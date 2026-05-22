@@ -1,0 +1,33 @@
+license = "MIT"
+loaderVersion = "[40,)"
+modLoader = "javafml"
+
+[[mods]]
+modId = "${mod_id}"
+version = "${version}"
+displayName = "${mod_name}"
+authors = "hoyin1600p"
+description = '''
+Replaces Vault Hunters Arcane and Arcane Rail particle streams with clean rendered beams.
+'''
+
+[[dependencies.${mod_id}]]
+mandatory = true
+modId = "forge"
+ordering = "NONE"
+side = "BOTH"
+versionRange = "[40,)"
+
+[[dependencies.${mod_id}]]
+mandatory = true
+modId = "minecraft"
+ordering = "NONE"
+side = "BOTH"
+versionRange = "[1.18.2,1.19)"
+
+[[dependencies.${mod_id}]]
+mandatory = true
+modId = "the_vault"
+ordering = "AFTER"
+side = "BOTH"
+versionRange = "[0,)"

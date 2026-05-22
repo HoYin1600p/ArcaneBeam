@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "dev.hoyin1600p.arcanebeam.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "arcanebeam.refmap.json",
+  "client": [
+    "ClientLevelMixin",
+    "SoundManagerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "minVersion": "0.8"
+}

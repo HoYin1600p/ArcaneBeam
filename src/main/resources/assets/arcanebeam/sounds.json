@@ -1,0 +1,47 @@
+{
+  "arcane_1": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/arcane_1",
+        "stream": true
+      }
+    ]
+  },
+  "arcane_2_startup": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/arcane_2_startup",
+        "stream": true
+      }
+    ]
+  },
+  "arcane_2_loop": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/arcane_2_loop",
+        "stream": true
+      }
+    ]
+  },
+  "rail_1": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/rail_1",
+        "stream": true
+      }
+    ]
+  },
+  "rail_2": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/rail_2",
+        "stream": true
+      }
+    ]
+  }
+}
