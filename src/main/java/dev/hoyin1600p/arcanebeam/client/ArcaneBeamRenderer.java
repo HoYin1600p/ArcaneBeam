@@ -18,6 +18,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.Collection;
 
 public class ArcaneBeamRenderer extends RenderType {
+    private static final int CYLINDER_SIDES = 8;
     private static final ResourceLocation LOOT_BEAM_TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/entity/loot_beam.png");
     private static final ResourceLocation WHITE_TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/entity/white.png");
     private static final RenderType DEFAULT_BEAM = createUnlitBeamRenderType("default", LOOT_BEAM_TEXTURE);
@@ -100,19 +101,19 @@ public class ArcaneBeamRenderer extends RenderType {
             poseStack.pushPose();
             applyGlowRotation(poseStack, settings, partialTicks());
             if (shaderCompatibility) {
-                renderLitPart(poseStack, shaderGlow, glowRed, glowGreen, glowBlue, effectiveGlowAlpha, height, -effectiveGlowRadius, -effectiveGlowRadius, effectiveGlowRadius, -effectiveGlowRadius, -beamRadius, effectiveGlowRadius, effectiveGlowRadius, effectiveGlowRadius, false);
+                renderLitTube(poseStack, shaderGlow, glowRed, glowGreen, glowBlue, effectiveGlowAlpha, height, effectiveGlowRadius, false);
             } else {
-                renderPart(poseStack, shaderGlow, glowRed, glowGreen, glowBlue, effectiveGlowAlpha, height, -effectiveGlowRadius, -effectiveGlowRadius, effectiveGlowRadius, -effectiveGlowRadius, -beamRadius, effectiveGlowRadius, effectiveGlowRadius, effectiveGlowRadius, false);
+                renderTube(poseStack, shaderGlow, glowRed, glowGreen, glowBlue, effectiveGlowAlpha, height, effectiveGlowRadius, false);
             }
             poseStack.popPose();
         }
 
         if (shaderCompatibility) {
-            renderLitPart(poseStack, main, red, green, blue, alpha, height, 0.0F, beamRadius, beamRadius, 0.0F, -beamRadius, 0.0F, 0.0F, -beamRadius, false);
-            renderLitPart(poseStack, solid, red, green, blue, alpha, height, 0.0F, beamRadius * 0.35F, beamRadius * 0.35F, 0.0F, -beamRadius * 0.35F, 0.0F, 0.0F, -beamRadius * 0.35F, false);
+            renderLitTube(poseStack, main, red, green, blue, alpha, height, beamRadius, false);
+            renderLitTube(poseStack, solid, red, green, blue, alpha, height, beamRadius * 0.35F, false);
         } else {
-            renderPart(poseStack, main, red, green, blue, alpha, height, 0.0F, beamRadius, beamRadius, 0.0F, -beamRadius, 0.0F, 0.0F, -beamRadius, false);
-            renderPart(poseStack, solid, red, green, blue, alpha, height, 0.0F, beamRadius * 0.35F, beamRadius * 0.35F, 0.0F, -beamRadius * 0.35F, 0.0F, 0.0F, -beamRadius * 0.35F, false);
+            renderTube(poseStack, main, red, green, blue, alpha, height, beamRadius, false);
+            renderTube(poseStack, solid, red, green, blue, alpha, height, beamRadius * 0.35F, false);
         }
 
         poseStack.popPose();
@@ -186,36 +187,52 @@ public class ArcaneBeamRenderer extends RenderType {
         poseStack.mulPose(new Quaternion(axis, angle, false));
     }
 
-    private static void renderPart(PoseStack stack, VertexConsumer builder, float red, float green, float blue, float alpha, float height, float radius1, float radius2, float radius3, float radius4, float radius5, float radius6, float radius7, float radius8, boolean gradient) {
+    private static void renderTube(PoseStack stack, VertexConsumer builder, float red, float green, float blue, float alpha, float height, float radius, boolean gradient) {
         Matrix4f matrixPose = stack.last().pose();
-        renderQuad(matrixPose, builder, red, green, blue, alpha, height, radius1, radius2, radius3, radius4, gradient);
-        renderQuad(matrixPose, builder, red, green, blue, alpha, height, radius7, radius8, radius5, radius6, gradient);
-        renderQuad(matrixPose, builder, red, green, blue, alpha, height, radius3, radius4, radius7, radius8, gradient);
-        renderQuad(matrixPose, builder, red, green, blue, alpha, height, radius5, radius6, radius1, radius2, gradient);
+        for (int i = 0; i < CYLINDER_SIDES; i++) {
+            int next = (i + 1) % CYLINDER_SIDES;
+            float angle1 = (float) (Math.PI * 2.0D * i / CYLINDER_SIDES);
+            float angle2 = (float) (Math.PI * 2.0D * next / CYLINDER_SIDES);
+            float x1 = (float) Math.sin(angle1) * radius;
+            float z1 = (float) Math.cos(angle1) * radius;
+            float x2 = (float) Math.sin(angle2) * radius;
+            float z2 = (float) Math.cos(angle2) * radius;
+            float u1 = i / (float) CYLINDER_SIDES;
+            float u2 = next / (float) CYLINDER_SIDES;
+            renderQuad(matrixPose, builder, red, green, blue, alpha, height, x1, z1, x2, z2, u1, u2, gradient);
+        }
     }
 
-    private static void renderLitPart(PoseStack stack, VertexConsumer builder, float red, float green, float blue, float alpha, float height, float radius1, float radius2, float radius3, float radius4, float radius5, float radius6, float radius7, float radius8, boolean gradient) {
+    private static void renderLitTube(PoseStack stack, VertexConsumer builder, float red, float green, float blue, float alpha, float height, float radius, boolean gradient) {
         PoseStack.Pose pose = stack.last();
         Matrix4f matrixPose = pose.pose();
-        renderLitQuad(matrixPose, pose.normal(), builder, red, green, blue, alpha, height, radius1, radius2, radius3, radius4, gradient);
-        renderLitQuad(matrixPose, pose.normal(), builder, red, green, blue, alpha, height, radius7, radius8, radius5, radius6, gradient);
-        renderLitQuad(matrixPose, pose.normal(), builder, red, green, blue, alpha, height, radius3, radius4, radius7, radius8, gradient);
-        renderLitQuad(matrixPose, pose.normal(), builder, red, green, blue, alpha, height, radius5, radius6, radius1, radius2, gradient);
+        for (int i = 0; i < CYLINDER_SIDES; i++) {
+            int next = (i + 1) % CYLINDER_SIDES;
+            float angle1 = (float) (Math.PI * 2.0D * i / CYLINDER_SIDES);
+            float angle2 = (float) (Math.PI * 2.0D * next / CYLINDER_SIDES);
+            float x1 = (float) Math.sin(angle1) * radius;
+            float z1 = (float) Math.cos(angle1) * radius;
+            float x2 = (float) Math.sin(angle2) * radius;
+            float z2 = (float) Math.cos(angle2) * radius;
+            float u1 = i / (float) CYLINDER_SIDES;
+            float u2 = next / (float) CYLINDER_SIDES;
+            renderLitQuad(matrixPose, pose.normal(), builder, red, green, blue, alpha, height, x1, z1, x2, z2, u1, u2, gradient);
+        }
     }
 
-    private static void renderQuad(Matrix4f pose, VertexConsumer builder, float red, float green, float blue, float alpha, float y, float x1, float z1, float x2, float z2, boolean gradient) {
-        addVertex(pose, builder, red, green, blue, gradient ? 0.0F : alpha, y, x1, z1, 1.0F, 0.0F);
-        addVertex(pose, builder, red, green, blue, alpha, 0.0F, x1, z1, 1.0F, 1.0F);
-        addVertex(pose, builder, red, green, blue, alpha, 0.0F, x2, z2, 0.0F, 1.0F);
-        addVertex(pose, builder, red, green, blue, gradient ? 0.0F : alpha, y, x2, z2, 0.0F, 0.0F);
+    private static void renderQuad(Matrix4f pose, VertexConsumer builder, float red, float green, float blue, float alpha, float y, float x1, float z1, float x2, float z2, float u1, float u2, boolean gradient) {
+        addVertex(pose, builder, red, green, blue, gradient ? 0.0F : alpha, y, x1, z1, u1, 0.0F);
+        addVertex(pose, builder, red, green, blue, alpha, 0.0F, x1, z1, u1, 1.0F);
+        addVertex(pose, builder, red, green, blue, alpha, 0.0F, x2, z2, u2, 1.0F);
+        addVertex(pose, builder, red, green, blue, gradient ? 0.0F : alpha, y, x2, z2, u2, 0.0F);
     }
 
-    private static void renderLitQuad(Matrix4f pose, com.mojang.math.Matrix3f normalMatrix, VertexConsumer builder, float red, float green, float blue, float alpha, float y, float x1, float z1, float x2, float z2, boolean gradient) {
+    private static void renderLitQuad(Matrix4f pose, com.mojang.math.Matrix3f normalMatrix, VertexConsumer builder, float red, float green, float blue, float alpha, float y, float x1, float z1, float x2, float z2, float u1, float u2, boolean gradient) {
         Vector3f faceNormal = faceNormal(x1, z1, x2, z2);
-        addLitVertex(pose, normalMatrix, builder, red, green, blue, gradient ? 0.0F : alpha, y, x1, z1, 1.0F, 0.0F, faceNormal);
-        addLitVertex(pose, normalMatrix, builder, red, green, blue, alpha, 0.0F, x1, z1, 1.0F, 1.0F, faceNormal);
-        addLitVertex(pose, normalMatrix, builder, red, green, blue, alpha, 0.0F, x2, z2, 0.0F, 1.0F, faceNormal);
-        addLitVertex(pose, normalMatrix, builder, red, green, blue, gradient ? 0.0F : alpha, y, x2, z2, 0.0F, 0.0F, faceNormal);
+        addLitVertex(pose, normalMatrix, builder, red, green, blue, gradient ? 0.0F : alpha, y, x1, z1, u1, 0.0F, faceNormal);
+        addLitVertex(pose, normalMatrix, builder, red, green, blue, alpha, 0.0F, x1, z1, u1, 1.0F, faceNormal);
+        addLitVertex(pose, normalMatrix, builder, red, green, blue, alpha, 0.0F, x2, z2, u2, 1.0F, faceNormal);
+        addLitVertex(pose, normalMatrix, builder, red, green, blue, gradient ? 0.0F : alpha, y, x2, z2, u2, 0.0F, faceNormal);
     }
 
     private static void addVertex(Matrix4f pose, VertexConsumer builder, float red, float green, float blue, float alpha, float y, float x, float z, float u, float v) {

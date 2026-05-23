@@ -30,6 +30,7 @@ import java.util.UUID;
 public final class ArcaneBeamManager {
     private static final double MAX_PARTICLE_RAY_DISTANCE_SQR = 0.25D;
     private static final double LOCAL_OWNERSHIP_RAY_DISTANCE = 2.0D;
+    private static final float FADE_OUT_GRACE_TICKS = 2.0F;
     private static final ResourceLocation ARCANE = new ResourceLocation("the_vault", "arcane");
     private static final ResourceLocation ARCANE_RAIL = new ResourceLocation("the_vault", "arcane_rail");
     private static final Map<UUID, ActiveBeam> activeBeams = new LinkedHashMap<>();
@@ -267,7 +268,7 @@ public final class ArcaneBeamManager {
         public float alphaMultiplier(long gameTime, float partialTick) {
             float alpha = 1.0F;
             float age = Math.max(0.0F, gameTime - firstSeenGameTime + partialTick);
-            float sinceLastSeen = Math.max(0.0F, gameTime - lastSeenGameTime + partialTick);
+            float sinceLastSeen = fadeOutAge(gameTime, partialTick);
 
             if (fadeInStyle() == ArcaneBeamConfig.FadeInStyle.FADE && settings().fadeInTicks > 0) {
                 alpha *= Math.min(1.0F, age / settings().fadeInTicks);
@@ -281,7 +282,7 @@ public final class ArcaneBeamManager {
         public float beamRadiusMultiplier(long gameTime, float partialTick) {
             float radius = 1.0F;
             float age = Math.max(0.0F, gameTime - firstSeenGameTime + partialTick);
-            float sinceLastSeen = Math.max(0.0F, gameTime - lastSeenGameTime + partialTick);
+            float sinceLastSeen = fadeOutAge(gameTime, partialTick);
 
             if (fadeInStyle() == ArcaneBeamConfig.FadeInStyle.GROW && settings().fadeInTicks > 0) {
                 radius *= Math.min(1.0F, age / settings().fadeInTicks);
@@ -304,6 +305,10 @@ public final class ArcaneBeamManager {
         private ArcaneBeamConfig.FadeOutStyle fadeOutStyle() {
             ArcaneBeamConfig.FadeOutStyle style = ArcaneBeamConfig.FadeOutStyle.fromId(settings().fadeOutStyle);
             return style == null ? ArcaneBeamConfig.FadeOutStyle.FADE : style;
+        }
+
+        private float fadeOutAge(long gameTime, float partialTick) {
+            return Math.max(0.0F, gameTime - lastSeenGameTime - FADE_OUT_GRACE_TICKS + partialTick);
         }
     }
 
