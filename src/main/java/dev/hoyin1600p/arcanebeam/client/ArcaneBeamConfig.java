@@ -75,6 +75,8 @@ public final class ArcaneBeamConfig {
         validateSound(INSTANCE.rail);
         validateOrigin(INSTANCE.arcane);
         validateOrigin(INSTANCE.rail);
+        validateTransitions(INSTANCE.arcane, FadeInStyle.FADE, 5, FadeOutStyle.SHRINK, 10);
+        validateTransitions(INSTANCE.rail, FadeInStyle.FADE, 1, FadeOutStyle.FADE, 4);
         validateShaderCompatibility();
     }
 
@@ -115,11 +117,10 @@ public final class ArcaneBeamConfig {
     private static void validateSound(BeamSettings settings) {
         if (settings.sound == null || settings.sound.isBlank()) {
             settings.sound = SoundChoice.DEFAULT.id;
-            return;
-        }
-        if (SoundChoice.fromId(settings.sound) == null) {
+        } else if (SoundChoice.fromId(settings.sound) == null) {
             settings.sound = SoundChoice.DEFAULT.id;
         }
+        settings.soundVolume = Math.max(0.0F, Math.min(2.0F, settings.soundVolume));
     }
 
     private static void validateColorShift(BeamSettings settings) {
@@ -139,6 +140,17 @@ public final class ArcaneBeamConfig {
             settings.startOffsetY = -0.45D;
             settings.startOffsetZ = 0.18D;
         }
+    }
+
+    private static void validateTransitions(BeamSettings settings, FadeInStyle defaultFadeInStyle, int defaultFadeInTicks, FadeOutStyle defaultFadeOutStyle, int defaultFadeOutTicks) {
+        if (FadeInStyle.fromId(settings.fadeInStyle) == null) {
+            settings.fadeInStyle = defaultFadeInStyle.id;
+        }
+        if (FadeOutStyle.fromId(settings.fadeOutStyle) == null) {
+            settings.fadeOutStyle = defaultFadeOutStyle.id;
+        }
+        settings.fadeInTicks = settings.fadeInTicks < 0 ? defaultFadeInTicks : Math.max(0, Math.min(99, settings.fadeInTicks));
+        settings.fadeOutTicks = settings.fadeOutTicks < 0 ? defaultFadeOutTicks : Math.max(0, Math.min(99, settings.fadeOutTicks));
     }
 
     private static void validateShaderCompatibility() {
@@ -179,6 +191,11 @@ public final class ArcaneBeamConfig {
         public int lifetimeTicks;
         public double maxRange;
         public String sound = SoundChoice.DEFAULT.id;
+        public float soundVolume = 1.00F;
+        public String fadeInStyle = FadeInStyle.FADE.id;
+        public int fadeInTicks = -1;
+        public String fadeOutStyle = FadeOutStyle.SHRINK.id;
+        public int fadeOutTicks = -1;
         public String startHand = StartHand.OFFHAND.id;
         public double startOffsetX = 0.38D;
         public double startOffsetY = -0.45D;
@@ -264,6 +281,50 @@ public final class ArcaneBeamConfig {
             for (StartHand hand : values()) {
                 if (hand.id.equals(id)) {
                     return hand;
+                }
+            }
+            return null;
+        }
+    }
+
+    public enum FadeInStyle {
+        FADE("fade", "Fade In"),
+        GROW("grow", "Grow In");
+
+        public final String id;
+        public final String label;
+
+        FadeInStyle(String id, String label) {
+            this.id = id;
+            this.label = label;
+        }
+
+        public static FadeInStyle fromId(String id) {
+            for (FadeInStyle style : values()) {
+                if (style.id.equals(id)) {
+                    return style;
+                }
+            }
+            return null;
+        }
+    }
+
+    public enum FadeOutStyle {
+        FADE("fade", "Fade Out"),
+        SHRINK("shrink", "Shrink Out");
+
+        public final String id;
+        public final String label;
+
+        FadeOutStyle(String id, String label) {
+            this.id = id;
+            this.label = label;
+        }
+
+        public static FadeOutStyle fromId(String id) {
+            for (FadeOutStyle style : values()) {
+                if (style.id.equals(id)) {
+                    return style;
                 }
             }
             return null;

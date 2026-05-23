@@ -23,6 +23,7 @@ public final class ArcaneBeamSoundController {
     private static final String RAIL_1_PATH = "abilities/rail_1";
     private static final String RAIL_2_PATH = "abilities/rail_2";
 
+    private static FileSoundInstance arcaneStartupSound;
     private static ArcaneLoopSound arcaneLoopSound;
     private static long lastArcaneFirstSeen = Long.MIN_VALUE;
     private static long pendingArcaneLoopStart = Long.MIN_VALUE;
@@ -33,7 +34,7 @@ public final class ArcaneBeamSoundController {
 
     public static void tick(Minecraft minecraft) {
         if (minecraft.level == null || minecraft.player == null) {
-            stopArcaneLoop(minecraft);
+            stopArcaneSounds(minecraft);
             lastArcaneFirstSeen = Long.MIN_VALUE;
             pendingArcaneLoopStart = Long.MIN_VALUE;
             lastRailFirstSeen = Long.MIN_VALUE;
@@ -48,7 +49,7 @@ public final class ArcaneBeamSoundController {
         ArcaneBeamConfig.SoundChoice choice = soundChoice(ArcaneBeamConfig.INSTANCE.arcane.sound);
         long gameTime = minecraft.level.getGameTime();
         if (beam == null || choice == ArcaneBeamConfig.SoundChoice.DEFAULT) {
-            stopArcaneLoop(minecraft);
+            stopArcaneSounds(minecraft);
             lastArcaneFirstSeen = Long.MIN_VALUE;
             pendingArcaneLoopStart = Long.MIN_VALUE;
             return;
@@ -56,9 +57,9 @@ public final class ArcaneBeamSoundController {
 
         if (beam.firstSeenGameTime() != lastArcaneFirstSeen) {
             lastArcaneFirstSeen = beam.firstSeenGameTime();
-            stopArcaneLoop(minecraft);
+            stopArcaneSounds(minecraft);
             if (choice == ArcaneBeamConfig.SoundChoice.OPTION_1) {
-                arcaneLoopSound = new ArcaneLoopSound(player, ARCANE_1_PATH);
+                arcaneLoopSound = new ArcaneLoopSound(player, ARCANE_1_PATH, ArcaneBeamConfig.INSTANCE.arcane.soundVolume);
                 LOGGER.info("[ArcaneBeam] Starting Arcane option 1 loop");
                 minecraft.getSoundManager().play(arcaneLoopSound);
                 pendingArcaneLoopStart = Long.MIN_VALUE;
@@ -66,13 +67,14 @@ public final class ArcaneBeamSoundController {
             }
 
             LOGGER.info("[ArcaneBeam] Playing Arcane option 2 startup");
-            minecraft.getSoundManager().play(new FileSoundInstance(ARCANE_2_STARTUP_PATH));
+            arcaneStartupSound = new FileSoundInstance(ARCANE_2_STARTUP_PATH, ArcaneBeamConfig.INSTANCE.arcane.soundVolume);
+            minecraft.getSoundManager().play(arcaneStartupSound);
             pendingArcaneLoopStart = gameTime + ARCANE_OPTION_2_STARTUP_TICKS;
         }
 
         if (choice == ArcaneBeamConfig.SoundChoice.OPTION_2 && pendingArcaneLoopStart != Long.MIN_VALUE && gameTime >= pendingArcaneLoopStart) {
             if (arcaneLoopSound == null || arcaneLoopSound.isStopped()) {
-                arcaneLoopSound = new ArcaneLoopSound(player, ARCANE_2_LOOP_PATH);
+                arcaneLoopSound = new ArcaneLoopSound(player, ARCANE_2_LOOP_PATH, ArcaneBeamConfig.INSTANCE.arcane.soundVolume);
                 LOGGER.info("[ArcaneBeam] Starting Arcane option 2 loop");
                 minecraft.getSoundManager().play(arcaneLoopSound);
             }
@@ -96,11 +98,16 @@ public final class ArcaneBeamSoundController {
         };
         if (soundPath != null) {
             LOGGER.info("[ArcaneBeam] Playing Rail sound {}", soundPath);
-            minecraft.getSoundManager().play(new FileSoundInstance(soundPath));
+            minecraft.getSoundManager().play(new FileSoundInstance(soundPath, ArcaneBeamConfig.INSTANCE.rail.soundVolume));
         }
     }
 
-    private static void stopArcaneLoop(Minecraft minecraft) {
+    private static void stopArcaneSounds(Minecraft minecraft) {
+        if (arcaneStartupSound != null) {
+            LOGGER.info("[ArcaneBeam] Stopping Arcane startup");
+            minecraft.getSoundManager().stop(arcaneStartupSound);
+            arcaneStartupSound = null;
+        }
         if (arcaneLoopSound != null) {
             LOGGER.info("[ArcaneBeam] Stopping Arcane loop");
             minecraft.getSoundManager().stop(arcaneLoopSound);
@@ -116,8 +123,8 @@ public final class ArcaneBeamSoundController {
     private static final class ArcaneLoopSound extends FileSoundInstance {
         private final LocalPlayer player;
 
-        private ArcaneLoopSound(LocalPlayer player, String path) {
-            super(path);
+        private ArcaneLoopSound(LocalPlayer player, String path, float volume) {
+            super(path, volume);
             this.player = player;
             this.looping = true;
         }
@@ -134,17 +141,21 @@ public final class ArcaneBeamSoundController {
         private final WeighedSoundEvents soundSet;
 
         private FileSoundInstance(String path) {
-            this(new ResourceLocation(ArcaneBeam.MOD_ID, path));
+            this(path, 1.0F);
         }
 
-        private FileSoundInstance(ResourceLocation soundId) {
+        private FileSoundInstance(String path, float volume) {
+            this(new ResourceLocation(ArcaneBeam.MOD_ID, path), volume);
+        }
+
+        private FileSoundInstance(ResourceLocation soundId, float volume) {
             super(new SoundEvent(soundId), SoundSource.PLAYERS);
             this.soundSet = new WeighedSoundEvents(soundId, null);
             this.sound = new Sound(soundId.toString(), 1.0F, 1.0F, 1, Sound.Type.FILE, true, false, 16);
             this.soundSet.addSound(this.sound);
             this.looping = false;
             this.delay = 0;
-            this.volume = 1.0F;
+            this.volume = volume;
             this.pitch = 1.0F;
             this.relative = true;
             this.attenuation = Attenuation.NONE;

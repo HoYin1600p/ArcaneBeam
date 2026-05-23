@@ -20,10 +20,15 @@ public class ArcaneBeamConfigScreen extends Screen {
     private static final int SLOT_GAP = 12;
     private static final int SLOT_INNER_GAP = 6;
     private static final int ROW_LABEL_GAP = 8;
+    private static final int COLOR_ROW_GAP = 6;
+    private static final int GLOW_ROW_GAP = 26;
 
     private final List<EditBox> colorBoxes = new ArrayList<>();
     private final List<EditBox> glowColorBoxes = new ArrayList<>();
     private final List<EditBox> originBoxes = new ArrayList<>();
+    private EditBox soundVolumeBox;
+    private EditBox fadeInTicksBox;
+    private EditBox fadeOutTicksBox;
     private SettingSlider intensitySlider;
     private SettingSlider opacitySlider;
     private SettingSlider glowRadiusSlider;
@@ -33,6 +38,8 @@ public class ArcaneBeamConfigScreen extends Screen {
     private Button soundButton;
     private Button handButton;
     private Button shaderCompatibilityButton;
+    private Button fadeInModeButton;
+    private Button fadeOutModeButton;
     private boolean railSelected;
     private boolean draggingPalette;
     private boolean draggingBrightness;
@@ -71,7 +78,7 @@ public class ArcaneBeamConfigScreen extends Screen {
             refreshControls();
         }));
 
-        int boxY = paletteY + PALETTE_HEIGHT + 24;
+        int boxY = beamRowY();
         for (int i = 0; i < 4; i++) {
             final int slot = i;
             int slotX = slotStartX(i);
@@ -83,7 +90,7 @@ public class ArcaneBeamConfigScreen extends Screen {
             this.addRenderableWidget(editBox);
         }
 
-        int glowBoxY = boxY + 30;
+        int glowBoxY = glowRowY();
         for (int i = 0; i < 4; i++) {
             final int slot = i;
             int slotX = slotStartX(i);
@@ -96,7 +103,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
 
         int sliderX = this.width / 2 - 154;
-        int sliderY = glowBoxY + 38;
+        int sliderY = glowBoxY + 32;
         intensitySlider = new SettingSlider(sliderX, sliderY, 308, 20, "Intensity", 0.02D, 0.25D, () -> settings().intensity, value -> {
             settings().intensity = (float) value;
             settings().radius = (float) value;
@@ -125,13 +132,41 @@ public class ArcaneBeamConfigScreen extends Screen {
             refreshControls();
             ArcaneBeamConfig.save();
         }));
-        soundButton = this.addRenderableWidget(new Button(sliderX, sliderY + 168, 308, 20, TextComponent.EMPTY, button -> {
+        int soundRowY = sliderY + 168;
+        soundButton = this.addRenderableWidget(new Button(sliderX, soundRowY, 184, 20, TextComponent.EMPTY, button -> {
             cycleSound();
             refreshControls();
             ArcaneBeamConfig.save();
         }));
+        soundVolumeBox = new EditBox(this.font, sliderX + 248, soundRowY, 60, 20, new TextComponent("Sound Volume"));
+        soundVolumeBox.setMaxLength(4);
+        soundVolumeBox.setFilter(value -> value.isEmpty() || value.matches("[0-9]{0,1}(\\.[0-9]{0,2})?") || value.matches("2(\\.[0]{0,2})?"));
+        soundVolumeBox.setResponder(this::updateSoundVolumeFromText);
+        this.addRenderableWidget(soundVolumeBox);
 
-        int originY = sliderY + 192;
+        int transitionRowY = soundRowY + 24;
+        fadeInModeButton = this.addRenderableWidget(new Button(sliderX, transitionRowY, 122, 20, TextComponent.EMPTY, button -> {
+            cycleFadeInStyle();
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        fadeInTicksBox = new EditBox(this.font, sliderX + 128, transitionRowY, 24, 20, new TextComponent("In Ticks"));
+        fadeInTicksBox.setMaxLength(2);
+        fadeInTicksBox.setFilter(value -> value.isEmpty() || value.matches("[0-9]{0,2}"));
+        fadeInTicksBox.setResponder(this::updateFadeInTicksFromText);
+        this.addRenderableWidget(fadeInTicksBox);
+        fadeOutModeButton = this.addRenderableWidget(new Button(sliderX + 160, transitionRowY, 122, 20, TextComponent.EMPTY, button -> {
+            cycleFadeOutStyle();
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        fadeOutTicksBox = new EditBox(this.font, sliderX + 284, transitionRowY, 24, 20, new TextComponent("Out Ticks"));
+        fadeOutTicksBox.setMaxLength(2);
+        fadeOutTicksBox.setFilter(value -> value.isEmpty() || value.matches("[0-9]{0,2}"));
+        fadeOutTicksBox.setResponder(this::updateFadeOutTicksFromText);
+        this.addRenderableWidget(fadeOutTicksBox);
+
+        int originY = transitionRowY + 24;
         addOriginBox(sliderX, originY, "X", 0);
         addOriginBox(sliderX + 104, originY, "Y", 1);
         addOriginBox(sliderX + 208, originY, "Z", 2);
@@ -159,6 +194,15 @@ public class ArcaneBeamConfigScreen extends Screen {
         renderPalette(poseStack);
         renderBrightnessStrip(poseStack);
         renderInlinePreviews(poseStack);
+        if (soundVolumeBox != null) {
+            drawString(poseStack, this.font, "Volume", soundVolumeBox.x - this.font.width("Volume") - 8, soundVolumeBox.y + 6, 0xD8D8D8);
+        }
+        if (fadeInTicksBox != null) {
+            drawString(poseStack, this.font, "Ticks", fadeInTicksBox.x - this.font.width("Ticks") - 10, fadeInTicksBox.y + 6, 0xD8D8D8);
+        }
+        if (fadeOutTicksBox != null) {
+            drawString(poseStack, this.font, "Ticks", fadeOutTicksBox.x - this.font.width("Ticks") - 6, fadeOutTicksBox.y + 6, 0xD8D8D8);
+        }
         super.render(poseStack, mouseX, mouseY, partialTick);
     }
 
@@ -209,6 +253,25 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (soundVolumeBox != null && soundVolumeBox.isMouseOver(mouseX, mouseY)) {
+            double step = hasShiftDown() ? 0.10D : 0.01D;
+            nudgeSoundVolume(delta > 0.0D ? step : -step);
+            refreshSoundVolumeBox();
+            ArcaneBeamConfig.save();
+            return true;
+        }
+        if (fadeInTicksBox != null && fadeInTicksBox.isMouseOver(mouseX, mouseY)) {
+            nudgeFadeInTicks(delta > 0.0D ? 1 : -1);
+            refreshFadeTickBoxes();
+            ArcaneBeamConfig.save();
+            return true;
+        }
+        if (fadeOutTicksBox != null && fadeOutTicksBox.isMouseOver(mouseX, mouseY)) {
+            nudgeFadeOutTicks(delta > 0.0D ? 1 : -1);
+            refreshFadeTickBoxes();
+            ArcaneBeamConfig.save();
+            return true;
+        }
         for (int i = 0; i < originBoxes.size(); i++) {
             EditBox originBox = originBoxes.get(i);
             if (originBox.isMouseOver(mouseX, mouseY)) {
@@ -232,6 +295,15 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
         for (EditBox originBox : originBoxes) {
             originBox.tick();
+        }
+        if (soundVolumeBox != null) {
+            soundVolumeBox.tick();
+        }
+        if (fadeInTicksBox != null) {
+            fadeInTicksBox.tick();
+        }
+        if (fadeOutTicksBox != null) {
+            fadeOutTicksBox.tick();
         }
     }
 
@@ -263,8 +335,8 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void renderInlinePreviews(PoseStack poseStack) {
-        int beamY = paletteY + PALETTE_HEIGHT + 24;
-        int glowY = beamY + 30;
+        int beamY = colorBoxes.isEmpty() ? beamRowY() : colorBoxes.get(0).y;
+        int glowY = glowColorBoxes.isEmpty() ? glowRowY() : glowColorBoxes.get(0).y;
         int labelX = rowStartX() - ROW_LABEL_GAP - Math.max(this.font.width("Beam"), this.font.width("Glow"));
         drawString(poseStack, this.font, "Beam", labelX, beamY + 6, 0xD8D8D8);
         drawString(poseStack, this.font, "Glow", labelX, glowY + 6, 0xD8D8D8);
@@ -282,9 +354,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private boolean handlePreviewSelection(double mouseX, double mouseY) {
-        int beamY = paletteY + PALETTE_HEIGHT + 24;
-        int glowY = beamY + 30;
         for (int i = 0; i < 4; i++) {
+            int beamY = colorBoxes.get(i).y;
+            int glowY = glowColorBoxes.get(i).y;
             int previewX = slotStartX(i);
             if (isInside(mouseX, mouseY, previewX, beamY, SLOT_PREVIEW_WIDTH, 20)) {
                 selectedSlot = i;
@@ -359,6 +431,14 @@ public class ArcaneBeamConfigScreen extends Screen {
         return this.width / 2 - rowWidth() / 2;
     }
 
+    private int beamRowY() {
+        return paletteY + PALETTE_HEIGHT + COLOR_ROW_GAP;
+    }
+
+    private int glowRowY() {
+        return beamRowY() + GLOW_ROW_GAP;
+    }
+
     private static int rowWidth() {
         return slotWidth() * 4 + SLOT_GAP * 3;
     }
@@ -388,7 +468,11 @@ public class ArcaneBeamConfigScreen extends Screen {
             shaderCompatibilityButton.setMessage(new TextComponent("Shader Compatibility: " + shaderCompatibility().label));
             soundButton.setMessage(new TextComponent("Sound: " + soundChoice().label));
             handButton.setMessage(new TextComponent("Start: " + startHand().label));
+            fadeInModeButton.setMessage(new TextComponent(fadeInStyle().label));
+            fadeOutModeButton.setMessage(new TextComponent(fadeOutStyle().label));
             refreshOriginBoxes();
+            refreshSoundVolumeBox();
+            refreshFadeTickBoxes();
         }
     }
 
@@ -409,6 +493,16 @@ public class ArcaneBeamConfigScreen extends Screen {
     private void cycleHand() {
         ArcaneBeamConfig.StartHand current = startHand();
         settings().startHand = current == ArcaneBeamConfig.StartHand.OFFHAND ? ArcaneBeamConfig.StartHand.MAIN_HAND.id : ArcaneBeamConfig.StartHand.OFFHAND.id;
+    }
+
+    private void cycleFadeInStyle() {
+        ArcaneBeamConfig.FadeInStyle current = fadeInStyle();
+        settings().fadeInStyle = current == ArcaneBeamConfig.FadeInStyle.FADE ? ArcaneBeamConfig.FadeInStyle.GROW.id : ArcaneBeamConfig.FadeInStyle.FADE.id;
+    }
+
+    private void cycleFadeOutStyle() {
+        ArcaneBeamConfig.FadeOutStyle current = fadeOutStyle();
+        settings().fadeOutStyle = current == ArcaneBeamConfig.FadeOutStyle.FADE ? ArcaneBeamConfig.FadeOutStyle.SHRINK.id : ArcaneBeamConfig.FadeOutStyle.FADE.id;
     }
 
     private void updateColorFromText(int slot, String value) {
@@ -475,6 +569,40 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
     }
 
+    private void updateSoundVolumeFromText(String value) {
+        if (value == null || value.isEmpty() || ".".equals(value)) {
+            return;
+        }
+
+        try {
+            settings().soundVolume = clampSoundVolume((float) roundOffset(Double.parseDouble(value)));
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void updateFadeInTicksFromText(String value) {
+        if (value == null || value.isEmpty()) {
+            return;
+        }
+        try {
+            settings().fadeInTicks = clampTicks(Integer.parseInt(value));
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void updateFadeOutTicksFromText(String value) {
+        if (value == null || value.isEmpty()) {
+            return;
+        }
+        try {
+            settings().fadeOutTicks = clampTicks(Integer.parseInt(value));
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
     private void nudgeOrigin(int axis, double amount) {
         if (axis == 0) {
             settings().startOffsetX = roundOffset(settings().startOffsetX + amount);
@@ -485,8 +613,35 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
     }
 
+    private void nudgeSoundVolume(double amount) {
+        settings().soundVolume = clampSoundVolume((float) roundOffset(settings().soundVolume + amount));
+    }
+
+    private void nudgeFadeInTicks(int amount) {
+        settings().fadeInTicks = clampTicks(settings().fadeInTicks + amount);
+    }
+
+    private void nudgeFadeOutTicks(int amount) {
+        settings().fadeOutTicks = clampTicks(settings().fadeOutTicks + amount);
+    }
+
     private ArcaneBeamConfig.BeamSettings settings() {
         return railSelected ? ArcaneBeamConfig.INSTANCE.rail : ArcaneBeamConfig.INSTANCE.arcane;
+    }
+
+    private void refreshSoundVolumeBox() {
+        if (soundVolumeBox != null) {
+            soundVolumeBox.setValue(formatOffset(settings().soundVolume));
+        }
+    }
+
+    private void refreshFadeTickBoxes() {
+        if (fadeInTicksBox != null) {
+            fadeInTicksBox.setValue(Integer.toString(settings().fadeInTicks));
+        }
+        if (fadeOutTicksBox != null) {
+            fadeOutTicksBox.setValue(Integer.toString(settings().fadeOutTicks));
+        }
     }
 
     private int[] activeColors() {
@@ -513,6 +668,16 @@ public class ArcaneBeamConfigScreen extends Screen {
         return compatibility == null ? ArcaneBeamConfig.ShaderCompatibility.OFF : compatibility;
     }
 
+    private ArcaneBeamConfig.FadeInStyle fadeInStyle() {
+        ArcaneBeamConfig.FadeInStyle style = ArcaneBeamConfig.FadeInStyle.fromId(settings().fadeInStyle);
+        return style == null ? ArcaneBeamConfig.FadeInStyle.FADE : style;
+    }
+
+    private ArcaneBeamConfig.FadeOutStyle fadeOutStyle() {
+        ArcaneBeamConfig.FadeOutStyle style = ArcaneBeamConfig.FadeOutStyle.fromId(settings().fadeOutStyle);
+        return style == null ? ArcaneBeamConfig.FadeOutStyle.SHRINK : style;
+    }
+
     private static String formatColor(int color) {
         return String.format(Locale.ROOT, "#%06X", color & 0xFFFFFF);
     }
@@ -523,6 +688,14 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     private static double roundOffset(double value) {
         return Math.round(value * 100.0D) / 100.0D;
+    }
+
+    private static float clampSoundVolume(float value) {
+        return Math.max(0.0F, Math.min(2.0F, value));
+    }
+
+    private static int clampTicks(int value) {
+        return Math.max(0, Math.min(99, value));
     }
 
     private interface DoubleGetter {

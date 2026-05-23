@@ -28,12 +28,12 @@ import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = ArcaneBeam.MOD_ID, value = Dist.CLIENT)
 public final class ArcaneBeamManager {
+    private static final double MAX_PARTICLE_RAY_DISTANCE_SQR = 0.25D;
+    private static final double LOCAL_OWNERSHIP_RAY_DISTANCE = 2.0D;
     private static final ResourceLocation ARCANE = new ResourceLocation("the_vault", "arcane");
     private static final ResourceLocation ARCANE_RAIL = new ResourceLocation("the_vault", "arcane_rail");
     private static final Map<UUID, ActiveBeam> activeBeams = new LinkedHashMap<>();
     private static long lastArcaneSeenGameTime = Long.MIN_VALUE;
-    private static long lastLocalArcaneSeenGameTime = Long.MIN_VALUE;
-    private static long lastLocalRailSeenGameTime = Long.MIN_VALUE;
 
     private ArcaneBeamManager() {
     }
@@ -59,13 +59,6 @@ public final class ArcaneBeamManager {
                 activeBeams.put(caster.getUUID(), new ActiveBeam(caster.getUUID(), kind, firstSeen, gameTime));
                 if (kind == BeamKind.ARCANE) {
                     lastArcaneSeenGameTime = gameTime;
-                }
-                if (minecraft.player != null && caster.getUUID().equals(minecraft.player.getUUID())) {
-                    if (kind == BeamKind.ARCANE) {
-                        lastLocalArcaneSeenGameTime = gameTime;
-                    } else {
-                        lastLocalRailSeenGameTime = gameTime;
-                    }
                 }
             }
         }
@@ -107,6 +100,7 @@ public final class ArcaneBeamManager {
         AbstractClientPlayer bestPlayer = null;
         double bestDistance = Double.MAX_VALUE;
         double maxRange = kind.settings().maxRange;
+        Minecraft minecraft = Minecraft.getInstance();
 
         for (AbstractClientPlayer player : level.players()) {
             Vec3 start = beamStart(player, 1.0F, kind.settings());
@@ -114,6 +108,9 @@ public final class ArcaneBeamManager {
             Vec3 toParticle = particlePosition.subtract(start);
             double alongRay = toParticle.dot(look);
             if (alongRay < -0.5D || alongRay > maxRange + 1.0D) {
+                continue;
+            }
+            if (minecraft.player != null && player.getUUID().equals(minecraft.player.getUUID()) && alongRay > LOCAL_OWNERSHIP_RAY_DISTANCE) {
                 continue;
             }
 
@@ -125,14 +122,14 @@ public final class ArcaneBeamManager {
             }
         }
 
-        return bestDistance <= 4.0D ? bestPlayer : Minecraft.getInstance().player;
+        return bestDistance <= MAX_PARTICLE_RAY_DISTANCE_SQR ? bestPlayer : null;
     }
 
     private static void removeExpiredBeams(long gameTime) {
         Iterator<ActiveBeam> iterator = activeBeams.values().iterator();
         while (iterator.hasNext()) {
             ActiveBeam beam = iterator.next();
-            if (gameTime - beam.lastSeenGameTime > beam.settings().lifetimeTicks) {
+            if (gameTime - beam.lastSeenGameTime > beam.expireAfterTicks()) {
                 iterator.remove();
             }
         }
@@ -162,7 +159,14 @@ public final class ArcaneBeamManager {
         if (start.distanceToSqr(end) < 0.01D) {
             return null;
         }
-        return new BeamTrace(beam.kind, start, end, beam.alphaMultiplier(level.getGameTime(), partialTick));
+        return new BeamTrace(
+                beam.kind,
+                start,
+                end,
+                beam.alphaMultiplier(level.getGameTime(), partialTick),
+                beam.beamRadiusMultiplier(level.getGameTime(), partialTick),
+                beam.glowRadiusMultiplier(level.getGameTime(), partialTick)
+        );
     }
 
     public static BeamTrace tracePreviewBeam(float partialTick) {
@@ -186,7 +190,7 @@ public final class ArcaneBeamManager {
         if (start.distanceToSqr(end) < 0.01D) {
             return null;
         }
-        return new BeamTrace(kind, start, end, 1.0F);
+        return new BeamTrace(kind, start, end, 1.0F, 1.0F, 1.0F);
     }
 
     public static ActiveBeam getLocalActiveBeam(BeamKind kind) {
@@ -203,11 +207,13 @@ public final class ArcaneBeamManager {
     }
 
     public static boolean shouldSuppressArcaneCastSound() {
-        return getLocalActiveBeam(BeamKind.ARCANE) != null || isWithinRecentWindow(lastLocalArcaneSeenGameTime, 5L);
+        return getLocalActiveBeam(BeamKind.ARCANE) != null
+                && soundChoice(ArcaneBeamConfig.INSTANCE.arcane.sound) != ArcaneBeamConfig.SoundChoice.DEFAULT;
     }
 
     public static boolean shouldSuppressRailCastSound() {
-        return getLocalActiveBeam(BeamKind.RAIL) != null || isWithinRecentWindow(lastLocalRailSeenGameTime, 5L);
+        return getLocalActiveBeam(BeamKind.RAIL) != null
+                && soundChoice(ArcaneBeamConfig.INSTANCE.rail.sound) != ArcaneBeamConfig.SoundChoice.DEFAULT;
     }
 
     private static boolean isWithinRecentWindow(long lastSeenGameTime, long windowTicks) {
@@ -217,6 +223,11 @@ public final class ArcaneBeamManager {
         }
         long gameTime = minecraft.level.getGameTime();
         return gameTime - lastSeenGameTime >= 0L && gameTime - lastSeenGameTime <= windowTicks;
+    }
+
+    private static ArcaneBeamConfig.SoundChoice soundChoice(String id) {
+        ArcaneBeamConfig.SoundChoice choice = ArcaneBeamConfig.SoundChoice.fromId(id);
+        return choice == null ? ArcaneBeamConfig.SoundChoice.DEFAULT : choice;
     }
 
     private static Vec3 beamStart(LivingEntity caster, float partialTick, ArcaneBeamConfig.BeamSettings settings) {
@@ -249,21 +260,54 @@ public final class ArcaneBeamManager {
             return kind.settings();
         }
 
-        public float alphaMultiplier(long gameTime, float partialTick) {
-            if (kind != BeamKind.RAIL) {
-                return 1.0F;
-            }
+        public long expireAfterTicks() {
+            return Math.max(settings().lifetimeTicks, settings().fadeOutTicks);
+        }
 
-            float lifetime = Math.max(1.0F, settings().lifetimeTicks);
+        public float alphaMultiplier(long gameTime, float partialTick) {
+            float alpha = 1.0F;
             float age = Math.max(0.0F, gameTime - firstSeenGameTime + partialTick);
-            float fadeIn = Math.min(1.0F, age / 1.0F);
-            float fadeOutStart = lifetime * 0.5F;
-            float fadeOut = age <= fadeOutStart ? 1.0F : Math.max(0.0F, (lifetime - age) / (lifetime - fadeOutStart));
-            return Math.min(1.0F, fadeIn * fadeOut);
+            float sinceLastSeen = Math.max(0.0F, gameTime - lastSeenGameTime + partialTick);
+
+            if (fadeInStyle() == ArcaneBeamConfig.FadeInStyle.FADE && settings().fadeInTicks > 0) {
+                alpha *= Math.min(1.0F, age / settings().fadeInTicks);
+            }
+            if (fadeOutStyle() == ArcaneBeamConfig.FadeOutStyle.FADE && settings().fadeOutTicks > 0 && sinceLastSeen > 0.0F) {
+                alpha *= Math.max(0.0F, 1.0F - (sinceLastSeen / settings().fadeOutTicks));
+            }
+            return alpha;
+        }
+
+        public float beamRadiusMultiplier(long gameTime, float partialTick) {
+            float radius = 1.0F;
+            float age = Math.max(0.0F, gameTime - firstSeenGameTime + partialTick);
+            float sinceLastSeen = Math.max(0.0F, gameTime - lastSeenGameTime + partialTick);
+
+            if (fadeInStyle() == ArcaneBeamConfig.FadeInStyle.GROW && settings().fadeInTicks > 0) {
+                radius *= Math.min(1.0F, age / settings().fadeInTicks);
+            }
+            if (fadeOutStyle() == ArcaneBeamConfig.FadeOutStyle.SHRINK && settings().fadeOutTicks > 0 && sinceLastSeen > 0.0F) {
+                radius *= Math.max(0.0F, 1.0F - (sinceLastSeen / settings().fadeOutTicks));
+            }
+            return radius;
+        }
+
+        public float glowRadiusMultiplier(long gameTime, float partialTick) {
+            return beamRadiusMultiplier(gameTime, partialTick);
+        }
+
+        private ArcaneBeamConfig.FadeInStyle fadeInStyle() {
+            ArcaneBeamConfig.FadeInStyle style = ArcaneBeamConfig.FadeInStyle.fromId(settings().fadeInStyle);
+            return style == null ? ArcaneBeamConfig.FadeInStyle.FADE : style;
+        }
+
+        private ArcaneBeamConfig.FadeOutStyle fadeOutStyle() {
+            ArcaneBeamConfig.FadeOutStyle style = ArcaneBeamConfig.FadeOutStyle.fromId(settings().fadeOutStyle);
+            return style == null ? ArcaneBeamConfig.FadeOutStyle.FADE : style;
         }
     }
 
-    public record BeamTrace(BeamKind kind, Vec3 start, Vec3 end, float alphaMultiplier) {
+    public record BeamTrace(BeamKind kind, Vec3 start, Vec3 end, float alphaMultiplier, float beamRadiusMultiplier, float glowRadiusMultiplier) {
         public ArcaneBeamConfig.BeamSettings settings() {
             return kind.settings();
         }

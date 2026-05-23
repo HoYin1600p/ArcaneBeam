@@ -114,6 +114,15 @@ Each ability supports:
 - `Option 1`
 - `Option 2`
 
+Each ability also has a `Volume` field.
+
+Volume controls:
+
+- direct text editing
+- mouse wheel over the box: `0.01`
+- `Shift + mouse wheel`: `0.10`
+- range: `0.00` to `2.00`
+
 Current behavior:
 
 - `Arcane Default`: Vault default Arcane sound
@@ -124,6 +133,42 @@ Current behavior:
 - `Rail Option 2`: plays `rail_2.ogg`
 
 When custom options are selected, Arcane Beam suppresses the stock Vault Arcane and Rail cast sounds so only the selected custom sound remains.
+
+When `Default` is selected, Vault's normal Arcane or Rail cast sound is left alone.
+
+### Fade / Grow In
+
+Each ability can choose how the beam appears when it starts:
+
+- `Fade In`
+- `Grow In`
+
+`Fade In` ramps opacity from `0` to the configured opacity.
+
+`Grow In` ramps beam and glow radius from `0` to the configured size.
+
+### Fade / Shrink Out
+
+Each ability can choose how the beam ends:
+
+- `Fade Out`
+- `Shrink Out`
+
+`Fade Out` reduces opacity to `0`.
+
+`Shrink Out` reduces beam and glow radius to `0`.
+
+### Transition Ticks
+
+Each ability has independent `Fade In Ticks` and `Fade Out Ticks` fields.
+
+Controls:
+
+- direct text editing
+- mouse wheel over the box: `1`
+- range: `0` to `99`
+
+`0` is valid and means no transition time.
 
 ### Start Hand
 
@@ -167,8 +212,10 @@ Default behavior in this mod:
 
 - Arcane uses sustained rendering while the ability is active.
 - Rail fades in quickly, reaches full brightness, then fades out over its short lifetime.
+- Arcane and Rail both support configurable fade/grow-in and fade/shrink-out transitions.
 - The beam endpoint follows the player's crosshair ray.
 - The visual ray does not snap to entity feet or auto-aim to entity centers.
+- The local player only claims Arcane/Rail ownership near the beam origin, which prevents nearby players from falsely triggering a local beam and local audio when their beam crosses your view.
 
 ## Config File
 

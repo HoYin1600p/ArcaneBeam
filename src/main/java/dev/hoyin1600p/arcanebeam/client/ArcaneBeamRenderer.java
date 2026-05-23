@@ -77,10 +77,14 @@ public class ArcaneBeamRenderer extends RenderType {
         float glowBlue = (glowColor & 0xFF) / 255.0F;
         float alpha = settings.opacity * trace.alphaMultiplier();
         float glowAlpha = alpha * settings.glowOpacity;
-        float beamRadius = settings.intensity;
-        float glowRadius = Math.max(beamRadius, settings.glowRadius);
+        float beamRadius = settings.intensity * trace.beamRadiusMultiplier();
+        float glowRadius = Math.max(beamRadius, settings.glowRadius * trace.glowRadiusMultiplier());
         float height = (float) trace.start().distanceTo(trace.end());
         boolean shaderCompatibility = shaderCompatibilityEnabled();
+
+        if (alpha <= 0.001F || beamRadius <= 0.0005F) {
+            return;
+        }
 
         poseStack.pushPose();
         poseStack.translate(trace.start().x, trace.start().y, trace.start().z);
