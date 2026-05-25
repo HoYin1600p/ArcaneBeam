@@ -1,16 +1,19 @@
 package dev.hoyin1600p.arcanebeam.client;
 
 import dev.hoyin1600p.arcanebeam.ArcaneBeam;
+import iskallia.vault.init.ModKeybinds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.Registry;
 import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.util.Mth;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -29,12 +32,28 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = ArcaneBeam.MOD_ID, value = Dist.CLIENT)
 public final class ArcaneBeamManager {
     private static final double MAX_PARTICLE_RAY_DISTANCE_SQR = 0.25D;
-    private static final double LOCAL_OWNERSHIP_RAY_DISTANCE = 2.0D;
+    private static final double LOCAL_FALLBACK_ACQUIRE_DISTANCE = 4.0D;
+    private static final double REMOTE_OWNERSHIP_ACQUIRE_DISTANCE = 2.5D;
+    private static final double LOCAL_EXCLUSION_RAY_DISTANCE_SQR = 0.25D;
+    private static final double ORIGIN_VERTICAL_SMOOTHING_TICKS = 5.0D;
+    private static final double POSE_SMOOTHING_MIN_DELTA = 0.08D;
+    private static final double POSE_SMOOTHING_MAX_DELTA = 1.1D;
     private static final float FADE_OUT_GRACE_TICKS = 2.0F;
+    private static final int LOCAL_ARCANE_LATCH_TICKS = 12;
+    private static final int LOCAL_ARCANE_POST_DEACTIVATE_IGNORE_TICKS = 8;
+    private static final int REMOTE_ACTIVITY_GRACE_TICKS = 4;
     private static final ResourceLocation ARCANE = new ResourceLocation("the_vault", "arcane");
     private static final ResourceLocation ARCANE_RAIL = new ResourceLocation("the_vault", "arcane_rail");
     private static final Map<UUID, ActiveBeam> activeBeams = new LinkedHashMap<>();
+    private static final Map<UUID, SmoothedStartState> smoothedStarts = new LinkedHashMap<>();
     private static long lastArcaneSeenGameTime = Long.MIN_VALUE;
+    private static boolean localArcanePacketActive = false;
+    private static boolean localArcaneKeyHeld = false;
+    private static long localArcaneFirstSeenGameTime = Long.MIN_VALUE;
+    private static long lastLocalArcaneSignalGameTime = Long.MIN_VALUE;
+    private static long lastLocalArcaneDeactivateGameTime = Long.MIN_VALUE;
+    private static long localRailFirstSeenGameTime = Long.MIN_VALUE;
+    private static long localRailLatchedUntilGameTime = Long.MIN_VALUE;
 
     private ArcaneBeamManager() {
     }
@@ -52,12 +71,18 @@ public final class ArcaneBeamManager {
 
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level != null) {
-            AbstractClientPlayer caster = findCaster(minecraft.level, new Vec3(x, y, z), kind);
+            Vec3 particlePosition = new Vec3(x, y, z);
+            if (tryRefreshLocalFromOriginParticle(minecraft, particlePosition, kind)) {
+                return true;
+            }
+            if (isExcludedByLocalBeam(minecraft, particlePosition, kind)) {
+                return true;
+            }
+
+            AbstractClientPlayer caster = findCaster(minecraft.level, particlePosition, kind);
             if (caster != null) {
                 long gameTime = minecraft.level.getGameTime();
-                ActiveBeam existing = activeBeams.get(caster.getUUID());
-                long firstSeen = existing != null && existing.kind == kind ? existing.firstSeenGameTime : gameTime;
-                activeBeams.put(caster.getUUID(), new ActiveBeam(caster.getUUID(), kind, firstSeen, gameTime));
+                refreshBeam(caster.getUUID(), kind, gameTime);
                 if (kind == BeamKind.ARCANE) {
                     lastArcaneSeenGameTime = gameTime;
                 }
@@ -68,8 +93,43 @@ public final class ArcaneBeamManager {
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.END && Minecraft.getInstance().level == null) {
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
+
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
             activeBeams.clear();
+            smoothedStarts.clear();
+            localArcanePacketActive = false;
+            localArcaneKeyHeld = false;
+            localArcaneFirstSeenGameTime = Long.MIN_VALUE;
+            lastLocalArcaneSignalGameTime = Long.MIN_VALUE;
+            lastLocalArcaneDeactivateGameTime = Long.MIN_VALUE;
+            localRailFirstSeenGameTime = Long.MIN_VALUE;
+            localRailLatchedUntilGameTime = Long.MIN_VALUE;
+            lastArcaneSeenGameTime = Long.MIN_VALUE;
+            return;
+        }
+
+        if (minecraft.player != null) {
+            long gameTime = minecraft.level.getGameTime();
+            UUID localPlayerId = minecraft.player.getUUID();
+            syncLocalArcaneKeyState(localPlayerId, gameTime);
+
+            if (isLocalArcaneMaintained(gameTime)) {
+                if (localArcaneFirstSeenGameTime == Long.MIN_VALUE) {
+                    localArcaneFirstSeenGameTime = gameTime;
+                }
+                activeBeams.put(localPlayerId, new ActiveBeam(localPlayerId, BeamKind.ARCANE, localArcaneFirstSeenGameTime, gameTime));
+            }
+
+            if (isLocalRailLatched(gameTime)) {
+                if (localRailFirstSeenGameTime == Long.MIN_VALUE) {
+                    localRailFirstSeenGameTime = gameTime;
+                }
+                activeBeams.put(localPlayerId, new ActiveBeam(localPlayerId, BeamKind.RAIL, localRailFirstSeenGameTime, gameTime));
+            }
         }
     }
 
@@ -104,14 +164,20 @@ public final class ArcaneBeamManager {
         Minecraft minecraft = Minecraft.getInstance();
 
         for (AbstractClientPlayer player : level.players()) {
-            Vec3 start = beamStart(player, 1.0F, kind.settings());
+            if (minecraft.player != null && player.getUUID().equals(minecraft.player.getUUID())) {
+                continue;
+            }
+            Vec3 start = rawBeamStart(player, 1.0F, kind.settings());
             Vec3 look = player.getLookAngle().normalize();
             Vec3 toParticle = particlePosition.subtract(start);
             double alongRay = toParticle.dot(look);
             if (alongRay < -0.5D || alongRay > maxRange + 1.0D) {
                 continue;
             }
-            if (minecraft.player != null && player.getUUID().equals(minecraft.player.getUUID()) && alongRay > LOCAL_OWNERSHIP_RAY_DISTANCE) {
+
+            ActiveBeam existing = activeBeams.get(player.getUUID());
+            boolean existingSameKind = existing != null && existing.kind == kind;
+            if (!existingSameKind && alongRay > REMOTE_OWNERSHIP_ACQUIRE_DISTANCE) {
                 continue;
             }
 
@@ -126,14 +192,197 @@ public final class ArcaneBeamManager {
         return bestDistance <= MAX_PARTICLE_RAY_DISTANCE_SQR ? bestPlayer : null;
     }
 
+    private static boolean tryRefreshLocalFromOriginParticle(Minecraft minecraft, Vec3 particlePosition, BeamKind kind) {
+        if (minecraft.player == null || minecraft.level == null) {
+            return false;
+        }
+
+        ArcaneBeamConfig.BeamSettings settings = kind.settings();
+        Vec3 start = rawBeamStart(minecraft.player, 1.0F, settings);
+        Vec3 look = resolveLookVector(minecraft.player.getUUID(), minecraft.player, 1.0F);
+        Vec3 toParticle = particlePosition.subtract(start);
+        double alongRay = toParticle.dot(look);
+        if (alongRay < -0.5D || alongRay > LOCAL_FALLBACK_ACQUIRE_DISTANCE) {
+            return false;
+        }
+
+        Vec3 closestPoint = start.add(look.scale(alongRay));
+        if (closestPoint.distanceToSqr(particlePosition) > MAX_PARTICLE_RAY_DISTANCE_SQR) {
+            return false;
+        }
+
+        long gameTime = minecraft.level.getGameTime();
+        if (kind == BeamKind.ARCANE) {
+            if (!isLocalArcaneCastKeyHeld()) {
+                lastLocalArcaneSignalGameTime = Long.MIN_VALUE;
+                lastLocalArcaneDeactivateGameTime = gameTime;
+                forceLocalArcaneFadeOutStart(minecraft.player.getUUID(), gameTime);
+                return true;
+            }
+            if (!localArcanePacketActive && isWithinRecentWindow(lastLocalArcaneDeactivateGameTime, LOCAL_ARCANE_POST_DEACTIVATE_IGNORE_TICKS)) {
+                return true;
+            }
+            if (localArcaneFirstSeenGameTime == Long.MIN_VALUE) {
+                localArcaneFirstSeenGameTime = gameTime;
+            }
+            lastLocalArcaneSignalGameTime = gameTime;
+            lastArcaneSeenGameTime = gameTime;
+            refreshLocalArcaneBeam(minecraft.player.getUUID(), gameTime);
+            return true;
+        }
+        latchLocalRail(minecraft.player.getUUID(), gameTime);
+        return true;
+    }
+
+    private static boolean isExcludedByLocalBeam(Minecraft minecraft, Vec3 particlePosition, BeamKind kind) {
+        if (minecraft.player == null) {
+            return false;
+        }
+
+        ActiveBeam localBeam = getLocalActiveBeam(kind);
+        if (localBeam == null) {
+            return false;
+        }
+
+        ArcaneBeamConfig.BeamSettings settings = kind.settings();
+        Vec3 start = rawBeamStart(minecraft.player, 1.0F, settings);
+        Vec3 look = resolveLookVector(minecraft.player.getUUID(), minecraft.player, 1.0F);
+        Vec3 toParticle = particlePosition.subtract(start);
+        double alongRay = toParticle.dot(look);
+        if (alongRay < -0.5D || alongRay > settings.maxRange + 1.0D) {
+            return false;
+        }
+
+        Vec3 closestPoint = start.add(look.scale(alongRay));
+        return closestPoint.distanceToSqr(particlePosition) <= LOCAL_EXCLUSION_RAY_DISTANCE_SQR;
+    }
+
     private static void removeExpiredBeams(long gameTime) {
         Iterator<ActiveBeam> iterator = activeBeams.values().iterator();
         while (iterator.hasNext()) {
             ActiveBeam beam = iterator.next();
             if (gameTime - beam.lastSeenGameTime > beam.expireAfterTicks()) {
+                smoothedStarts.remove(beam.casterId);
                 iterator.remove();
             }
         }
+    }
+
+    public static void observeAbilityActivity(String abilityId, String activeFlagName) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || minecraft.player == null || abilityId == null || activeFlagName == null) {
+            return;
+        }
+
+        BeamKind kind = classifyAbility(abilityId);
+        if (kind == null) {
+            return;
+        }
+
+        long gameTime = minecraft.level.getGameTime();
+        if (kind == BeamKind.ARCANE) {
+            if ("DEACTIVATE_ABILITY".equals(activeFlagName)) {
+                localArcanePacketActive = false;
+                lastLocalArcaneSignalGameTime = Long.MIN_VALUE;
+                lastLocalArcaneDeactivateGameTime = gameTime;
+                forceLocalArcaneFadeOutStart(minecraft.player.getUUID(), gameTime);
+            } else {
+                if (!localArcaneKeyHeld) {
+                    return;
+                }
+                if (!localArcanePacketActive || localArcaneFirstSeenGameTime == Long.MIN_VALUE) {
+                    localArcaneFirstSeenGameTime = gameTime;
+                }
+                localArcanePacketActive = true;
+                lastLocalArcaneDeactivateGameTime = Long.MIN_VALUE;
+                refreshLocalArcaneBeam(minecraft.player.getUUID(), gameTime);
+                lastArcaneSeenGameTime = gameTime;
+            }
+            return;
+        }
+
+        if (!"DEACTIVATE_ABILITY".equals(activeFlagName)) {
+            latchLocalRail(minecraft.player.getUUID(), gameTime);
+        }
+    }
+
+    private static void refreshLocalArcaneBeam(UUID casterId, long gameTime) {
+        if (localArcaneFirstSeenGameTime == Long.MIN_VALUE) {
+            localArcaneFirstSeenGameTime = gameTime;
+        }
+        activeBeams.put(casterId, new ActiveBeam(casterId, BeamKind.ARCANE, localArcaneFirstSeenGameTime, gameTime));
+    }
+
+    private static void forceLocalArcaneFadeOutStart(UUID casterId, long gameTime) {
+        ActiveBeam existing = activeBeams.get(casterId);
+        if (existing == null || existing.kind != BeamKind.ARCANE) {
+            return;
+        }
+        long adjustedLastSeen = gameTime - (long) Math.ceil(FADE_OUT_GRACE_TICKS);
+        activeBeams.put(casterId, new ActiveBeam(casterId, BeamKind.ARCANE, existing.firstSeenGameTime, adjustedLastSeen));
+    }
+
+    private static void syncLocalArcaneKeyState(UUID casterId, long gameTime) {
+        boolean heldNow = isLocalArcaneCastKeyHeld();
+        if (heldNow == localArcaneKeyHeld) {
+            return;
+        }
+
+        localArcaneKeyHeld = heldNow;
+        if (heldNow) {
+            if (localArcaneFirstSeenGameTime == Long.MIN_VALUE) {
+                localArcaneFirstSeenGameTime = gameTime;
+            }
+            lastArcaneSeenGameTime = gameTime;
+            refreshLocalArcaneBeam(casterId, gameTime);
+            return;
+        }
+
+        localArcanePacketActive = false;
+        lastLocalArcaneSignalGameTime = Long.MIN_VALUE;
+        lastLocalArcaneDeactivateGameTime = gameTime;
+        forceLocalArcaneFadeOutStart(casterId, gameTime);
+    }
+
+    private static boolean isLocalArcaneCastKeyHeld() {
+        if (ModKeybinds.abilityKey != null && ModKeybinds.abilityKey.isDown()) {
+            return true;
+        }
+        if (ModKeybinds.abilityQuickfireKey != null) {
+            for (Map.Entry<String, net.minecraft.client.KeyMapping> entry : ModKeybinds.abilityQuickfireKey.entrySet()) {
+                if (classifyAbility(entry.getKey()) == BeamKind.ARCANE && entry.getValue() != null && entry.getValue().isDown()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static void latchLocalRail(UUID casterId, long gameTime) {
+        ArcaneBeamConfig.BeamSettings settings = BeamKind.RAIL.settings();
+        long latchTicks = Math.max(Math.max(settings.lifetimeTicks, settings.fadeOutTicks), 2);
+        if (gameTime > localRailLatchedUntilGameTime) {
+            localRailFirstSeenGameTime = gameTime;
+        }
+        localRailLatchedUntilGameTime = gameTime + latchTicks;
+        activeBeams.put(casterId, new ActiveBeam(casterId, BeamKind.RAIL, localRailFirstSeenGameTime, gameTime));
+    }
+
+    private static void refreshBeam(UUID casterId, BeamKind kind, long gameTime) {
+        ActiveBeam existing = activeBeams.get(casterId);
+        long firstSeen = existing != null && existing.kind == kind ? existing.firstSeenGameTime : gameTime;
+        activeBeams.put(casterId, new ActiveBeam(casterId, kind, firstSeen, gameTime));
+    }
+
+    private static BeamKind classifyAbility(String abilityId) {
+        String normalized = abilityId.toLowerCase(java.util.Locale.ROOT);
+        if (normalized.contains("arcane_rail")) {
+            return BeamKind.RAIL;
+        }
+        if (normalized.contains("arcane")) {
+            return BeamKind.ARCANE;
+        }
+        return null;
     }
 
     public static BeamTrace traceBeam(ActiveBeam beam, float partialTick) {
@@ -149,8 +398,8 @@ public final class ArcaneBeamManager {
         }
 
         Vec3 aimStart = caster.getEyePosition(partialTick);
-        Vec3 start = beamStart(caster, partialTick, beam.settings());
-        Vec3 look = caster.getLookAngle().normalize();
+        Vec3 start = visualBeamStart(caster, partialTick, beam.settings());
+        Vec3 look = resolveLookVector(beam.casterId, caster, partialTick);
         double maxRange = beam.settings().maxRange;
         Vec3 rangeEnd = aimStart.add(look.scale(maxRange));
 
@@ -182,8 +431,8 @@ public final class ArcaneBeamManager {
         BeamKind kind = configScreen.previewKind();
         ArcaneBeamConfig.BeamSettings settings = kind.settings();
         Vec3 aimStart = caster.getEyePosition(partialTick);
-        Vec3 start = beamStart(caster, partialTick, settings);
-        Vec3 look = caster.getLookAngle().normalize();
+        Vec3 start = visualBeamStart(caster, partialTick, settings);
+        Vec3 look = resolveLookVector(caster.getUUID(), caster, partialTick);
         Vec3 rangeEnd = aimStart.add(look.scale(settings.maxRange));
         BlockHitResult blockHit = level.clip(new ClipContext(aimStart, rangeEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, caster));
         Vec3 end = blockHit.getType() == HitResult.Type.MISS ? rangeEnd : blockHit.getLocation();
@@ -231,7 +480,24 @@ public final class ArcaneBeamManager {
         return choice == null ? ArcaneBeamConfig.SoundChoice.DEFAULT : choice;
     }
 
-    private static Vec3 beamStart(LivingEntity caster, float partialTick, ArcaneBeamConfig.BeamSettings settings) {
+    private static boolean isLocalArcaneMaintained(long gameTime) {
+        return gameTime - lastLocalArcaneSignalGameTime >= 0L
+                && gameTime - lastLocalArcaneSignalGameTime <= LOCAL_ARCANE_LATCH_TICKS;
+    }
+
+    private static boolean isLocalRailLatched(long gameTime) {
+        return gameTime <= localRailLatchedUntilGameTime;
+    }
+
+    private static Vec3 resolveLookVector(UUID casterId, LivingEntity caster, float partialTick) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player != null && minecraft.player.getUUID().equals(casterId)) {
+            return minecraft.player.getViewVector(partialTick).normalize();
+        }
+        return caster.getLookAngle().normalize();
+    }
+
+    private static Vec3 rawBeamStart(LivingEntity caster, float partialTick, ArcaneBeamConfig.BeamSettings settings) {
         Vec3 eye = caster.getEyePosition(partialTick);
         Vec3 look = caster.getLookAngle().normalize();
         Vec3 right = new Vec3(0.0D, 1.0D, 0.0D).cross(look);
@@ -245,6 +511,79 @@ public final class ArcaneBeamManager {
         HumanoidArm arm = startHand == ArcaneBeamConfig.StartHand.MAIN_HAND ? caster.getMainArm() : caster.getMainArm().getOpposite();
         double side = arm == HumanoidArm.RIGHT ? -1.0D : 1.0D;
         return eye.add(right.scale(settings.startOffsetX * side)).add(0.0D, settings.startOffsetY, 0.0D).add(look.scale(settings.startOffsetZ));
+    }
+
+    private static Vec3 visualBeamStart(LivingEntity caster, float partialTick, ArcaneBeamConfig.BeamSettings settings) {
+        Vec3 target = rawBeamStart(caster, partialTick, settings);
+        return smoothPoseStart(caster, partialTick, settings, target);
+    }
+
+    private static Vec3 smoothPoseStart(LivingEntity caster, float partialTick, ArcaneBeamConfig.BeamSettings settings, Vec3 target) {
+        UUID casterId = caster.getUUID();
+        SmoothedStartState state = smoothedStarts.get(casterId);
+        double poseY = poseContributionY(caster, partialTick, settings, target);
+        boolean crouching = caster.getPose() == Pose.CROUCHING || caster.isShiftKeyDown();
+        if (state == null) {
+            smoothedStarts.put(casterId, new SmoothedStartState(poseY, poseY, crouching));
+            return target;
+        }
+
+        double frameDelta = Math.abs(poseY - state.lastPoseY);
+        boolean poseChanged = crouching != state.lastCrouching;
+        if (poseChanged || (frameDelta >= POSE_SMOOTHING_MIN_DELTA && frameDelta <= POSE_SMOOTHING_MAX_DELTA)) {
+            state.transitionStartPoseY = state.smoothedPoseY;
+            state.transitionStartGameTime = currentGameTime();
+            state.smoothingActive = true;
+        } else if (frameDelta > POSE_SMOOTHING_MAX_DELTA) {
+            state.smoothedPoseY = poseY;
+            state.smoothingActive = false;
+        }
+
+        state.lastPoseY = poseY;
+        state.lastCrouching = crouching;
+        if (state.smoothingActive) {
+            state.transitionTargetPoseY = poseY;
+            double elapsedTicks = Math.max(0.0D, currentGameTime() - state.transitionStartGameTime + partialTick);
+            double progress = Math.min(1.0D, elapsedTicks / ORIGIN_VERTICAL_SMOOTHING_TICKS);
+            state.smoothedPoseY = Mth.lerp(progress, state.transitionStartPoseY, state.transitionTargetPoseY);
+            if (progress >= 1.0D || Math.abs(poseY - state.smoothedPoseY) < 0.005D) {
+                state.smoothedPoseY = poseY;
+                state.smoothingActive = false;
+            }
+            return new Vec3(target.x, target.y + state.smoothedPoseY - poseY, target.z);
+        }
+
+        state.smoothedPoseY = poseY;
+        return target;
+    }
+
+    private static double poseContributionY(LivingEntity caster, float partialTick, ArcaneBeamConfig.BeamSettings settings, Vec3 target) {
+        double bodyY = Mth.lerp((double) partialTick, caster.yo, caster.getY());
+        double lookOffsetY = caster.getLookAngle().normalize().y * settings.startOffsetZ;
+        return target.y - bodyY - settings.startOffsetY - lookOffsetY;
+    }
+
+    private static long currentGameTime() {
+        Minecraft minecraft = Minecraft.getInstance();
+        return minecraft.level == null ? 0L : minecraft.level.getGameTime();
+    }
+
+    private static final class SmoothedStartState {
+        private double smoothedPoseY;
+        private double lastPoseY;
+        private double transitionStartPoseY;
+        private double transitionTargetPoseY;
+        private long transitionStartGameTime;
+        private boolean lastCrouching;
+        private boolean smoothingActive;
+
+        private SmoothedStartState(double smoothedPoseY, double lastPoseY, boolean lastCrouching) {
+            this.smoothedPoseY = smoothedPoseY;
+            this.lastPoseY = lastPoseY;
+            this.transitionStartPoseY = smoothedPoseY;
+            this.transitionTargetPoseY = smoothedPoseY;
+            this.lastCrouching = lastCrouching;
+        }
     }
 
     public enum BeamKind {
@@ -262,7 +601,7 @@ public final class ArcaneBeamManager {
         }
 
         public long expireAfterTicks() {
-            return Math.max(settings().lifetimeTicks, settings().fadeOutTicks);
+            return Math.max(Math.max(settings().lifetimeTicks, settings().fadeOutTicks), REMOTE_ACTIVITY_GRACE_TICKS);
         }
 
         public float alphaMultiplier(long gameTime, float partialTick) {

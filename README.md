@@ -16,6 +16,8 @@ Arcane Beam is a client-side Forge mod for Vault Hunters on Minecraft 1.18.2. It
 - Stops the beam at block collision or configured max range.
 - Preserves Arcane's held-beam behavior.
 - Preserves Rail's short single-shot behavior.
+- Keeps local Arcane tracking tied to the local cast key/activity state so nearby players cannot easily trigger a beam or sound from your character.
+- Keeps other players' Arcane and Rail casts visible as beams through remote particle detection.
 - Supports separate beam and glow color sets for Arcane and Rail.
 - Supports custom Arcane and Rail sound selections.
 - Suppresses the stock Vault cast sounds for Arcane and Rail when custom ArcaneBeam sounds are selected.
@@ -213,9 +215,13 @@ Default behavior in this mod:
 - Arcane uses sustained rendering while the ability is active.
 - Rail fades in quickly, reaches full brightness, then fades out over its short lifetime.
 - Arcane and Rail both support configurable fade/grow-in and fade/shrink-out transitions.
+- Arcane release timing is tied to local cast key/activity state so the held beam and looped custom sounds stop promptly when the cast ends.
 - The beam endpoint follows the player's crosshair ray.
 - The visual ray does not snap to entity feet or auto-aim to entity centers.
 - The local player only claims Arcane/Rail ownership near the beam origin, which prevents nearby players from falsely triggering a local beam and local audio when their beam crosses your view.
+- Remote players can still render as beams from detected Arcane/Rail particles.
+- The beam core and glow shell render as 8-sided tubes for a rounder shape.
+- The start point has a short crouch/stand smoothing pass to reduce vertical snapping when entering or leaving sneak.
 
 ## Config File
 

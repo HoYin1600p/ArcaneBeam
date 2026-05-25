@@ -68,8 +68,9 @@ public class ArcaneBeamRenderer extends RenderType {
 
     private static void renderTrace(PoseStack poseStack, MultiBufferSource buffer, ArcaneBeamManager.BeamTrace trace) {
         ArcaneBeamConfig.BeamSettings settings = trace.settings();
-        int color = getAnimatedColor(settings.colors, settings.color, settings.colorShiftTicks);
-        int glowColor = getAnimatedColor(settings.glowColors, settings.glowColor, settings.colorShiftTicks);
+        float partialTick = partialTicks();
+        int color = getAnimatedColor(settings.colors, settings.color, settings.colorShiftTicks, partialTick);
+        int glowColor = getAnimatedColor(settings.glowColors, settings.glowColor, settings.colorShiftTicks, partialTick);
         float red = ((color >> 16) & 0xFF) / 255.0F;
         float green = ((color >> 8) & 0xFF) / 255.0F;
         float blue = (color & 0xFF) / 255.0F;
@@ -99,7 +100,7 @@ public class ArcaneBeamRenderer extends RenderType {
         if (effectiveGlowAlpha > 0.001F) {
             VertexConsumer shaderGlow = main;
             poseStack.pushPose();
-            applyGlowRotation(poseStack, settings, partialTicks());
+            applyGlowRotation(poseStack, settings, partialTick);
             if (shaderCompatibility) {
                 renderLitTube(poseStack, shaderGlow, glowRed, glowGreen, glowBlue, effectiveGlowAlpha, height, effectiveGlowRadius, false);
             } else {
@@ -129,16 +130,17 @@ public class ArcaneBeamRenderer extends RenderType {
         poseStack.mulPose(Vector3f.YP.rotationDegrees(angle));
     }
 
-    private static int getAnimatedColor(int[] colors, int fallbackColor, float colorShiftTicks) {
+    private static int getAnimatedColor(int[] colors, int fallbackColor, float colorShiftTicks, float partialTick) {
         if (colors == null || colors.length == 0) {
             return fallbackColor;
         }
         long gameTime = Minecraft.getInstance().level == null ? 0L : Minecraft.getInstance().level.getGameTime();
         int length = colors.length;
-        float clampedShiftTicks = Math.max(2.0F, colorShiftTicks);
-        int index = (int) Math.floor(gameTime / clampedShiftTicks) % length;
+        double clampedShiftTicks = Math.max(2.0D, colorShiftTicks);
+        double animatedTime = gameTime + partialTick;
+        int index = (int) Math.floor(animatedTime / clampedShiftTicks) % length;
         int nextIndex = (index + 1) % length;
-        float progress = (gameTime % clampedShiftTicks) / clampedShiftTicks;
+        float progress = (float) ((animatedTime % clampedShiftTicks) / clampedShiftTicks);
         return lerpColor(colors[index], colors[nextIndex], progress);
     }
 
