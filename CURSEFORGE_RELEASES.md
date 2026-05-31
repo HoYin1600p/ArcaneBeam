@@ -20,6 +20,7 @@ Rules for future updates:
 - Hardened beam direction rendering so theme particles and collision endpoints cannot rotate the rendered beam away from the caster's aim
 - Kept block collision behavior intact: beams can still stop early on blocks, but collision can only shorten the beam instead of changing its direction
 - Added fallback handling for brief invalid look-vector frames so beams keep their last valid aim instead of snapping to a world direction
+- Added a client-side compatibility fix for Compressium compressed blocks on Sophisticated Storage barrel display faces
 ```
 
 ## 0.1.3

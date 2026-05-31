@@ -23,6 +23,7 @@ When the user asks to append to this file, add a new subsection for the new vers
 #### Summary
 
 `0.1.4` focused on hardening the beam's directional render path against vault themes whose particles or collision endpoints could make the rendered tube snap toward a cardinal world direction.
+It also includes a small client-side Sophisticated Storage compatibility mixin for Compressium compressed block display rendering.
 
 #### Changes
 
@@ -31,13 +32,24 @@ When the user asks to append to this file, add a new subsection for the new vers
 - Updated `ArcaneBeamRenderer` to rotate the beam from the resolved look direction instead of recalculating direction from `end - start`
 - Projected collision endpoints onto the aim vector so block collision can shorten the beam but cannot rotate the visual axis
 - Cached each caster's last valid look vector so brief invalid look-vector frames do not snap to a fixed world direction
+- Added an optional Sophisticated Storage display-item mixin that manually renders Compressium block display faces from their base particle sprite plus the matching Compressium outline layer
+- Added a second optional Sophisticated Storage baked-barrel-model mixin for limited barrels, which can bake item-display quads instead of using the dynamic display renderer
+- Corrected Compressium barrel display sizing by applying a vanilla-style fixed block display scale
+- Restored the baked Compressium overlay path that made the outline visible on limited barrels
+- Merged Compressium layer PNG alpha into subdivided base-sprite quads for limited barrels, preserving the intended translucent-black outline effect without a second z-fighting overlay surface
+- Pushed Compressium barrel display faces outward by a quarter pixel so they sit closer to normal block display items without protruding too far
+- Cleaned up the Compressium compatibility code by centralizing shared tier/texture/offset logic and removing the failed limited-barrel dynamic overlay experiment
+- Moved the shared Compressium helper out of the configured mixin package to avoid Mixin `IllegalClassLoadError` during client startup
+- Updated optional mixin detection to use Mixin's bytecode provider so the Sophisticated Storage compatibility mixin is not silently skipped during early loading
+- Added local compile-only Sophisticated Core/Storage jars so the optional mixin target can be validated during development without bundling those mods
 - Updated CurseForge release copy for `0.1.4`
 
 #### Release Notes
 
 - Artifact: `build/libs/ArcaneBeam-1.18.2-0.1.4.jar`
 - Version source: `gradle.properties -> mod_version=0.1.4`
-- SHA256: `5CF0213E14985ED7455A9BC75B03F5F0C4B15BAF6523DC00FAFD5A02CE532221`
+- SHA256: `76A6B0C215A2EC49371211C4ADC7C9140672D32D3D38E35704BCC38A5B0AA3CC`
+- Matching jar deployed to the Prism instance mod folder
 
 ### 0.1.3
 

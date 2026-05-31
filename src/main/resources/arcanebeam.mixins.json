@@ -2,11 +2,14 @@
   "required": true,
   "package": "dev.hoyin1600p.arcanebeam.mixin",
   "compatibilityLevel": "JAVA_17",
+  "plugin": "dev.hoyin1600p.arcanebeam.mixin.ArcaneBeamMixinPlugin",
   "refmap": "arcanebeam.refmap.json",
   "client": [
     "AbilityActivityMessageMixin",
     "ClientLevelMixin",
-    "SoundManagerMixin"
+    "SoundManagerMixin",
+    "SophisticatedStorageBarrelBakedModelBaseMixin",
+    "SophisticatedStorageDisplayItemRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1
