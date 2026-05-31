@@ -12,11 +12,32 @@ When the user asks to append to this file, add a new subsection for the new vers
 
 ## Current Version
 
-- Current version: `0.1.3`
+- Current version: `0.1.4`
 - Repo: `https://github.com/HoYin1600p/ArcaneBeam`
 - Main technical reference: [PERSISTENCE.md](PERSISTENCE.md)
 
 ## Version History
+
+### 0.1.4
+
+#### Summary
+
+`0.1.4` focused on hardening the beam's directional render path against vault themes whose particles or collision endpoints could make the rendered tube snap toward a cardinal world direction.
+
+#### Changes
+
+- Fixed beams being pulled straight north in some vault themes
+- Added an explicit normalized direction to `BeamTrace`
+- Updated `ArcaneBeamRenderer` to rotate the beam from the resolved look direction instead of recalculating direction from `end - start`
+- Projected collision endpoints onto the aim vector so block collision can shorten the beam but cannot rotate the visual axis
+- Cached each caster's last valid look vector so brief invalid look-vector frames do not snap to a fixed world direction
+- Updated CurseForge release copy for `0.1.4`
+
+#### Release Notes
+
+- Artifact: `build/libs/ArcaneBeam-1.18.2-0.1.4.jar`
+- Version source: `gradle.properties -> mod_version=0.1.4`
+- SHA256: `5CF0213E14985ED7455A9BC75B03F5F0C4B15BAF6523DC00FAFD5A02CE532221`
 
 ### 0.1.3
 
@@ -38,6 +59,9 @@ When the user asks to append to this file, add a new subsection for the new vers
 
 - Artifact: `build/libs/ArcaneBeam-1.18.2-0.1.3.jar`
 - Version source: `gradle.properties -> mod_version=0.1.3`
+- SHA256: `690DE5ACCB6913016C2583FAEC5EDD6EE08D9BBB7ED2B95469CD2F692A25A5A9`
+- Matching jar deployed to the Prism instance mod folder
+- Residual note: crouch/stand smoothing is still slightly jumpy at `5` ticks, but the user accepted leaving it for now
 
 ### 0.1.2
 

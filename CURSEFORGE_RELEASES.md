@@ -9,6 +9,19 @@ Rules for future updates:
 - Keep the user-facing release text clean and ready to paste.
 - If Codex needs internal notes for a release, put them in a clearly separate `Internal Notes` subsection.
 
+## 0.1.4
+
+### Release Copy
+
+```markdown
+## 0.1.4
+
+- Fixed beams being pulled straight north in some vault themes
+- Hardened beam direction rendering so theme particles and collision endpoints cannot rotate the rendered beam away from the caster's aim
+- Kept block collision behavior intact: beams can still stop early on blocks, but collision can only shorten the beam instead of changing its direction
+- Added fallback handling for brief invalid look-vector frames so beams keep their last valid aim instead of snapping to a world direction
+```
+
 ## 0.1.3
 
 ### Release Copy

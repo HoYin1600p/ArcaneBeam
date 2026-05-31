@@ -84,13 +84,13 @@ public class ArcaneBeamRenderer extends RenderType {
         float height = (float) trace.start().distanceTo(trace.end());
         boolean shaderCompatibility = shaderCompatibilityEnabled();
 
-        if (alpha <= 0.001F || beamRadius <= 0.0005F) {
+        if (alpha <= 0.001F || beamRadius <= 0.0005F || height <= 0.0005F) {
             return;
         }
 
         poseStack.pushPose();
         poseStack.translate(trace.start().x, trace.start().y, trace.start().z);
-        rotateYAxisToDirection(poseStack, trace.end().subtract(trace.start()).normalize());
+        rotateYAxisToDirection(poseStack, trace.direction());
 
         VertexConsumer main = shaderCompatibility ? buffer.getBuffer(SHADER_DEFAULT_BEAM) : buffer.getBuffer(DEFAULT_BEAM);
         VertexConsumer solid = shaderCompatibility ? buffer.getBuffer(SHADER_SOLID_BEAM) : buffer.getBuffer(SOLID_BEAM);

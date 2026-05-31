@@ -7,7 +7,7 @@ This file is for future maintenance work. It is meant to give enough context to 
 - Repo: `https://github.com/HoYin1600p/ArcaneBeam`
 - Mod name: `Arcane Beam`
 - Current version:
-  - `0.1.3`
+  - `0.1.4`
 - Target:
   - Minecraft `1.18.2`
   - Forge `40.x`
@@ -65,11 +65,13 @@ Instead:
 - the beam aim uses the player/caster look direction
 - the endpoint follows the crosshair ray
 - the ray terminates on block collision or max range
+- the rendered tube axis must stay locked to the resolved look direction; block collision is only allowed to shorten the beam, not rotate it
 
 Important:
 
 - the beam should **not** snap to entity feet or entity centers
 - the beam should visually follow the crosshair
+- the beam should **not** be pulled toward a cardinal world direction by vault theme blocks, bad collision endpoints, or particle layout
 - current visual collision is block-based
 
 ## Core Files
@@ -191,8 +193,15 @@ That decision was made because the standard sound registration path repeatedly f
 
 ### Mixins
 
+- `src/main/java/dev/hoyin1600p/arcanebeam/mixin/AbilityActivityMessageMixin.java`
 - `src/main/java/dev/hoyin1600p/arcanebeam/mixin/ClientLevelMixin.java`
 - `src/main/java/dev/hoyin1600p/arcanebeam/mixin/SoundManagerMixin.java`
+
+`AbilityActivityMessageMixin`:
+
+- observes Vault `AbilityActivityMessage` client handling
+- passes ability id and active/deactivate flag names into `ArcaneBeamManager.observeAbilityActivity(...)`
+- this is part of the local Arcane release-timing fix
 
 `ClientLevelMixin`:
 
@@ -438,7 +447,7 @@ Vault jar reference:
 
 ArcaneBeam instance mod path:
 
-- `C:\Users\Ethan\AppData\Roaming\PrismLauncher\instances\vaultcrafters-bootstrap-1.0.0\.minecraft\mods\ArcaneBeam-1.18.2-0.1.3.jar`
+- `C:\Users\Ethan\AppData\Roaming\PrismLauncher\instances\vaultcrafters-bootstrap-1.0.0\.minecraft\mods\ArcaneBeam-1.18.2-0.1.4.jar`
 
 Vault ability config reference files used for context only:
 
@@ -460,6 +469,37 @@ If you return later, do **not** start by re-debugging these unless symptoms spec
 
 The basic systems already work. The custom sound path intentionally bypasses the standard event route.
 - the current 8-sided tube renderer also works and should be treated as the baseline shape unless the user explicitly wants another geometry
+
+## Current Working State After 0.1.4
+
+Last verified build:
+
+- Version: `0.1.4`
+- Built jar: `build/libs/ArcaneBeam-1.18.2-0.1.4.jar`
+- SHA256: `5CF0213E14985ED7455A9BC75B03F5F0C4B15BAF6523DC00FAFD5A02CE532221`
+
+User-confirmed before closing:
+
+- local Arcane release timing is good
+- crouch/stand smoothing now works
+- smoothing is set to `5` ticks
+- the crouch/stand transition is still a little jumpy, but close enough to leave for now
+
+Direction hardening applied after the initial `0.1.3` build:
+
+- `BeamTrace` now carries an explicit normalized direction
+- `ArcaneBeamRenderer` rotates the tube from that direction instead of deriving direction from `end - start`
+- `ArcaneBeamManager.directionalRenderEnd(...)` projects the collision/crosshair endpoint onto the look vector, so collision can shorten the beam but cannot pull its visual axis north or any other cardinal direction
+- `ArcaneBeamManager` caches the last valid look vector per caster so a transient bad look vector does not fall back to a fixed world direction
+
+Do not restart the crouch smoothing investigation unless the user asks. If revisiting it, start from:
+
+- `ArcaneBeamManager.visualBeamStart(...)`
+- `ArcaneBeamManager.smoothPoseStart(...)`
+- `ORIGIN_VERTICAL_SMOOTHING_TICKS = 5.0D`
+- `poseContributionY(...)`
+
+The important design constraint is that crouch/stand should smooth, but jumping and normal movement should remain responsive.
 
 ## Best Next Debug Entry Points
 
