@@ -7,7 +7,7 @@ This file is for future maintenance work. It is meant to give enough context to 
 - Repo: `https://github.com/HoYin1600p/ArcaneBeam`
 - Mod name: `Arcane Beam`
 - Current version:
-  - `0.1.5`
+  - `0.1.6`
 - Target:
   - Minecraft `1.18.2`
   - Forge `40.x`
@@ -484,16 +484,16 @@ If you return later, do **not** start by re-debugging these unless symptoms spec
 The basic systems already work. The custom sound path intentionally bypasses the standard event route.
 - the current 8-sided tube renderer also works and should be treated as the baseline shape unless the user explicitly wants another geometry
 
-## Current Working State After 0.1.5
+## Current Working State After 0.1.6
 
 Last verified build:
 
-- Version: `0.1.5`
-- Built jar: `build/libs/ArcaneBeam-1.18.2-0.1.5.jar`
-- Built jar SHA256: `09B4B67C7150137BAE3AE3A3ADAC20FF794E0F235640E45E60E04358DED7B85F`
+- Version: `0.1.6`
+- Built jar: `build/libs/ArcaneBeam-1.18.2-0.1.6.jar`
+- Built jar SHA256: `E23EDE3B38ADD042CB2BC87B94FF1B6D12C34B0A9426A98803D10E14DED2ECEF`
 - Example resource pack: `ArcaneBeam-Example-Resourcepack-Sounds.zip`
 - Example resource pack SHA256: `DDB9D3DE4818822E3493A7041A961F40D3CC426C8D7DC43F8EA1BE568BEABE6D`
-- Instance jar was not updated during this build/release-note pass.
+- Instance jar was not updated during this build/version-bump pass.
 
 User-confirmed before closing:
 
@@ -528,6 +528,18 @@ Sophisticated Storage / Compressium compatibility added in the same deployed `0.
 - it still returns a stable full-cube display offset for Compressium block items when Sophisticated Storage asks for one
 - `ArcaneBeamMixinPlugin` uses Mixin's bytecode provider to detect the Sophisticated Storage target class and logs whether the optional mixin is applied or skipped
 - `build.gradle` uses local `compileOnly` Sophisticated Core/Storage jars from the Prism instance; these are compile-time validation inputs only and are not bundled
+
+Config profiles added in `0.1.6`:
+
+- Arcane and Rail each maintain independent profile maps in `config/ArcaneBeam.json`
+- profile sections are stored as `arcaneProfiles` and `railProfiles`
+- selected profile names are stored as `selectedArcaneProfile` and `selectedRailProfile`
+- old configs without profile maps migrate the current `arcane` and `rail` settings into `Default` profiles
+- profile edits save live because `ArcaneBeamConfig.INSTANCE.arcane` and `.rail` are references to the selected profile entries
+- adding a profile copies the current category settings, creates a unique name if needed, and selects the new profile
+- the profile panel is dynamically positioned just left of the centered palette using `profilePanelX()`
+- shader compatibility is now stored on `BeamSettings` so it is profile-specific like the rest of the config-screen settings
+- `ArcaneBeamConfig.INSTANCE.shaderCompatibility` remains as a legacy migration field for older JSON files
 
 Config screen fit-scaling added in the same deployed `0.1.5` artifact:
 

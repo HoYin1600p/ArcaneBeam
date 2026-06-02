@@ -9,6 +9,18 @@ Rules for future updates:
 - Keep the user-facing release text clean and ready to paste.
 - If Codex needs internal notes for a release, put them in a clearly separate `Internal Notes` subsection.
 
+## 0.1.6
+
+### Release Copy
+
+```markdown
+## 0.1.6
+
+- Added Arcane and Rail profile support in the config screen
+- Added per-category profile creation and selection, with profiles saved in `config/ArcaneBeam.json`
+- Migrated existing Arcane and Rail settings into `Default` profiles on first launch with the new config format
+```
+
 ## 0.1.5
 
 ### Release Copy

@@ -82,7 +82,7 @@ public class ArcaneBeamRenderer extends RenderType {
         float beamRadius = settings.intensity * trace.beamRadiusMultiplier();
         float glowRadius = Math.max(beamRadius, settings.glowRadius * trace.glowRadiusMultiplier());
         float height = (float) trace.start().distanceTo(trace.end());
-        boolean shaderCompatibility = shaderCompatibilityEnabled();
+        boolean shaderCompatibility = shaderCompatibilityEnabled(settings);
 
         if (alpha <= 0.001F || beamRadius <= 0.0005F || height <= 0.0005F) {
             return;
@@ -161,8 +161,8 @@ public class ArcaneBeamRenderer extends RenderType {
         return (r << 16) | (g << 8) | b;
     }
 
-    private static boolean shaderCompatibilityEnabled() {
-        ArcaneBeamConfig.ShaderCompatibility compatibility = ArcaneBeamConfig.ShaderCompatibility.fromId(ArcaneBeamConfig.INSTANCE.shaderCompatibility);
+    private static boolean shaderCompatibilityEnabled(ArcaneBeamConfig.BeamSettings settings) {
+        ArcaneBeamConfig.ShaderCompatibility compatibility = ArcaneBeamConfig.ShaderCompatibility.fromId(settings.shaderCompatibility);
         return compatibility == ArcaneBeamConfig.ShaderCompatibility.ON;
     }
 
