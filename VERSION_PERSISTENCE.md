@@ -12,11 +12,34 @@ When the user asks to append to this file, add a new subsection for the new vers
 
 ## Current Version
 
-- Current version: `0.1.5`
+- Current version: `0.1.6`
 - Repo: `https://github.com/HoYin1600p/ArcaneBeam`
 - Main technical reference: [PERSISTENCE.md](PERSISTENCE.md)
 
 ## Version History
+
+### 0.1.6
+
+#### Summary
+
+`0.1.6` adds config-screen profiles for Arcane and Rail settings.
+
+#### Changes
+
+- Added per-category Arcane and Rail profiles in the config screen
+- Added left-side profile controls for creating and selecting profiles
+- Moved the profile controls closer to the rest of the config UI after initial layout testing
+- Saved profile data in `config/ArcaneBeam.json` under `arcaneProfiles` and `railProfiles`
+- Migrated existing Arcane and Rail settings into `Default` profiles when the new config format is first loaded
+- Moved shader compatibility into the active profile so every editable config-screen setting is profile-specific
+- Bumped the mod version to `0.1.6`
+- Updated CurseForge release copy for `0.1.6`
+
+#### Release Notes
+
+- Artifact: `build/libs/ArcaneBeam-1.18.2-0.1.6.jar`
+- Version source: `gradle.properties -> mod_version=0.1.6`
+- SHA256: `E23EDE3B38ADD042CB2BC87B94FF1B6D12C34B0A9426A98803D10E14DED2ECEF`
 
 ### 0.1.5
 

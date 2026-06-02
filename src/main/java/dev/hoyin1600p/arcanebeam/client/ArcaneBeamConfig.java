@@ -9,10 +9,15 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public final class ArcaneBeamConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("ArcaneBeam.json");
+    private static final String DEFAULT_PROFILE = "Default";
 
     public static Config INSTANCE = new Config();
 
@@ -39,45 +44,88 @@ public final class ArcaneBeamConfig {
             INSTANCE.shaderCompatibility = ShaderCompatibility.OFF.id;
         }
         if (INSTANCE.arcane == null) {
-            INSTANCE.arcane = new BeamSettings(0x8F35FF, new int[]{0x8F35FF, 0xB369FF, 0x5C7CFF, 0xFFFFFF}, 0.08F, 0.65F, 0.14F, 3, 16.0D);
+            INSTANCE.arcane = defaultArcaneSettings();
         }
         if (INSTANCE.rail == null) {
-            INSTANCE.rail = new BeamSettings(0x00FF44, new int[]{0x00FF44, 0x7CFF5C, 0x00FFC8, 0xFFFFFF}, 0.11F, 0.95F, 0.18F, 8, 128.0D);
+            INSTANCE.rail = defaultRailSettings();
         }
-        if (INSTANCE.arcane.maxRange <= 0.0D) {
-            INSTANCE.arcane.maxRange = 16.0D;
-        }
-        if (INSTANCE.rail.maxRange <= 0.0D) {
-            INSTANCE.rail.maxRange = 128.0D;
-        }
-        if (INSTANCE.arcane.lifetimeTicks <= 0) {
-            INSTANCE.arcane.lifetimeTicks = 3;
-        }
-        if (INSTANCE.rail.lifetimeTicks <= 0) {
-            INSTANCE.rail.lifetimeTicks = 8;
-        }
-        if (INSTANCE.arcane.radius >= 0.16F) {
-            INSTANCE.arcane.radius = 0.08F;
-        }
-        if (INSTANCE.rail.radius >= 0.22F) {
-            INSTANCE.rail.radius = 0.11F;
-        }
-        if (INSTANCE.rail.color == 0x35D7FF) {
-            INSTANCE.rail.color = 0x00FF44;
-        }
-        validateShape(INSTANCE.arcane, 0.08F, 0.65F, 0.14F);
-        validateShape(INSTANCE.rail, 0.11F, 0.95F, 0.18F);
-        validateColors(INSTANCE.arcane);
-        validateColors(INSTANCE.rail);
-        validateColorShift(INSTANCE.arcane);
-        validateColorShift(INSTANCE.rail);
-        validateSound(INSTANCE.arcane);
-        validateSound(INSTANCE.rail);
-        validateOrigin(INSTANCE.arcane);
-        validateOrigin(INSTANCE.rail);
-        validateTransitions(INSTANCE.arcane, FadeInStyle.FADE, 5, FadeOutStyle.SHRINK, 10);
-        validateTransitions(INSTANCE.rail, FadeInStyle.FADE, 1, FadeOutStyle.FADE, 4);
         validateShaderCompatibility();
+        validateBeamSettings(INSTANCE.arcane, false);
+        validateBeamSettings(INSTANCE.rail, true);
+        INSTANCE.arcaneProfiles = validateProfiles(INSTANCE.arcaneProfiles, INSTANCE.arcane, false);
+        INSTANCE.railProfiles = validateProfiles(INSTANCE.railProfiles, INSTANCE.rail, true);
+        INSTANCE.selectedArcaneProfile = validateSelectedProfile(INSTANCE.selectedArcaneProfile, INSTANCE.arcaneProfiles);
+        INSTANCE.selectedRailProfile = validateSelectedProfile(INSTANCE.selectedRailProfile, INSTANCE.railProfiles);
+        activateSelectedProfiles();
+    }
+
+    private static void validateBeamSettings(BeamSettings settings, boolean rail) {
+        if (settings.maxRange <= 0.0D) {
+            settings.maxRange = rail ? 128.0D : 16.0D;
+        }
+        if (settings.lifetimeTicks <= 0) {
+            settings.lifetimeTicks = rail ? 8 : 3;
+        }
+        if (!rail && settings.radius >= 0.16F) {
+            settings.radius = 0.08F;
+        }
+        if (rail && settings.radius >= 0.22F) {
+            settings.radius = 0.11F;
+        }
+        if (rail && settings.color == 0x35D7FF) {
+            settings.color = 0x00FF44;
+        }
+        validateShape(settings, rail ? 0.11F : 0.08F, rail ? 0.95F : 0.65F, rail ? 0.18F : 0.14F);
+        validateColors(settings);
+        validateColorShift(settings);
+        validateSound(settings);
+        validateOrigin(settings);
+        validateTransitions(settings, FadeInStyle.FADE, rail ? 1 : 5, rail ? FadeOutStyle.FADE : FadeOutStyle.SHRINK, rail ? 4 : 10);
+        validateShaderCompatibility(settings);
+    }
+
+    private static LinkedHashMap<String, BeamSettings> validateProfiles(Map<String, BeamSettings> profiles, BeamSettings migrationSettings, boolean rail) {
+        LinkedHashMap<String, BeamSettings> validated = new LinkedHashMap<>();
+        if (profiles != null) {
+            for (Map.Entry<String, BeamSettings> entry : profiles.entrySet()) {
+                String name = normalizeProfileName(entry.getKey());
+                if (name.isEmpty()) {
+                    continue;
+                }
+                BeamSettings settings = entry.getValue() == null ? defaultSettings(rail) : entry.getValue();
+                validateBeamSettings(settings, rail);
+                validated.put(uniqueProfileName(validated, name), settings);
+            }
+        }
+        if (validated.isEmpty()) {
+            BeamSettings settings = copyOf(migrationSettings == null ? defaultSettings(rail) : migrationSettings);
+            validateBeamSettings(settings, rail);
+            validated.put(DEFAULT_PROFILE, settings);
+        }
+        return validated;
+    }
+
+    private static String validateSelectedProfile(String selectedProfile, LinkedHashMap<String, BeamSettings> profiles) {
+        String normalized = normalizeProfileName(selectedProfile);
+        if (!normalized.isEmpty() && profiles.containsKey(normalized)) {
+            return normalized;
+        }
+        return profiles.keySet().iterator().next();
+    }
+
+    private static void activateSelectedProfiles() {
+        INSTANCE.arcane = INSTANCE.arcaneProfiles.get(INSTANCE.selectedArcaneProfile);
+        INSTANCE.rail = INSTANCE.railProfiles.get(INSTANCE.selectedRailProfile);
+        INSTANCE.shaderCompatibility = INSTANCE.arcane.shaderCompatibility;
+    }
+
+    private static void syncActiveProfiles() {
+        if (INSTANCE.arcaneProfiles != null && INSTANCE.selectedArcaneProfile != null && INSTANCE.arcane != null) {
+            INSTANCE.arcaneProfiles.put(INSTANCE.selectedArcaneProfile, INSTANCE.arcane);
+        }
+        if (INSTANCE.railProfiles != null && INSTANCE.selectedRailProfile != null && INSTANCE.rail != null) {
+            INSTANCE.railProfiles.put(INSTANCE.selectedRailProfile, INSTANCE.rail);
+        }
     }
 
     private static void validateShape(BeamSettings settings, float defaultIntensity, float defaultOpacity, float defaultGlowRadius) {
@@ -159,7 +207,17 @@ public final class ArcaneBeamConfig {
         }
     }
 
+    private static void validateShaderCompatibility(BeamSettings settings) {
+        if (settings.shaderCompatibility == null) {
+            settings.shaderCompatibility = INSTANCE.shaderCompatibility;
+        }
+        if (ShaderCompatibility.fromId(settings.shaderCompatibility) == null) {
+            settings.shaderCompatibility = ShaderCompatibility.OFF.id;
+        }
+    }
+
     public static void save() {
+        syncActiveProfiles();
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
             try (Writer writer = Files.newBufferedWriter(CONFIG_PATH)) {
@@ -169,10 +227,128 @@ public final class ArcaneBeamConfig {
         }
     }
 
+    public static List<String> profileNames(boolean rail) {
+        return new ArrayList<>(profileMap(rail).keySet());
+    }
+
+    public static String selectedProfileName(boolean rail) {
+        return rail ? INSTANCE.selectedRailProfile : INSTANCE.selectedArcaneProfile;
+    }
+
+    public static void selectProfile(boolean rail, String profileName) {
+        LinkedHashMap<String, BeamSettings> profiles = profileMap(rail);
+        String normalized = normalizeProfileName(profileName);
+        if (normalized.isEmpty() || !profiles.containsKey(normalized)) {
+            return;
+        }
+        syncActiveProfiles();
+        if (rail) {
+            INSTANCE.selectedRailProfile = normalized;
+            INSTANCE.rail = profiles.get(normalized);
+        } else {
+            INSTANCE.selectedArcaneProfile = normalized;
+            INSTANCE.arcane = profiles.get(normalized);
+            INSTANCE.shaderCompatibility = INSTANCE.arcane.shaderCompatibility;
+        }
+        save();
+    }
+
+    public static String addProfile(boolean rail, String requestedName) {
+        LinkedHashMap<String, BeamSettings> profiles = profileMap(rail);
+        String baseName = normalizeProfileName(requestedName);
+        if (baseName.isEmpty()) {
+            baseName = "Profile";
+        }
+        syncActiveProfiles();
+        String profileName = uniqueProfileName(profiles, baseName);
+        BeamSettings settings = copyOf(rail ? INSTANCE.rail : INSTANCE.arcane);
+        validateBeamSettings(settings, rail);
+        profiles.put(profileName, settings);
+        if (rail) {
+            INSTANCE.selectedRailProfile = profileName;
+            INSTANCE.rail = settings;
+        } else {
+            INSTANCE.selectedArcaneProfile = profileName;
+            INSTANCE.arcane = settings;
+            INSTANCE.shaderCompatibility = settings.shaderCompatibility;
+        }
+        save();
+        return profileName;
+    }
+
+    private static LinkedHashMap<String, BeamSettings> profileMap(boolean rail) {
+        return rail ? INSTANCE.railProfiles : INSTANCE.arcaneProfiles;
+    }
+
+    private static String normalizeProfileName(String profileName) {
+        if (profileName == null) {
+            return "";
+        }
+        return profileName.replaceAll("[\\r\\n\\t]+", " ").trim();
+    }
+
+    private static String uniqueProfileName(Map<String, BeamSettings> profiles, String baseName) {
+        if (!profiles.containsKey(baseName)) {
+            return baseName;
+        }
+        int suffix = 2;
+        String candidate;
+        do {
+            candidate = baseName + " " + suffix++;
+        } while (profiles.containsKey(candidate));
+        return candidate;
+    }
+
+    private static BeamSettings defaultSettings(boolean rail) {
+        return rail ? defaultRailSettings() : defaultArcaneSettings();
+    }
+
+    private static BeamSettings defaultArcaneSettings() {
+        return new BeamSettings(0x8F35FF, new int[]{0x8F35FF, 0xB369FF, 0x5C7CFF, 0xFFFFFF}, 0.08F, 0.65F, 0.14F, 3, 16.0D);
+    }
+
+    private static BeamSettings defaultRailSettings() {
+        return new BeamSettings(0x00FF44, new int[]{0x00FF44, 0x7CFF5C, 0x00FFC8, 0xFFFFFF}, 0.11F, 0.95F, 0.18F, 8, 128.0D);
+    }
+
+    private static BeamSettings copyOf(BeamSettings source) {
+        BeamSettings copy = new BeamSettings();
+        copy.color = source.color;
+        copy.colors = source.colors == null ? null : source.colors.clone();
+        copy.glowColor = source.glowColor;
+        copy.glowColors = source.glowColors == null ? null : source.glowColors.clone();
+        copy.radius = source.radius;
+        copy.alpha = source.alpha;
+        copy.intensity = source.intensity;
+        copy.opacity = source.opacity;
+        copy.glowRadius = source.glowRadius;
+        copy.glowOpacity = source.glowOpacity;
+        copy.colorShiftTicks = source.colorShiftTicks;
+        copy.glowRotationRpm = source.glowRotationRpm;
+        copy.lifetimeTicks = source.lifetimeTicks;
+        copy.maxRange = source.maxRange;
+        copy.sound = source.sound;
+        copy.soundVolume = source.soundVolume;
+        copy.fadeInStyle = source.fadeInStyle;
+        copy.fadeInTicks = source.fadeInTicks;
+        copy.fadeOutStyle = source.fadeOutStyle;
+        copy.fadeOutTicks = source.fadeOutTicks;
+        copy.startHand = source.startHand;
+        copy.startOffsetX = source.startOffsetX;
+        copy.startOffsetY = source.startOffsetY;
+        copy.startOffsetZ = source.startOffsetZ;
+        copy.shaderCompatibility = source.shaderCompatibility;
+        return copy;
+    }
+
     public static final class Config {
-        public String shaderCompatibility = ShaderCompatibility.OFF.id;
-        public BeamSettings arcane = new BeamSettings(0x8F35FF, new int[]{0x8F35FF, 0xB369FF, 0x5C7CFF, 0xFFFFFF}, 0.08F, 0.65F, 0.14F, 3, 16.0D);
-        public BeamSettings rail = new BeamSettings(0x00FF44, new int[]{0x00FF44, 0x7CFF5C, 0x00FFC8, 0xFFFFFF}, 0.11F, 0.95F, 0.18F, 8, 128.0D);
+        public String shaderCompatibility;
+        public String selectedArcaneProfile = DEFAULT_PROFILE;
+        public String selectedRailProfile = DEFAULT_PROFILE;
+        public BeamSettings arcane = defaultArcaneSettings();
+        public BeamSettings rail = defaultRailSettings();
+        public LinkedHashMap<String, BeamSettings> arcaneProfiles;
+        public LinkedHashMap<String, BeamSettings> railProfiles;
     }
 
     public static final class BeamSettings {
@@ -200,6 +376,7 @@ public final class ArcaneBeamConfig {
         public double startOffsetX = 0.38D;
         public double startOffsetY = -0.45D;
         public double startOffsetZ = 0.18D;
+        public String shaderCompatibility;
 
         public BeamSettings() {
         }
@@ -217,6 +394,7 @@ public final class ArcaneBeamConfig {
             this.glowOpacity = 0.20F;
             this.lifetimeTicks = lifetimeTicks;
             this.maxRange = maxRange;
+            this.shaderCompatibility = ShaderCompatibility.OFF.id;
         }
     }
 

@@ -12,8 +12,12 @@ import java.util.List;
 import java.util.Locale;
 
 public class ArcaneBeamConfigScreen extends Screen {
-    private static final int MIN_LAYOUT_WIDTH = 420;
+    private static final int MIN_LAYOUT_WIDTH = 560;
     private static final int MIN_LAYOUT_HEIGHT = 520;
+    private static final int PROFILE_PANEL_Y = 68;
+    private static final int PROFILE_PANEL_WIDTH = 132;
+    private static final int PROFILE_PANEL_GAP = 20;
+    private static final int PROFILE_ROW_HEIGHT = 18;
     private static final int PALETTE_WIDTH = 180;
     private static final int PALETTE_HEIGHT = 110;
     private static final int BRIGHTNESS_WIDTH = 14;
@@ -28,6 +32,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     private final List<EditBox> colorBoxes = new ArrayList<>();
     private final List<EditBox> glowColorBoxes = new ArrayList<>();
     private final List<EditBox> originBoxes = new ArrayList<>();
+    private EditBox profileNameBox;
     private EditBox soundVolumeBox;
     private EditBox fadeInTicksBox;
     private EditBox fadeOutTicksBox;
@@ -42,6 +47,8 @@ public class ArcaneBeamConfigScreen extends Screen {
     private Button shaderCompatibilityButton;
     private Button fadeInModeButton;
     private Button fadeOutModeButton;
+    private Button profileDropdownButton;
+    private boolean profileDropdownOpen;
     private boolean railSelected;
     private boolean draggingPalette;
     private boolean draggingBrightness;
@@ -68,6 +75,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         colorBoxes.clear();
         glowColorBoxes.clear();
         originBoxes.clear();
+        profileDropdownOpen = false;
         paletteX = layoutWidth / 2 - PALETTE_WIDTH / 2;
         paletteY = 72;
 
@@ -75,14 +83,24 @@ public class ArcaneBeamConfigScreen extends Screen {
             railSelected = false;
             selectedSlot = 0;
             glowColorsSelected = false;
+            profileDropdownOpen = false;
             refreshControls();
         }));
         this.addRenderableWidget(new Button(layoutWidth / 2 + 2, 36, 90, 20, new TextComponent("Rail"), button -> {
             railSelected = true;
             selectedSlot = 0;
             glowColorsSelected = false;
+            profileDropdownOpen = false;
             refreshControls();
         }));
+
+        int profileX = profilePanelX();
+        profileNameBox = new EditBox(this.font, profileX, PROFILE_PANEL_Y + 18, 84, 20, new TextComponent("Profile Name"));
+        profileNameBox.setMaxLength(24);
+        profileNameBox.setFilter(value -> value == null || !value.contains("\n") && !value.contains("\r") && !value.contains("\t"));
+        this.addRenderableWidget(profileNameBox);
+        this.addRenderableWidget(new Button(profileX + 88, PROFILE_PANEL_Y + 18, 44, 20, new TextComponent("Add"), button -> addProfile()));
+        profileDropdownButton = this.addRenderableWidget(new Button(profileX, PROFILE_PANEL_Y + 42, PROFILE_PANEL_WIDTH, 20, TextComponent.EMPTY, button -> profileDropdownOpen = !profileDropdownOpen));
 
         int boxY = beamRowY();
         for (int i = 0; i < 4; i++) {
@@ -213,6 +231,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         poseStack.scale(layoutScale, layoutScale, 1.0F);
         drawCenteredString(poseStack, this.font, this.title, layoutWidth / 2, 14, 0xFFFFFF);
         drawCenteredString(poseStack, this.font, railSelected ? "Rail colors" : "Arcane colors", layoutWidth / 2, 60, 0xD8D8D8);
+        renderProfilePanel(poseStack);
         renderPalette(poseStack);
         renderBrightnessStrip(poseStack);
         renderInlinePreviews(poseStack);
@@ -226,6 +245,7 @@ public class ArcaneBeamConfigScreen extends Screen {
             drawString(poseStack, this.font, "Ticks", fadeOutTicksBox.x - this.font.width("Ticks") - 6, fadeOutTicksBox.y + 6, 0xD8D8D8);
         }
         super.render(poseStack, layoutMouseX, layoutMouseY, partialTick);
+        renderProfileDropdown(poseStack);
         poseStack.popPose();
     }
 
@@ -233,6 +253,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         double layoutMouseX = toLayoutX(mouseX);
         double layoutMouseY = toLayoutY(mouseY);
+        if (button == 0 && handleProfileDropdownSelection(layoutMouseX, layoutMouseY)) {
+            return true;
+        }
         if (button == 0 && handlePreviewSelection(layoutMouseX, layoutMouseY)) {
             return true;
         }
@@ -333,6 +356,9 @@ public class ArcaneBeamConfigScreen extends Screen {
         for (EditBox originBox : originBoxes) {
             originBox.tick();
         }
+        if (profileNameBox != null) {
+            profileNameBox.tick();
+        }
         if (soundVolumeBox != null) {
             soundVolumeBox.tick();
         }
@@ -382,6 +408,95 @@ public class ArcaneBeamConfigScreen extends Screen {
             renderPreviewBox(poseStack, previewX, beamY, settings().colors[i], i == selectedSlot && !glowColorsSelected);
             renderPreviewBox(poseStack, previewX, glowY, settings().glowColors[i], i == selectedSlot && glowColorsSelected);
         }
+    }
+
+    private void renderProfilePanel(PoseStack poseStack) {
+        drawString(poseStack, this.font, railSelected ? "Rail Profiles" : "Arcane Profiles", profilePanelX(), PROFILE_PANEL_Y, 0xD8D8D8);
+    }
+
+    private void renderProfileDropdown(PoseStack poseStack) {
+        if (!profileDropdownOpen) {
+            return;
+        }
+        List<String> profiles = ArcaneBeamConfig.profileNames(railSelected);
+        int x = profilePanelX();
+        int y = profileDropdownY();
+        int height = profiles.size() * PROFILE_ROW_HEIGHT;
+        fill(poseStack, x - 1, y - 1, x + PROFILE_PANEL_WIDTH + 1, y + height + 1, 0xFFFFFFFF);
+        fill(poseStack, x, y, x + PROFILE_PANEL_WIDTH, y + height, 0xEE101018);
+
+        String selected = ArcaneBeamConfig.selectedProfileName(railSelected);
+        for (int i = 0; i < profiles.size(); i++) {
+            int rowY = y + i * PROFILE_ROW_HEIGHT;
+            String profile = profiles.get(i);
+            int rowColor = profile.equals(selected) ? 0xFF304060 : 0xFF181820;
+            fill(poseStack, x, rowY, x + PROFILE_PANEL_WIDTH, rowY + PROFILE_ROW_HEIGHT, rowColor);
+            drawString(poseStack, this.font, ellipsize(profile, PROFILE_PANEL_WIDTH - 8), x + 4, rowY + 5, 0xFFFFFF);
+        }
+    }
+
+    private boolean handleProfileDropdownSelection(double mouseX, double mouseY) {
+        if (!profileDropdownOpen) {
+            return false;
+        }
+
+        int profileX = profilePanelX();
+        if (isInside(mouseX, mouseY, profileX, PROFILE_PANEL_Y + 42, PROFILE_PANEL_WIDTH, 20)) {
+            profileDropdownOpen = false;
+            return true;
+        }
+
+        int x = profileX;
+        int y = profileDropdownY();
+        List<String> profiles = ArcaneBeamConfig.profileNames(railSelected);
+        int height = profiles.size() * PROFILE_ROW_HEIGHT;
+        if (!isInside(mouseX, mouseY, x, y, PROFILE_PANEL_WIDTH, height)) {
+            profileDropdownOpen = false;
+            return false;
+        }
+
+        int index = (int) ((mouseY - y) / PROFILE_ROW_HEIGHT);
+        if (index >= 0 && index < profiles.size()) {
+            ArcaneBeamConfig.selectProfile(railSelected, profiles.get(index));
+            selectedSlot = 0;
+            glowColorsSelected = false;
+            profileDropdownOpen = false;
+            refreshControls();
+            return true;
+        }
+        return false;
+    }
+
+    private int profileDropdownY() {
+        return PROFILE_PANEL_Y + 64;
+    }
+
+    private int profilePanelX() {
+        return Math.max(12, paletteX - PROFILE_PANEL_WIDTH - PROFILE_PANEL_GAP);
+    }
+
+    private void addProfile() {
+        ArcaneBeamConfig.addProfile(railSelected, profileNameBox == null ? "" : profileNameBox.getValue());
+        if (profileNameBox != null) {
+            profileNameBox.setValue("");
+        }
+        selectedSlot = 0;
+        glowColorsSelected = false;
+        profileDropdownOpen = false;
+        refreshControls();
+    }
+
+    private String ellipsize(String value, int maxWidth) {
+        if (this.font.width(value) <= maxWidth) {
+            return value;
+        }
+        String suffix = "...";
+        int suffixWidth = this.font.width(suffix);
+        String clipped = value;
+        while (!clipped.isEmpty() && this.font.width(clipped) + suffixWidth > maxWidth) {
+            clipped = clipped.substring(0, clipped.length() - 1);
+        }
+        return clipped + suffix;
     }
 
     private void renderPreviewBox(PoseStack poseStack, int x, int y, int color, boolean selected) {
@@ -507,6 +622,7 @@ public class ArcaneBeamConfigScreen extends Screen {
             handButton.setMessage(new TextComponent("Start: " + startHand().label));
             fadeInModeButton.setMessage(new TextComponent(fadeInStyle().label));
             fadeOutModeButton.setMessage(new TextComponent(fadeOutStyle().label));
+            profileDropdownButton.setMessage(new TextComponent("Profile: " + ellipsize(ArcaneBeamConfig.selectedProfileName(railSelected), 74)));
             refreshOriginBoxes();
             refreshSoundVolumeBox();
             refreshFadeTickBoxes();
@@ -515,7 +631,7 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     private void cycleShaderCompatibility() {
         ArcaneBeamConfig.ShaderCompatibility current = shaderCompatibility();
-        ArcaneBeamConfig.INSTANCE.shaderCompatibility = current == ArcaneBeamConfig.ShaderCompatibility.ON
+        settings().shaderCompatibility = current == ArcaneBeamConfig.ShaderCompatibility.ON
                 ? ArcaneBeamConfig.ShaderCompatibility.OFF.id
                 : ArcaneBeamConfig.ShaderCompatibility.ON.id;
     }
@@ -701,7 +817,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private ArcaneBeamConfig.ShaderCompatibility shaderCompatibility() {
-        ArcaneBeamConfig.ShaderCompatibility compatibility = ArcaneBeamConfig.ShaderCompatibility.fromId(ArcaneBeamConfig.INSTANCE.shaderCompatibility);
+        ArcaneBeamConfig.ShaderCompatibility compatibility = ArcaneBeamConfig.ShaderCompatibility.fromId(settings().shaderCompatibility);
         return compatibility == null ? ArcaneBeamConfig.ShaderCompatibility.OFF : compatibility;
     }
 

@@ -35,6 +35,20 @@ Arcane and Rail each have their own tab in the config screen.
 
 While the config screen is open, Arcane Beam renders a live world-space preview beam behind the translucent UI using the currently selected settings.
 
+### Profiles
+
+Arcane and Rail each have independent profile lists.
+
+Profile controls are on the left side of the config screen:
+
+- Type a profile name and click `Add` to copy the current tab's settings into a new profile.
+- Use the profile dropdown to switch the current tab to a saved profile.
+- Arcane profiles and Rail profiles save independently.
+- Existing configs are migrated into `Default` profiles the first time the new format is loaded.
+
+Profiles are saved in `config/ArcaneBeam.json`.
+Every setting editable in the config screen is saved per profile.
+
 ## Per-Ability Options
 
 Every option below exists separately for `Arcane` and `Rail`.
