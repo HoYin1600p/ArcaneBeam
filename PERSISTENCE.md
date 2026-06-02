@@ -7,7 +7,7 @@ This file is for future maintenance work. It is meant to give enough context to 
 - Repo: `https://github.com/HoYin1600p/ArcaneBeam`
 - Mod name: `Arcane Beam`
 - Current version:
-  - `0.1.4`
+  - `0.1.5`
 - Target:
   - Minecraft `1.18.2`
   - Forge `40.x`
@@ -238,6 +238,16 @@ Files:
 - `rail_1.ogg`
 - `rail_2.ogg`
 
+Resource-pack extension slots use the same namespace/path and are intentionally not bundled as real sounds:
+
+- `arcane_resourcepack_1.ogg`
+- `arcane_resourcepack_2.ogg`
+- `rail_resourcepack_1.ogg`
+- `rail_resourcepack_2.ogg`
+
+Resource packs should place those files under `assets/arcanebeam/sounds/abilities/`.
+No `sounds.json` entry is required for these slots because ArcaneBeam plays them through direct file-backed sound instances.
+
 ### Current Mappings
 
 Arcane:
@@ -245,12 +255,16 @@ Arcane:
 - `default` -> Vault default sound
 - `option_1` -> `arcane_1.ogg` loop while active
 - `option_2` -> `arcane_2_startup.ogg` then `arcane_2_loop.ogg`
+- `resourcepack_1` -> `arcane_resourcepack_1.ogg` loop while active
+- `resourcepack_2` -> `arcane_resourcepack_2.ogg` loop while active
 
 Rail:
 
 - `default` -> Vault default sound
 - `option_1` -> `rail_1.ogg`
 - `option_2` -> `rail_2.ogg`
+- `resourcepack_1` -> `rail_resourcepack_1.ogg`
+- `resourcepack_2` -> `rail_resourcepack_2.ogg`
 
 ### Arcane Option 2 Timing
 
@@ -445,7 +459,7 @@ Vault jar reference:
 
 - `C:\Users\Ethan\AppData\Roaming\PrismLauncher\instances\vaultcrafters-bootstrap-1.0.0\.minecraft\mods\the_vault-1.18.2-3.21.5-remastered.jar`
 
-ArcaneBeam instance mod path:
+Previous ArcaneBeam instance mod path:
 
 - `C:\Users\Ethan\AppData\Roaming\PrismLauncher\instances\vaultcrafters-bootstrap-1.0.0\.minecraft\mods\ArcaneBeam-1.18.2-0.1.4.jar`
 
@@ -470,14 +484,16 @@ If you return later, do **not** start by re-debugging these unless symptoms spec
 The basic systems already work. The custom sound path intentionally bypasses the standard event route.
 - the current 8-sided tube renderer also works and should be treated as the baseline shape unless the user explicitly wants another geometry
 
-## Current Working State After 0.1.4
+## Current Working State After 0.1.5
 
 Last verified build:
 
-- Version: `0.1.4`
-- Built jar: `build/libs/ArcaneBeam-1.18.2-0.1.4.jar`
-- Instance jar: `C:\Users\Ethan\AppData\Roaming\PrismLauncher\instances\vaultcrafters-bootstrap-1.0.0\.minecraft\mods\ArcaneBeam-1.18.2-0.1.4.jar`
-- SHA256 for both jars: `76A6B0C215A2EC49371211C4ADC7C9140672D32D3D38E35704BCC38A5B0AA3CC`
+- Version: `0.1.5`
+- Built jar: `build/libs/ArcaneBeam-1.18.2-0.1.5.jar`
+- Built jar SHA256: `09B4B67C7150137BAE3AE3A3ADAC20FF794E0F235640E45E60E04358DED7B85F`
+- Example resource pack: `ArcaneBeam-Example-Resourcepack-Sounds.zip`
+- Example resource pack SHA256: `DDB9D3DE4818822E3493A7041A961F40D3CC426C8D7DC43F8EA1BE568BEABE6D`
+- Instance jar was not updated during this build/release-note pass.
 
 User-confirmed before closing:
 
@@ -493,7 +509,7 @@ Direction hardening applied after the initial `0.1.3` build:
 - `ArcaneBeamManager.directionalRenderEnd(...)` projects the collision/crosshair endpoint onto the look vector, so collision can shorten the beam but cannot pull its visual axis north or any other cardinal direction
 - `ArcaneBeamManager` caches the last valid look vector per caster so a transient bad look vector does not fall back to a fixed world direction
 
-Sophisticated Storage / Compressium compatibility added in the same deployed `0.1.4` artifact:
+Sophisticated Storage / Compressium compatibility added in the same deployed `0.1.5` artifact:
 
 - `SophisticatedStorageDisplayItemRendererMixin` targets `net.p3pp3rf1y.sophisticatedstorage.client.render.DisplayItemRenderer`
 - `SophisticatedStorageBarrelBakedModelBaseMixin` targets `net.p3pp3rf1y.sophisticatedstorage.client.render.BarrelBakedModelBase`
@@ -512,6 +528,20 @@ Sophisticated Storage / Compressium compatibility added in the same deployed `0.
 - it still returns a stable full-cube display offset for Compressium block items when Sophisticated Storage asks for one
 - `ArcaneBeamMixinPlugin` uses Mixin's bytecode provider to detect the Sophisticated Storage target class and logs whether the optional mixin is applied or skipped
 - `build.gradle` uses local `compileOnly` Sophisticated Core/Storage jars from the Prism instance; these are compile-time validation inputs only and are not bundled
+
+Config screen fit-scaling added in the same deployed `0.1.5` artifact:
+
+- `ArcaneBeamConfigScreen` now computes a virtual layout size and scale factor from the current screen dimensions
+- the screen background still fills the real viewport, while UI widgets render and receive mouse input through the virtual layout transform
+- this is intended to keep the full Arcane/Rail config UI visible at larger Minecraft GUI scales and smaller monitor resolutions
+
+Resource-pack sound slots added in the same deployed `0.1.5` artifact:
+
+- `ArcaneBeamConfig.SoundChoice` now includes `Resourcepack1` and `Resourcepack2`
+- Arcane resource-pack slots loop `assets/arcanebeam/sounds/abilities/arcane_resourcepack_1.ogg` and `arcane_resourcepack_2.ogg`
+- Rail resource-pack slots play `assets/arcanebeam/sounds/abilities/rail_resourcepack_1.ogg` and `rail_resourcepack_2.ogg`
+- the example pack `ArcaneBeam-Example-Resourcepack-Sounds.zip` includes `pack.mcmeta`, a README, and zero-byte placeholder `.ogg` files at all four paths
+- the resource-pack slots still use direct file-backed playback; do not switch this to registered `sounds.json` events unless the direct playback strategy is intentionally replaced
 
 Do not restart the crouch smoothing investigation unless the user asks. If revisiting it, start from:
 

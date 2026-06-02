@@ -115,6 +115,8 @@ Each ability supports:
 - `Default`
 - `Option 1`
 - `Option 2`
+- `Resourcepack1`
+- `Resourcepack2`
 
 Each ability also has a `Volume` field.
 
@@ -130,13 +132,30 @@ Current behavior:
 - `Arcane Default`: Vault default Arcane sound
 - `Arcane Option 1`: loops `arcane_1.ogg` while Arcane is active
 - `Arcane Option 2`: plays `arcane_2_startup.ogg`, then loops `arcane_2_loop.ogg` while Arcane is active
+- `Arcane Resourcepack1`: loops `arcane_resourcepack_1.ogg` while Arcane is active
+- `Arcane Resourcepack2`: loops `arcane_resourcepack_2.ogg` while Arcane is active
 - `Rail Default`: Vault default Rail sound
 - `Rail Option 1`: plays `rail_1.ogg`
 - `Rail Option 2`: plays `rail_2.ogg`
+- `Rail Resourcepack1`: plays `rail_resourcepack_1.ogg`
+- `Rail Resourcepack2`: plays `rail_resourcepack_2.ogg`
 
 When custom options are selected, Arcane Beam suppresses the stock Vault Arcane and Rail cast sounds so only the selected custom sound remains.
 
 When `Default` is selected, Vault's normal Arcane or Rail cast sound is left alone.
+
+### Resource Pack Sound Slots
+
+The `Resourcepack1` and `Resourcepack2` sound choices are intentionally left for resource packs.
+
+Resource packs can provide replacement `.ogg` files at:
+
+- `assets/arcanebeam/sounds/abilities/arcane_resourcepack_1.ogg`
+- `assets/arcanebeam/sounds/abilities/arcane_resourcepack_2.ogg`
+- `assets/arcanebeam/sounds/abilities/rail_resourcepack_1.ogg`
+- `assets/arcanebeam/sounds/abilities/rail_resourcepack_2.ogg`
+
+No `sounds.json` entry is required for these slots. Arcane Beam plays the files directly by resource path.
 
 ### Fade / Grow In
 
@@ -240,6 +259,13 @@ Current bundled sound files:
 - `assets/arcanebeam/sounds/abilities/arcane_2_loop.ogg`
 - `assets/arcanebeam/sounds/abilities/rail_1.ogg`
 - `assets/arcanebeam/sounds/abilities/rail_2.ogg`
+
+Resource-pack extension sound file names:
+
+- `assets/arcanebeam/sounds/abilities/arcane_resourcepack_1.ogg`
+- `assets/arcanebeam/sounds/abilities/arcane_resourcepack_2.ogg`
+- `assets/arcanebeam/sounds/abilities/rail_resourcepack_1.ogg`
+- `assets/arcanebeam/sounds/abilities/rail_resourcepack_2.ogg`
 
 ## Building
 

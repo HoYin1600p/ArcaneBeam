@@ -12,11 +12,37 @@ When the user asks to append to this file, add a new subsection for the new vers
 
 ## Current Version
 
-- Current version: `0.1.4`
+- Current version: `0.1.5`
 - Repo: `https://github.com/HoYin1600p/ArcaneBeam`
 - Main technical reference: [PERSISTENCE.md](PERSISTENCE.md)
 
 ## Version History
+
+### 0.1.5
+
+#### Summary
+
+`0.1.5` packages the Sophisticated Storage / Compressium display compatibility work, config-screen fit scaling, and resource-pack sound slot integration as a patch release.
+
+#### Changes
+
+- Fixed Compressium compressed blocks not displaying correctly on Sophisticated Storage barrel display faces
+- Added optional client-side mixins for Sophisticated Storage's dynamic display renderer and baked limited-barrel model path
+- Centralized Compressium tier texture lookup, fixed-display sizing, and barrel-face offset logic
+- Preserved optional compatibility behavior so Arcane Beam can still load without Sophisticated Storage or Compressium installed
+- Added config-screen fit scaling so the Arcane/Rail editor remains visible at larger GUI scales and smaller resolutions
+- Added `Resourcepack1` and `Resourcepack2` sound slots for both Arcane and Rail
+- Added direct resource-pack sound paths for `arcane_resourcepack_1.ogg`, `arcane_resourcepack_2.ogg`, `rail_resourcepack_1.ogg`, and `rail_resourcepack_2.ogg`
+- Added an example resource pack zip with placeholder sound files for the new slots
+- Updated CurseForge release copy for `0.1.5`
+
+#### Release Notes
+
+- Artifact: `build/libs/ArcaneBeam-1.18.2-0.1.5.jar`
+- Version source: `gradle.properties -> mod_version=0.1.5`
+- SHA256: `09B4B67C7150137BAE3AE3A3ADAC20FF794E0F235640E45E60E04358DED7B85F`
+- Example resource pack: `ArcaneBeam-Example-Resourcepack-Sounds.zip`
+- Example resource pack SHA256: `DDB9D3DE4818822E3493A7041A961F40D3CC426C8D7DC43F8EA1BE568BEABE6D`
 
 ### 0.1.4
 
