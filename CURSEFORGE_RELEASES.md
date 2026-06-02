@@ -9,6 +9,22 @@ Rules for future updates:
 - Keep the user-facing release text clean and ready to paste.
 - If Codex needs internal notes for a release, put them in a clearly separate `Internal Notes` subsection.
 
+## 0.1.5
+
+### Release Copy
+
+```markdown
+## 0.1.5
+
+- Fixed Compressium compressed blocks not displaying correctly on Sophisticated Storage barrel display faces
+- Added optional client-side compatibility handling for Sophisticated Storage display rendering paths
+- Improved Compressium block display sizing and face alignment so barrel displays match normal block display behavior more closely
+- Kept the compatibility path optional, so Arcane Beam can still load without Sophisticated Storage or Compressium installed
+- Improved the Arcane/Rail config screen so it scales down to fit larger GUI scales and smaller screens
+- Added two resource-pack sound slots for Arcane and two resource-pack sound slots for Rail
+- Included an example resource pack zip showing the sound file paths for the new slots
+```
+
 ## 0.1.4
 
 ### Release Copy

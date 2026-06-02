@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Locale;
 
 public class ArcaneBeamConfigScreen extends Screen {
+    private static final int MIN_LAYOUT_WIDTH = 420;
+    private static final int MIN_LAYOUT_HEIGHT = 520;
     private static final int PALETTE_WIDTH = 180;
     private static final int PALETTE_HEIGHT = 110;
     private static final int BRIGHTNESS_WIDTH = 14;
@@ -48,6 +50,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     private boolean glowColorsSelected;
     private int paletteX;
     private int paletteY;
+    private int layoutWidth;
+    private int layoutHeight;
+    private float layoutScale = 1.0F;
 
     public ArcaneBeamConfigScreen() {
         super(new TextComponent("Arcane Beam"));
@@ -59,19 +64,20 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     @Override
     protected void init() {
+        updateLayoutScale();
         colorBoxes.clear();
         glowColorBoxes.clear();
         originBoxes.clear();
-        paletteX = this.width / 2 - PALETTE_WIDTH / 2;
+        paletteX = layoutWidth / 2 - PALETTE_WIDTH / 2;
         paletteY = 72;
 
-        this.addRenderableWidget(new Button(this.width / 2 - 92, 36, 90, 20, new TextComponent("Arcane"), button -> {
+        this.addRenderableWidget(new Button(layoutWidth / 2 - 92, 36, 90, 20, new TextComponent("Arcane"), button -> {
             railSelected = false;
             selectedSlot = 0;
             glowColorsSelected = false;
             refreshControls();
         }));
-        this.addRenderableWidget(new Button(this.width / 2 + 2, 36, 90, 20, new TextComponent("Rail"), button -> {
+        this.addRenderableWidget(new Button(layoutWidth / 2 + 2, 36, 90, 20, new TextComponent("Rail"), button -> {
             railSelected = true;
             selectedSlot = 0;
             glowColorsSelected = false;
@@ -102,7 +108,7 @@ public class ArcaneBeamConfigScreen extends Screen {
             this.addRenderableWidget(editBox);
         }
 
-        int sliderX = this.width / 2 - 154;
+        int sliderX = layoutWidth / 2 - 154;
         int sliderY = glowBoxY + 32;
         intensitySlider = new SettingSlider(sliderX, sliderY, 308, 20, "Intensity", 0.02D, 0.25D, () -> settings().intensity, value -> {
             settings().intensity = (float) value;
@@ -171,8 +177,19 @@ public class ArcaneBeamConfigScreen extends Screen {
         addOriginBox(sliderX + 104, originY, "Y", 1);
         addOriginBox(sliderX + 208, originY, "Z", 2);
 
-        this.addRenderableWidget(new Button(this.width / 2 - 45, this.height - 32, 90, 20, new TextComponent("Done"), button -> onClose()));
+        this.addRenderableWidget(new Button(layoutWidth / 2 - 45, layoutHeight - 32, 90, 20, new TextComponent("Done"), button -> onClose()));
         refreshControls();
+    }
+
+    private void updateLayoutScale() {
+        float widthScale = this.width / (float) MIN_LAYOUT_WIDTH;
+        float heightScale = this.height / (float) MIN_LAYOUT_HEIGHT;
+        layoutScale = Math.min(1.0F, Math.min(widthScale, heightScale));
+        if (layoutScale <= 0.0F) {
+            layoutScale = 1.0F;
+        }
+        layoutWidth = Math.max(MIN_LAYOUT_WIDTH, (int) Math.ceil(this.width / layoutScale));
+        layoutHeight = Math.max(MIN_LAYOUT_HEIGHT, (int) Math.ceil(this.height / layoutScale));
     }
 
     private void addOriginBox(int x, int y, String label, int axis) {
@@ -189,8 +206,13 @@ public class ArcaneBeamConfigScreen extends Screen {
     @Override
     public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(poseStack);
-        drawCenteredString(poseStack, this.font, this.title, this.width / 2, 14, 0xFFFFFF);
-        drawCenteredString(poseStack, this.font, railSelected ? "Rail colors" : "Arcane colors", this.width / 2, 60, 0xD8D8D8);
+        int layoutMouseX = toLayoutX(mouseX);
+        int layoutMouseY = toLayoutY(mouseY);
+
+        poseStack.pushPose();
+        poseStack.scale(layoutScale, layoutScale, 1.0F);
+        drawCenteredString(poseStack, this.font, this.title, layoutWidth / 2, 14, 0xFFFFFF);
+        drawCenteredString(poseStack, this.font, railSelected ? "Rail colors" : "Arcane colors", layoutWidth / 2, 60, 0xD8D8D8);
         renderPalette(poseStack);
         renderBrightnessStrip(poseStack);
         renderInlinePreviews(poseStack);
@@ -203,41 +225,46 @@ public class ArcaneBeamConfigScreen extends Screen {
         if (fadeOutTicksBox != null) {
             drawString(poseStack, this.font, "Ticks", fadeOutTicksBox.x - this.font.width("Ticks") - 6, fadeOutTicksBox.y + 6, 0xD8D8D8);
         }
-        super.render(poseStack, mouseX, mouseY, partialTick);
+        super.render(poseStack, layoutMouseX, layoutMouseY, partialTick);
+        poseStack.popPose();
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0 && handlePreviewSelection(mouseX, mouseY)) {
+        double layoutMouseX = toLayoutX(mouseX);
+        double layoutMouseY = toLayoutY(mouseY);
+        if (button == 0 && handlePreviewSelection(layoutMouseX, layoutMouseY)) {
             return true;
         }
-        if (button == 0 && mouseX >= paletteX && mouseX < paletteX + PALETTE_WIDTH && mouseY >= paletteY && mouseY < paletteY + PALETTE_HEIGHT) {
+        if (button == 0 && layoutMouseX >= paletteX && layoutMouseX < paletteX + PALETTE_WIDTH && layoutMouseY >= paletteY && layoutMouseY < paletteY + PALETTE_HEIGHT) {
             draggingPalette = true;
-            updatePaletteSelection(mouseX, mouseY);
+            updatePaletteSelection(layoutMouseX, layoutMouseY);
             return true;
         }
 
         int brightnessX = paletteX + PALETTE_WIDTH + 10;
-        if (button == 0 && mouseX >= brightnessX && mouseX < brightnessX + BRIGHTNESS_WIDTH && mouseY >= paletteY && mouseY < paletteY + PALETTE_HEIGHT) {
+        if (button == 0 && layoutMouseX >= brightnessX && layoutMouseX < brightnessX + BRIGHTNESS_WIDTH && layoutMouseY >= paletteY && layoutMouseY < paletteY + PALETTE_HEIGHT) {
             draggingBrightness = true;
             brightnessDragBaseColor = activeColors()[selectedSlot];
-            updateBrightnessSelection(mouseY);
+            updateBrightnessSelection(layoutMouseY);
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(layoutMouseX, layoutMouseY, button);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        double layoutMouseX = toLayoutX(mouseX);
+        double layoutMouseY = toLayoutY(mouseY);
         if (button == 0 && draggingPalette) {
-            updatePaletteSelection(mouseX, mouseY);
+            updatePaletteSelection(layoutMouseX, layoutMouseY);
             return true;
         }
         if (button == 0 && draggingBrightness) {
-            updateBrightnessSelection(mouseY);
+            updateBrightnessSelection(layoutMouseY);
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(layoutMouseX, layoutMouseY, button, dragX / layoutScale, dragY / layoutScale);
     }
 
     @Override
@@ -248,25 +275,27 @@ public class ArcaneBeamConfigScreen extends Screen {
             ArcaneBeamConfig.save();
             return true;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(toLayoutX(mouseX), toLayoutY(mouseY), button);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        if (soundVolumeBox != null && soundVolumeBox.isMouseOver(mouseX, mouseY)) {
+        double layoutMouseX = toLayoutX(mouseX);
+        double layoutMouseY = toLayoutY(mouseY);
+        if (soundVolumeBox != null && soundVolumeBox.isMouseOver(layoutMouseX, layoutMouseY)) {
             double step = hasShiftDown() ? 0.10D : 0.01D;
             nudgeSoundVolume(delta > 0.0D ? step : -step);
             refreshSoundVolumeBox();
             ArcaneBeamConfig.save();
             return true;
         }
-        if (fadeInTicksBox != null && fadeInTicksBox.isMouseOver(mouseX, mouseY)) {
+        if (fadeInTicksBox != null && fadeInTicksBox.isMouseOver(layoutMouseX, layoutMouseY)) {
             nudgeFadeInTicks(delta > 0.0D ? 1 : -1);
             refreshFadeTickBoxes();
             ArcaneBeamConfig.save();
             return true;
         }
-        if (fadeOutTicksBox != null && fadeOutTicksBox.isMouseOver(mouseX, mouseY)) {
+        if (fadeOutTicksBox != null && fadeOutTicksBox.isMouseOver(layoutMouseX, layoutMouseY)) {
             nudgeFadeOutTicks(delta > 0.0D ? 1 : -1);
             refreshFadeTickBoxes();
             ArcaneBeamConfig.save();
@@ -274,7 +303,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
         for (int i = 0; i < originBoxes.size(); i++) {
             EditBox originBox = originBoxes.get(i);
-            if (originBox.isMouseOver(mouseX, mouseY)) {
+            if (originBox.isMouseOver(layoutMouseX, layoutMouseY)) {
                 double step = hasShiftDown() ? 0.10D : 0.01D;
                 nudgeOrigin(i, delta > 0.0D ? step : -step);
                 refreshOriginBoxes();
@@ -282,7 +311,15 @@ public class ArcaneBeamConfigScreen extends Screen {
                 return true;
             }
         }
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        return super.mouseScrolled(layoutMouseX, layoutMouseY, delta);
+    }
+
+    private int toLayoutX(double mouseX) {
+        return (int) Math.floor(mouseX / layoutScale);
+    }
+
+    private int toLayoutY(double mouseY) {
+        return (int) Math.floor(mouseY / layoutScale);
     }
 
     @Override
@@ -428,7 +465,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private int rowStartX() {
-        return this.width / 2 - rowWidth() / 2;
+        return layoutWidth / 2 - rowWidth() / 2;
     }
 
     private int beamRowY() {

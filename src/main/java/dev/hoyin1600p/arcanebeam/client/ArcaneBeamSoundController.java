@@ -17,8 +17,12 @@ public final class ArcaneBeamSoundController {
     private static final String ARCANE_1_PATH = "abilities/arcane_1";
     private static final String ARCANE_2_STARTUP_PATH = "abilities/arcane_2_startup";
     private static final String ARCANE_2_LOOP_PATH = "abilities/arcane_2_loop";
+    private static final String ARCANE_RESOURCEPACK_1_PATH = "abilities/arcane_resourcepack_1";
+    private static final String ARCANE_RESOURCEPACK_2_PATH = "abilities/arcane_resourcepack_2";
     private static final String RAIL_1_PATH = "abilities/rail_1";
     private static final String RAIL_2_PATH = "abilities/rail_2";
+    private static final String RAIL_RESOURCEPACK_1_PATH = "abilities/rail_resourcepack_1";
+    private static final String RAIL_RESOURCEPACK_2_PATH = "abilities/rail_resourcepack_2";
 
     private static FileSoundInstance arcaneStartupSound;
     private static ArcaneLoopSound arcaneLoopSound;
@@ -61,6 +65,18 @@ public final class ArcaneBeamSoundController {
                 pendingArcaneLoopStart = Long.MIN_VALUE;
                 return;
             }
+            if (choice == ArcaneBeamConfig.SoundChoice.RESOURCEPACK_1) {
+                arcaneLoopSound = new ArcaneLoopSound(player, ARCANE_RESOURCEPACK_1_PATH, ArcaneBeamConfig.INSTANCE.arcane.soundVolume);
+                minecraft.getSoundManager().play(arcaneLoopSound);
+                pendingArcaneLoopStart = Long.MIN_VALUE;
+                return;
+            }
+            if (choice == ArcaneBeamConfig.SoundChoice.RESOURCEPACK_2) {
+                arcaneLoopSound = new ArcaneLoopSound(player, ARCANE_RESOURCEPACK_2_PATH, ArcaneBeamConfig.INSTANCE.arcane.soundVolume);
+                minecraft.getSoundManager().play(arcaneLoopSound);
+                pendingArcaneLoopStart = Long.MIN_VALUE;
+                return;
+            }
 
             arcaneStartupSound = new FileSoundInstance(ARCANE_2_STARTUP_PATH, ArcaneBeamConfig.INSTANCE.arcane.soundVolume);
             minecraft.getSoundManager().play(arcaneStartupSound);
@@ -88,6 +104,8 @@ public final class ArcaneBeamSoundController {
         String soundPath = switch (soundChoice(ArcaneBeamConfig.INSTANCE.rail.sound)) {
             case OPTION_1 -> RAIL_1_PATH;
             case OPTION_2 -> RAIL_2_PATH;
+            case RESOURCEPACK_1 -> RAIL_RESOURCEPACK_1_PATH;
+            case RESOURCEPACK_2 -> RAIL_RESOURCEPACK_2_PATH;
             default -> null;
         };
         if (soundPath != null) {
