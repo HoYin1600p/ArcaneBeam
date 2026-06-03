@@ -2,6 +2,7 @@ package dev.hoyin1600p.arcanebeam.mixin;
 
 import com.mojang.logging.LogUtils;
 import java.io.IOException;
+import net.minecraftforge.fml.loading.LoadingModList;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -13,6 +14,7 @@ import java.util.Set;
 
 public class ArcaneBeamMixinPlugin implements IMixinConfigPlugin {
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final String VAULT_ADDITIONS_MOD_ID = "vaultadditions";
     private static final String SOPHISTICATED_STORAGE_DISPLAY_MIXIN = "dev.hoyin1600p.arcanebeam.mixin.SophisticatedStorageDisplayItemRendererMixin";
     private static final String SOPHISTICATED_STORAGE_BARREL_BAKED_MIXIN = "dev.hoyin1600p.arcanebeam.mixin.SophisticatedStorageBarrelBakedModelBaseMixin";
     private static final Set<String> OPTIONAL_SOPHISTICATED_STORAGE_MIXINS = Set.of(
@@ -33,8 +35,17 @@ public class ArcaneBeamMixinPlugin implements IMixinConfigPlugin {
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         if (OPTIONAL_SOPHISTICATED_STORAGE_MIXINS.contains(mixinClassName)) {
             boolean targetPresent = isClassPresent(targetClassName);
-            LOGGER.info("ArcaneBeam {} optional Sophisticated Storage mixin {} for target {}", targetPresent ? "applying" : "skipping", mixinClassName, targetClassName);
-            return targetPresent;
+            if (!targetPresent) {
+                LOGGER.info("ArcaneBeam skipping optional Sophisticated Storage mixin {} because target {} is not present", mixinClassName, targetClassName);
+                return false;
+            }
+            if (isVaultAdditionsPresent()) {
+                LOGGER.info("ArcaneBeam skipping optional Sophisticated Storage mixin {} because {} is present", mixinClassName, VAULT_ADDITIONS_MOD_ID);
+                return false;
+            }
+
+            LOGGER.info("ArcaneBeam applying optional Sophisticated Storage mixin {} for target {}", mixinClassName, targetClassName);
+            return true;
         }
         return true;
     }
@@ -61,6 +72,16 @@ public class ArcaneBeamMixinPlugin implements IMixinConfigPlugin {
             MixinService.getService().getBytecodeProvider().getClassNode(className);
             return true;
         } catch (ClassNotFoundException | IOException e) {
+            return false;
+        }
+    }
+
+    private static boolean isVaultAdditionsPresent() {
+        try {
+            LoadingModList loadingModList = LoadingModList.get();
+            return loadingModList != null && loadingModList.getModFileById(VAULT_ADDITIONS_MOD_ID) != null;
+        } catch (LinkageError | RuntimeException e) {
+            LOGGER.debug("ArcaneBeam could not query Forge loading mod list for {}", VAULT_ADDITIONS_MOD_ID, e);
             return false;
         }
     }

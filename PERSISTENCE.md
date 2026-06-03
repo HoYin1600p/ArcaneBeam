@@ -490,7 +490,7 @@ Last verified build:
 
 - Version: `0.1.6`
 - Built jar: `build/libs/ArcaneBeam-1.18.2-0.1.6.jar`
-- Built jar SHA256: `E23EDE3B38ADD042CB2BC87B94FF1B6D12C34B0A9426A98803D10E14DED2ECEF`
+- Built jar SHA256: `B9A7CFE55FF2CAE64886EB7D7562DF8225A3A3F58570DD9017980214E67E60C1`
 - Example resource pack: `ArcaneBeam-Example-Resourcepack-Sounds.zip`
 - Example resource pack SHA256: `DDB9D3DE4818822E3493A7041A961F40D3CC426C8D7DC43F8EA1BE568BEABE6D`
 - Instance jar was not updated during this build/version-bump pass.
@@ -540,6 +540,14 @@ Config profiles added in `0.1.6`:
 - the profile panel is dynamically positioned just left of the centered palette using `profilePanelX()`
 - shader compatibility is now stored on `BeamSettings` so it is profile-specific like the rest of the config-screen settings
 - `ArcaneBeamConfig.INSTANCE.shaderCompatibility` remains as a legacy migration field for older JSON files
+
+Vault Additions coexistence guard added in `0.1.6`:
+
+- `ArcaneBeamMixinPlugin` checks the exact Forge mod id `vaultadditions`
+- if `vaultadditions` is present, ArcaneBeam skips only `SophisticatedStorageDisplayItemRendererMixin` and `SophisticatedStorageBarrelBakedModelBaseMixin`
+- if `vaultadditions` is absent, ArcaneBeam applies those mixins exactly as before when Sophisticated Storage targets are present
+- if Forge's loading mod list cannot be queried, the guard fails open and ArcaneBeam applies those mixins as before
+- both Sophisticated Storage compatibility mixins use priority `900`, so a default-priority `1000` mixin from another mod takes precedence if both are ever active
 
 Config screen fit-scaling added in the same deployed `0.1.5` artifact:
 

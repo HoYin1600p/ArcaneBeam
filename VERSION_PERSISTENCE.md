@@ -23,6 +23,7 @@ When the user asks to append to this file, add a new subsection for the new vers
 #### Summary
 
 `0.1.6` adds config-screen profiles for Arcane and Rail settings.
+It also makes ArcaneBeam defer its Sophisticated Storage / Compressium compatibility mixins when the exact Forge mod id `vaultadditions` is present.
 
 #### Changes
 
@@ -32,6 +33,9 @@ When the user asks to append to this file, add a new subsection for the new vers
 - Saved profile data in `config/ArcaneBeam.json` under `arcaneProfiles` and `railProfiles`
 - Migrated existing Arcane and Rail settings into `Default` profiles when the new config format is first loaded
 - Moved shader compatibility into the active profile so every editable config-screen setting is profile-specific
+- Added an exact `vaultadditions` loading-list check that skips only ArcaneBeam's Sophisticated Storage compatibility mixins
+- Kept the guard fail-open: if the Forge loading mod list cannot be queried, ArcaneBeam applies its optional mixins as before
+- Lowered ArcaneBeam's Sophisticated Storage compatibility mixin priority to `900`, below Mixin's default `1000`
 - Bumped the mod version to `0.1.6`
 - Updated CurseForge release copy for `0.1.6`
 
@@ -39,7 +43,7 @@ When the user asks to append to this file, add a new subsection for the new vers
 
 - Artifact: `build/libs/ArcaneBeam-1.18.2-0.1.6.jar`
 - Version source: `gradle.properties -> mod_version=0.1.6`
-- SHA256: `E23EDE3B38ADD042CB2BC87B94FF1B6D12C34B0A9426A98803D10E14DED2ECEF`
+- SHA256: `B9A7CFE55FF2CAE64886EB7D7562DF8225A3A3F58570DD9017980214E67E60C1`
 
 ### 0.1.5
 

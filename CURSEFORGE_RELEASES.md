@@ -19,6 +19,7 @@ Rules for future updates:
 - Added Arcane and Rail profile support in the config screen
 - Added per-category profile creation and selection, with profiles saved in `config/ArcaneBeam.json`
 - Migrated existing Arcane and Rail settings into `Default` profiles on first launch with the new config format
+- Safely skipped Arcane Beam's Sophisticated Storage / Compressium mixins when Vault Additions is installed
 ```
 
 ## 0.1.5

@@ -37,7 +37,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(targets = "net.p3pp3rf1y.sophisticatedstorage.client.render.BarrelBakedModelBase")
+@Mixin(targets = "net.p3pp3rf1y.sophisticatedstorage.client.render.BarrelBakedModelBase", priority = 900)
 public abstract class SophisticatedStorageBarrelBakedModelBaseMixin {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final ResourceLocation COMPRESSIUM_BARREL_FACE = new ResourceLocation("arcanebeam", "compressium_barrel_face");
