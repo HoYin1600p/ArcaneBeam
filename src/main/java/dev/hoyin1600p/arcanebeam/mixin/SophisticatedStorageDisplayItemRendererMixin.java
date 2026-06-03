@@ -27,7 +27,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.slf4j.Logger;
 
-@Mixin(targets = "net.p3pp3rf1y.sophisticatedstorage.client.render.DisplayItemRenderer")
+@Mixin(targets = "net.p3pp3rf1y.sophisticatedstorage.client.render.DisplayItemRenderer", priority = 900)
 public abstract class SophisticatedStorageDisplayItemRendererMixin {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Set<ResourceLocation> LOGGED_RENDERED_ITEMS = ConcurrentHashMap.newKeySet();
