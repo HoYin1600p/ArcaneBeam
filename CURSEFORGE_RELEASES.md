@@ -9,6 +9,19 @@ Rules for future updates:
 - Keep the user-facing release text clean and ready to paste.
 - If Codex needs internal notes for a release, put them in a clearly separate `Internal Notes` subsection.
 
+## 0.1.7
+
+### Release Copy
+
+```markdown
+## 0.1.7
+
+- Added a client-side Sophisticated Storage limited-barrel interaction fix
+- Preserved normal front-face behavior for item deposit, double-right-click deposit-all, dyes, packing tape, and upgrades
+- Added Sneak + right-click empty-hand opening from the limited-barrel front face, matching the user's configured Sneak keybind
+- Skipped the new Sophisticated Storage interaction mixin when Vault Additions is installed, matching Arcane Beam's existing Vault Additions compatibility guard
+```
+
 ## 0.1.6
 
 ### Release Copy

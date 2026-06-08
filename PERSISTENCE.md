@@ -7,7 +7,7 @@ This file is for future maintenance work. It is meant to give enough context to 
 - Repo: `https://github.com/HoYin1600p/ArcaneBeam`
 - Mod name: `Arcane Beam`
 - Current version:
-  - `0.1.6`
+  - `0.1.7`
 - Target:
   - Minecraft `1.18.2`
   - Forge `40.x`
@@ -483,6 +483,26 @@ If you return later, do **not** start by re-debugging these unless symptoms spec
 
 The basic systems already work. The custom sound path intentionally bypasses the standard event route.
 - the current 8-sided tube renderer also works and should be treated as the baseline shape unless the user explicitly wants another geometry
+
+## Current Working State After 0.1.7
+
+Last verified build:
+
+- Version: `0.1.7`
+- Built jar: `build/libs/ArcaneBeam-1.18.2-0.1.7.jar`
+- Built jar SHA256: `45B7158E34679DF55B89C32BA863D55BB144B44AD1E1BA01CD0D6CAEE555B29D`
+- Instance jar was not updated during this build/version-bump pass.
+
+Sophisticated Storage limited-barrel client interaction added in `0.1.7`:
+
+- `SophisticatedStorageLimitedBarrelClientInteractionMixin` targets `net.minecraft.client.multiplayer.MultiPlayerGameMode`
+- The mixin is client-only and registered in the `client` array of `arcanebeam.mixins.json`
+- It rewrites the client `BlockHitResult` for limited-barrel front-face interactions only when the player is using Minecraft's secondary-use/sneak state and both hands are empty
+- It uses `LocalPlayer.isSecondaryUseActive()`, so it follows the user's configured Sneak keybind and is not hard-coded to physical Shift
+- Regular front-face right-clicks remain untouched, preserving Sophisticated Storage's native slot deposit, double-right-click deposit-all, dyes, packing tape, and upgrades
+- The rewritten direction is `UP` for horizontally facing barrels and `NORTH` for vertically facing barrels, matching a non-front face so Sophisticated Storage falls through to its normal GUI-open path
+- `ArcaneBeamMixinPlugin` treats the mixin as optional and skips it when the exact Forge mod id `vaultadditions` is installed
+- The git-ignored export package for sharing this mixin is `build/exports/sophisticatedstorage-limited-barrel-client-mixin-20260608.zip`
 
 ## Current Working State After 0.1.6
 

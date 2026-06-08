@@ -281,6 +281,27 @@ Resource-pack extension sound file names:
 - `assets/arcanebeam/sounds/abilities/rail_resourcepack_1.ogg`
 - `assets/arcanebeam/sounds/abilities/rail_resourcepack_2.ogg`
 
+## Compatibility
+
+### Sophisticated Storage
+
+Arcane Beam includes optional client-side Sophisticated Storage compatibility fixes.
+
+When Sophisticated Storage is present, Arcane Beam can:
+
+- improve Compressium compressed block rendering on Sophisticated Storage barrel display faces
+- allow limited barrels to be opened from the front face with Sneak + right-click while both hands are empty
+
+The limited-barrel interaction uses Minecraft's secondary-use state, so it follows the player's configured Sneak keybind. It is not hard-coded to the physical Shift key.
+
+Normal limited-barrel front-face interactions are preserved:
+
+- right-click a slot with a matching item to deposit into that slot
+- double-right-click a slot to deposit matching items from inventory
+- use dyes, packing tape, and Sophisticated Storage upgrades normally
+
+If Vault Additions is installed, Arcane Beam skips its Sophisticated Storage compatibility mixins to avoid conflicting with Vault Additions' own handling.
+
 ## Building
 
 ```powershell

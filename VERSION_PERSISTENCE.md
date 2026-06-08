@@ -12,11 +12,36 @@ When the user asks to append to this file, add a new subsection for the new vers
 
 ## Current Version
 
-- Current version: `0.1.6`
+- Current version: `0.1.7`
 - Repo: `https://github.com/HoYin1600p/ArcaneBeam`
 - Main technical reference: [PERSISTENCE.md](PERSISTENCE.md)
 
 ## Version History
+
+### 0.1.7
+
+#### Summary
+
+`0.1.7` adds a client-only Sophisticated Storage limited-barrel front-face interaction compatibility mixin.
+Normal front-face limited-barrel interactions remain untouched so single-slot deposit, double-right-click deposit-all, dyes, packing tape, and upgrades keep Sophisticated Storage's original behavior.
+
+#### Changes
+
+- Added `SophisticatedStorageLimitedBarrelClientInteractionMixin`
+- Registered the new mixin in the client mixin list
+- Added the mixin to ArcaneBeam's optional Sophisticated Storage mixin gate
+- Added the mixin to the existing `vaultadditions` conflict skip set
+- Changed front-face GUI opening to Sneak + right-click with both hands empty
+- Used Minecraft's secondary-use state so the behavior follows the user's configured Sneak keybind instead of hard-coding physical Shift
+- Preserved regular front-face right-clicks, including double-right-click deposit-all
+- Bumped the mod version to `0.1.7`
+- Updated CurseForge release copy for `0.1.7`
+
+#### Release Notes
+
+- Artifact: `build/libs/ArcaneBeam-1.18.2-0.1.7.jar`
+- Version source: `gradle.properties -> mod_version=0.1.7`
+- SHA256: `45B7158E34679DF55B89C32BA863D55BB144B44AD1E1BA01CD0D6CAEE555B29D`
 
 ### 0.1.6
 
