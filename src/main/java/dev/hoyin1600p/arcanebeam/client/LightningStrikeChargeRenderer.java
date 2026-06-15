@@ -98,11 +98,25 @@ public class LightningStrikeChargeRenderer extends RenderType {
         float red = red(color);
         float green = green(color);
         float blue = blue(color);
+        float r1 = chargeRadiusAtX(x1) + 0.004F;
+        float r2 = chargeRadiusAtX(x2) + 0.004F;
         for (int i = 0; i < 8; i += 2) {
             float a1 = (float) (Math.PI * 2.0D * (i + 0.18D) / 8.0D);
             float a2 = (float) (Math.PI * 2.0D * (i + 0.82D) / 8.0D);
-            addCylinderQuadX(pose, builder, red, green, blue, alpha, 0.107F, 0.107F, x1, x2, a1, a2);
+            addCylinderQuadX(pose, builder, red, green, blue, alpha, r1, r2, x1, x2, a1, a2);
         }
+    }
+
+    private static float chargeRadiusAtX(float x) {
+        if (x < -0.095F) {
+            float progress = Mth.clamp((x + 0.175F) / 0.080F, 0.0F, 1.0F);
+            return Mth.lerp(progress, 0.045F, 0.100F);
+        }
+        if (x > 0.095F) {
+            float progress = Mth.clamp((x - 0.095F) / 0.080F, 0.0F, 1.0F);
+            return Mth.lerp(progress, 0.100F, 0.052F);
+        }
+        return 0.100F;
     }
 
     private static void renderPanelLinesX(PoseStack poseStack, VertexConsumer builder) {
