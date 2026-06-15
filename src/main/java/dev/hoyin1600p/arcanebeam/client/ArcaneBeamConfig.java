@@ -256,37 +256,37 @@ public final class ArcaneBeamConfig {
     }
 
     private static void validateLightningStrikeSettings(LightningStrikeSettings settings) {
-        settings.startRadius = clampFloat(settings.startRadius <= 0.0F ? 1.5F : settings.startRadius, 0.1F, 32.0F);
+        settings.startRadius = clampFloat(settings.startRadius <= 0.0F ? 0.37766665F : settings.startRadius, 0.1F, 32.0F);
         settings.endRadius = clampFloat(settings.endRadius <= 0.0F ? 6.0F : settings.endRadius, settings.startRadius, 64.0F);
         settings.lifetimeTicks = clampInt(settings.lifetimeTicks <= 0 ? 30 : settings.lifetimeTicks, 1, 200);
-        settings.ringThickness = clampFloat(settings.ringThickness <= 0.0F ? 0.18F : settings.ringThickness, 0.02F, 4.0F);
+        settings.ringThickness = clampFloat(settings.ringThickness <= 0.0F ? 0.8334F : settings.ringThickness, 0.02F, 4.0F);
         settings.ringSideCount = clampInt(settings.ringSideCount <= 0 ? 16 : settings.ringSideCount, 8, 96);
         settings.renderYOffset = clampFloat(settings.renderYOffset, -4.0F, 8.0F);
         if (settings.ringColor == 0) {
-            settings.ringColor = 0xBFEFFF;
+            settings.ringColor = 883199;
         }
         if (settings.centerFlashColor == 0) {
-            settings.centerFlashColor = 0xFFFFFF;
+            settings.centerFlashColor = 911869;
         }
-        settings.alpha = clampFloat(settings.alpha <= 0.0F ? 0.95F : settings.alpha, 0.0F, 1.0F);
+        settings.alpha = clampFloat(settings.alpha <= 0.0F ? 1.0F : settings.alpha, 0.0F, 1.0F);
         settings.ringInteriorOpacity = clampFloat(settings.ringInteriorOpacity <= 0.0F ? 0.28F : settings.ringInteriorOpacity, 0.0F, 1.0F);
         if (settings.sphereColor == 0) {
-            settings.sphereColor = settings.centerFlashColor == 0 ? 0xFFFFFF : settings.centerFlashColor;
+            settings.sphereColor = settings.centerFlashColor == 0 ? 911869 : settings.centerFlashColor;
         }
-        settings.sphereRadius = clampFloat(settings.sphereRadius <= 0.0F ? 0.35F : settings.sphereRadius, 0.02F, 2.0F);
-        settings.sphereOpacity = clampFloat(settings.sphereOpacity <= 0.0F ? 0.85F : settings.sphereOpacity, 0.0F, 1.0F);
+        settings.sphereRadius = clampFloat(settings.sphereRadius <= 0.0F ? 0.24309859F : settings.sphereRadius, 0.02F, 2.0F);
+        settings.sphereOpacity = clampFloat(settings.sphereOpacity <= 0.0F ? 0.6056338F : settings.sphereOpacity, 0.0F, 1.0F);
         if (settings.coneColor == 0) {
-            settings.coneColor = settings.ringColor == 0 ? 0xBFEFFF : settings.ringColor;
+            settings.coneColor = settings.ringColor == 0 ? 884989 : settings.ringColor;
         }
-        settings.coneHeight = clampFloat(settings.coneHeight <= 0.0F ? 1.1F : settings.coneHeight, 0.05F, 6.0F);
-        settings.coneRadius = clampFloat(settings.coneRadius <= 0.0F ? 0.45F : settings.coneRadius, 0.02F, 4.0F);
-        settings.coneOpacity = clampFloat(settings.coneOpacity <= 0.0F ? 0.65F : settings.coneOpacity, 0.0F, 1.0F);
+        settings.coneHeight = clampFloat(settings.coneHeight <= 0.0F ? 2.6059859F : settings.coneHeight, 0.05F, 6.0F);
+        settings.coneRadius = clampFloat(settings.coneRadius <= 0.0F ? 0.4684507F : settings.coneRadius, 0.02F, 4.0F);
+        settings.coneOpacity = clampFloat(settings.coneOpacity <= 0.0F ? 0.59859157F : settings.coneOpacity, 0.0F, 1.0F);
         if (settings.spotColor == 0) {
-            settings.spotColor = 0xFFFFFF;
+            settings.spotColor = 12975586;
         }
         settings.spotCount = clampInt(settings.spotCount, 0, 128);
-        settings.spotSize = clampFloat(settings.spotSize <= 0.0F ? 0.2F : settings.spotSize, 0.02F, 1.5F);
-        settings.spotOpacity = clampFloat(settings.spotOpacity <= 0.0F ? 0.9F : settings.spotOpacity, 0.0F, 1.0F);
+        settings.spotSize = clampFloat(settings.spotSize <= 0.0F ? 0.15549296F : settings.spotSize, 0.02F, 1.5F);
+        settings.spotOpacity = clampFloat(settings.spotOpacity <= 0.0F ? 0.9929578F : settings.spotOpacity, 0.0F, 1.0F);
         if (!settings.shaderCompatibilityMigrated) {
             ShaderCompatibility inherited = ShaderCompatibility.fromId(INSTANCE.shaderCompatibility);
             if (settings.shaderCompatibility == null || ShaderCompatibility.fromId(settings.shaderCompatibility) == null
@@ -296,14 +296,14 @@ public final class ArcaneBeamConfig {
             settings.shaderCompatibilityMigrated = true;
         }
         if (settings.shaderCompatibility == null || ShaderCompatibility.fromId(settings.shaderCompatibility) == null) {
-            settings.shaderCompatibility = ShaderCompatibility.OFF.id;
+            settings.shaderCompatibility = ShaderCompatibility.ON.id;
         }
         if (settings.soundMode == null || LightningSoundMode.fromId(settings.soundMode) == null) {
-            settings.soundMode = LightningSoundMode.DEFAULT.id;
+            settings.soundMode = LightningSoundMode.SEISMIC_CHARGE.id;
         }
         settings.soundVolume = clampFloat(settings.soundVolume, 0.0F, 2.0F);
         settings.secondaryRippleCount = clampInt(settings.secondaryRippleCount, 0, 4);
-        settings.secondaryRippleSize = clampFloat(settings.secondaryRippleSize <= 0.0F ? 0.75F : settings.secondaryRippleSize, 0.1F, 1.5F);
+        settings.secondaryRippleSize = clampFloat(settings.secondaryRippleSize <= 0.0F ? 1.4346666F : settings.secondaryRippleSize, 0.1F, 1.5F);
         settings.secondaryRippleDelayTicks = clampInt(settings.secondaryRippleDelayTicks < 0 ? 4 : settings.secondaryRippleDelayTicks, 0, 40);
     }
 
@@ -619,35 +619,35 @@ public final class ArcaneBeamConfig {
 
     public static final class LightningStrikeSettings {
         public boolean enabled = true;
-        public float startRadius = 1.5F;
+        public float startRadius = 0.37766665F;
         public float endRadius = 6.0F;
         public int lifetimeTicks = 30;
-        public float ringThickness = 0.18F;
+        public float ringThickness = 0.8334F;
         public int ringSideCount = 16;
         public float renderYOffset = 1.0F;
-        public int ringColor = 0xBFEFFF;
-        public int centerFlashColor = 0xFFFFFF;
-        public float alpha = 0.95F;
+        public int ringColor = 883199;
+        public int centerFlashColor = 911869;
+        public float alpha = 1.0F;
         public float ringInteriorOpacity = 0.28F;
-        public int sphereColor = 0xFFFFFF;
-        public float sphereRadius = 0.35F;
-        public float sphereOpacity = 0.85F;
-        public int coneColor = 0xBFEFFF;
-        public float coneHeight = 1.1F;
-        public float coneRadius = 0.45F;
-        public float coneOpacity = 0.65F;
-        public int spotColor = 0xFFFFFF;
-        public int spotCount = 18;
-        public float spotSize = 0.20F;
-        public float spotOpacity = 0.90F;
+        public int sphereColor = 911869;
+        public float sphereRadius = 0.24309859F;
+        public float sphereOpacity = 0.6056338F;
+        public int coneColor = 884989;
+        public float coneHeight = 2.6059859F;
+        public float coneRadius = 0.4684507F;
+        public float coneOpacity = 0.59859157F;
+        public int spotColor = 12975586;
+        public int spotCount = 105;
+        public float spotSize = 0.15549296F;
+        public float spotOpacity = 0.9929578F;
         public boolean fullbright = true;
-        public String shaderCompatibility = ShaderCompatibility.OFF.id;
-        public boolean shaderCompatibilityMigrated = false;
+        public String shaderCompatibility = ShaderCompatibility.ON.id;
+        public boolean shaderCompatibilityMigrated = true;
         public int secondaryRippleCount = 0;
-        public float secondaryRippleSize = 0.75F;
+        public float secondaryRippleSize = 1.4346666F;
         public int secondaryRippleDelayTicks = 4;
-        public String soundMode = LightningSoundMode.DEFAULT.id;
-        public float soundVolume = 1.00F;
+        public String soundMode = LightningSoundMode.SEISMIC_CHARGE.id;
+        public float soundVolume = 0.36F;
     }
 
     private static LightningStrikeSettings defaultLightningStrikeSettings() {
