@@ -14,10 +14,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.ArrayList;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = ArcaneBeam.MOD_ID, value = Dist.CLIENT)
 public final class LightningStrikeShockwaveManager {
@@ -28,10 +26,8 @@ public final class LightningStrikeShockwaveManager {
     private static final double CAST_SOUND_SUPPRESSION_DISTANCE_SQR = 16.0D;
     private static final double IMPACT_SOUND_SUPPRESSION_DISTANCE_SQR = 16.0D;
     private static final double VAULT_LIGHTNING_VISUAL_SUPPRESSION_DISTANCE_SQR = 4096.0D;
-    private static final double PROJECTILE_IMPACT_FALLBACK_DISTANCE_SQR = 64.0D;
     private static final List<ActiveShockwave> activeShockwaves = new ArrayList<>();
     private static final List<ChainLightningAbility.ChainLightningProjectile> activeProjectiles = new ArrayList<>();
-    private static final Map<ChainLightningAbility.ChainLightningProjectile, ProjectileImpactState> projectileImpactStates = new IdentityHashMap<>();
     private static long suppressCastSoundUntilGameTime = Long.MIN_VALUE;
     private static long suppressImpactSoundUntilGameTime = Long.MIN_VALUE;
     private static long suppressVaultLightningVisualUntilGameTime = Long.MIN_VALUE;
@@ -54,7 +50,6 @@ public final class LightningStrikeShockwaveManager {
             if (!activeProjectiles.contains(projectile)) {
                 activeProjectiles.add(projectile);
             }
-            projectileImpactStates.put(projectile, new ProjectileImpactState(projectile.position()));
             observeProjectileSpawn(projectile.position());
             return;
         }
@@ -75,15 +70,6 @@ public final class LightningStrikeShockwaveManager {
         observeImpact(position);
         observeVaultLightningVisual(position);
         ArcaneBeamSoundController.playLightningStrikeImpact(minecraft, position);
-    }
-
-    public static void spawnFromProjectile(ChainLightningAbility.ChainLightningProjectile projectile, Vec3 position) {
-        ProjectileImpactState state = projectileImpactStates.get(projectile);
-        if (state != null) {
-            state.handledImpact = true;
-            state.lastPosition = position;
-        }
-        spawn(position);
     }
 
     private static void observeProjectileSpawn(Vec3 position) {
@@ -193,28 +179,8 @@ public final class LightningStrikeShockwaveManager {
             return false;
         }
 
-        markProjectileImpactNear(position);
         spawn(position);
         return true;
-    }
-
-    private static void markProjectileImpactNear(Vec3 position) {
-        for (ProjectileImpactState state : projectileImpactStates.values()) {
-            if (state.lastPosition != null && state.lastPosition.distanceToSqr(position) <= PROJECTILE_IMPACT_FALLBACK_DISTANCE_SQR) {
-                state.lastPosition = position;
-                state.handledImpact = true;
-            }
-        }
-    }
-
-    private static boolean hasPendingLightningStrikeNear(Vec3 position) {
-        Minecraft minecraft = Minecraft.getInstance();
-        ClientLevel level = minecraft.level;
-        if (level == null || position == null || pendingLightningStrikePosition == null) {
-            return false;
-        }
-        return level.getGameTime() <= pendingLightningStrikeUntilGameTime
-                && pendingLightningStrikePosition.distanceToSqr(position) <= VAULT_LIGHTNING_VISUAL_SUPPRESSION_DISTANCE_SQR;
     }
 
     @SubscribeEvent
@@ -235,7 +201,6 @@ public final class LightningStrikeShockwaveManager {
             suppressImpactSoundPosition = null;
             suppressVaultLightningVisualPosition = null;
             pendingLightningStrikePosition = null;
-            projectileImpactStates.clear();
             return;
         }
 
@@ -253,16 +218,7 @@ public final class LightningStrikeShockwaveManager {
         while (projectileIterator.hasNext()) {
             ChainLightningAbility.ChainLightningProjectile projectile = projectileIterator.next();
             if (projectile == null || projectile.isRemoved() || !projectile.isAlive()) {
-                ProjectileImpactState state = projectile == null ? null : projectileImpactStates.remove(projectile);
-                if (state != null && !state.handledImpact && hasPendingLightningStrikeNear(state.lastPosition)) {
-                    spawn(state.lastPosition);
-                }
                 projectileIterator.remove();
-            } else {
-                ProjectileImpactState state = projectileImpactStates.get(projectile);
-                if (state != null) {
-                    state.lastPosition = projectile.position();
-                }
             }
         }
     }
@@ -286,15 +242,6 @@ public final class LightningStrikeShockwaveManager {
             Minecraft minecraft = Minecraft.getInstance();
             long gameTime = minecraft.level == null ? startGameTime : minecraft.level.getGameTime();
             return Math.max(0.0F, gameTime - startGameTime + partialTick);
-        }
-    }
-
-    private static final class ProjectileImpactState {
-        private Vec3 lastPosition;
-        private boolean handledImpact;
-
-        private ProjectileImpactState(Vec3 lastPosition) {
-            this.lastPosition = lastPosition;
         }
     }
 
