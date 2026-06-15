@@ -132,19 +132,19 @@ public final class LightningStrikeShockwaveManager {
         return suppressCastSoundPosition.distanceToSqr(x, y, z) <= CAST_SOUND_SUPPRESSION_DISTANCE_SQR;
     }
 
-    public static boolean shouldSuppressLightningImpactSound(double x, double y, double z) {
+    public static boolean handleLightningImpactSound(double x, double y, double z) {
         Minecraft minecraft = Minecraft.getInstance();
         ClientLevel level = minecraft.level;
         if (level == null || suppressImpactSoundPosition == null || lightningSoundMode() == ArcaneBeamConfig.LightningSoundMode.DEFAULT) {
-            return shouldSuppressPendingLightningImpactSound(x, y, z);
+            return spawnFromPendingLightningImpactSound(x, y, z);
         }
         if (level.getGameTime() > suppressImpactSoundUntilGameTime) {
-            return shouldSuppressPendingLightningImpactSound(x, y, z);
+            return spawnFromPendingLightningImpactSound(x, y, z);
         }
         return suppressImpactSoundPosition.distanceToSqr(x, y, z) <= IMPACT_SOUND_SUPPRESSION_DISTANCE_SQR;
     }
 
-    private static boolean shouldSuppressPendingLightningImpactSound(double x, double y, double z) {
+    private static boolean spawnFromPendingLightningImpactSound(double x, double y, double z) {
         Minecraft minecraft = Minecraft.getInstance();
         ClientLevel level = minecraft.level;
         if (level == null || pendingLightningStrikePosition == null || lightningSoundMode() == ArcaneBeamConfig.LightningSoundMode.DEFAULT) {
@@ -153,7 +153,12 @@ public final class LightningStrikeShockwaveManager {
         if (level.getGameTime() > pendingLightningStrikeUntilGameTime) {
             return false;
         }
-        return pendingLightningStrikePosition.distanceToSqr(x, y, z) <= VAULT_LIGHTNING_VISUAL_SUPPRESSION_DISTANCE_SQR;
+        if (pendingLightningStrikePosition.distanceToSqr(x, y, z) > VAULT_LIGHTNING_VISUAL_SUPPRESSION_DISTANCE_SQR) {
+            return false;
+        }
+
+        spawn(new Vec3(x, y, z));
+        return true;
     }
 
     public static boolean shouldReplaceProjectileRender() {

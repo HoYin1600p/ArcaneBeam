@@ -39,7 +39,7 @@ public abstract class SoundManagerMixin {
             return;
         }
         if (LIGHTNING_IMPACT.equals(sound.getLocation())
-                && LightningStrikeShockwaveManager.shouldSuppressLightningImpactSound(sound.getX(), sound.getY(), sound.getZ())) {
+                && LightningStrikeShockwaveManager.handleLightningImpactSound(sound.getX(), sound.getY(), sound.getZ())) {
             ci.cancel();
         }
     }
