@@ -9,6 +9,29 @@ Rules for future updates:
 - Keep the user-facing release text clean and ready to paste.
 - If Codex needs internal notes for a release, put them in a clearly separate `Internal Notes` subsection.
 
+## 0.1.8
+
+### Release Copy
+
+```markdown
+## 0.1.8
+
+- Added a configurable Lightning Strike visual replacement inspired by a seismic charge shockwave
+- Added a new Lightning Strike tab to the config screen with profiles, shader compatibility, color controls, visual tuning, and sound controls
+- Added a custom Lightning Strike projectile render styled like a small seismic charge
+- Added configurable Lightning Strike shockwave elements, including the expanding ring, center sphere, upper/lower cones, star-like spots, ripple settings, opacity, size, color, and lifetime
+- Added Lightning Strike sound modes for Default, Seismic Charge, Resource Pack 1, and Resource Pack 2
+- Added separate Lightning Strike cast and impact sound replacement support, with volume control
+- Included bundled Seismic Charge cast and impact sounds
+- Set the default Lightning Strike settings to the tested `Main` profile values
+- Improved Lightning Strike shader compatibility for both the shockwave and projectile render
+- Improved Lightning Strike impact reliability by using the Vault impact sound as a fallback trigger when the client projectile hit hook misses
+- Fixed Lightning Strike replacement effects so projectile expiration and non-target impacts do not trigger the shockwave or impact sound
+- Fixed Lightning Strike color picker layout and color update behavior
+- Improved Arcane activation and release handling so the custom beam and sound track the key press more reliably
+- Hardened the optional client-side Sophisticated Storage limited-barrel front-face interaction helper
+```
+
 ## 0.1.7
 
 ### Release Copy
