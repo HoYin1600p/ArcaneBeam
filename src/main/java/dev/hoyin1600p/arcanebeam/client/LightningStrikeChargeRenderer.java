@@ -23,8 +23,8 @@ public class LightningStrikeChargeRenderer extends RenderType {
     private static final ResourceLocation WHITE_TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/entity/white.png");
     private static final RenderType BODY = createBodyRenderType();
     private static final RenderType GLOW = createGlowRenderType();
-    private static final RenderType SHADER_BODY = createShaderBodyRenderType();
-    private static final RenderType SHADER_GLOW = createShaderGlowRenderType();
+    private static final RenderType SHADER_BODY = RenderType.entityCutoutNoCull(WHITE_TEXTURE);
+    private static final RenderType SHADER_GLOW = RenderType.entityTranslucent(WHITE_TEXTURE);
     private static final int FULLBRIGHT = 15728880;
     private static final int SIDES = 16;
 
@@ -247,25 +247,4 @@ public class LightningStrikeChargeRenderer extends RenderType {
         return RenderType.create("arcanebeam_lightning_charge_glow", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.QUADS, 512, false, true, state);
     }
 
-    private static RenderType createShaderBodyRenderType() {
-        CompositeState state = CompositeState.builder()
-                .setShaderState(RENDERTYPE_BEACON_BEAM_SHADER)
-                .setTextureState(new TextureStateShard(WHITE_TEXTURE, false, false))
-                .setTransparencyState(NO_TRANSPARENCY)
-                .setCullState(NO_CULL)
-                .setWriteMaskState(COLOR_DEPTH_WRITE)
-                .createCompositeState(false);
-        return RenderType.create("arcanebeam_lightning_charge_body_shader", DefaultVertexFormat.BLOCK, VertexFormat.Mode.QUADS, 512, false, false, state);
-    }
-
-    private static RenderType createShaderGlowRenderType() {
-        CompositeState state = CompositeState.builder()
-                .setShaderState(RENDERTYPE_BEACON_BEAM_SHADER)
-                .setTextureState(new TextureStateShard(WHITE_TEXTURE, false, false))
-                .setTransparencyState(LIGHTNING_TRANSPARENCY)
-                .setCullState(NO_CULL)
-                .setWriteMaskState(COLOR_DEPTH_WRITE)
-                .createCompositeState(false);
-        return RenderType.create("arcanebeam_lightning_charge_glow_shader", DefaultVertexFormat.BLOCK, VertexFormat.Mode.QUADS, 512, false, true, state);
-    }
 }
