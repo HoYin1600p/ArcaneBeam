@@ -43,5 +43,23 @@
         "stream": true
       }
     ]
+  },
+  "lightning_seismic_charge_cast": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/lightning_seismic_charge_cast",
+        "stream": false
+      }
+    ]
+  },
+  "lightning_seismic_charge_impact": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/lightning_seismic_charge_impact",
+        "stream": false
+      }
+    ]
   }
 }

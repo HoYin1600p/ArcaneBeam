@@ -14,6 +14,12 @@ public final class ArcaneBeamSounds {
     public static final RegistryObject<SoundEvent> ARCANE_2_LOOP = register("arcane_2_loop");
     public static final RegistryObject<SoundEvent> RAIL_1 = register("rail_1");
     public static final RegistryObject<SoundEvent> RAIL_2 = register("rail_2");
+    public static final RegistryObject<SoundEvent> LIGHTNING_SEISMIC_CHARGE_CAST = register("lightning_seismic_charge_cast");
+    public static final RegistryObject<SoundEvent> LIGHTNING_SEISMIC_CHARGE_IMPACT = register("lightning_seismic_charge_impact");
+    public static final RegistryObject<SoundEvent> LIGHTNING_RESOURCEPACK_1_CAST = register("lightning_resourcepack_1_cast");
+    public static final RegistryObject<SoundEvent> LIGHTNING_RESOURCEPACK_1_IMPACT = register("lightning_resourcepack_1_impact");
+    public static final RegistryObject<SoundEvent> LIGHTNING_RESOURCEPACK_2_CAST = register("lightning_resourcepack_2_cast");
+    public static final RegistryObject<SoundEvent> LIGHTNING_RESOURCEPACK_2_IMPACT = register("lightning_resourcepack_2_impact");
 
     private ArcaneBeamSounds() {
     }

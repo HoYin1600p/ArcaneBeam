@@ -49,13 +49,19 @@ public final class ArcaneBeamConfig {
         if (INSTANCE.rail == null) {
             INSTANCE.rail = defaultRailSettings();
         }
+        if (INSTANCE.lightningStrike == null) {
+            INSTANCE.lightningStrike = defaultLightningStrikeSettings();
+        }
         validateShaderCompatibility();
         validateBeamSettings(INSTANCE.arcane, false);
         validateBeamSettings(INSTANCE.rail, true);
+        validateLightningStrikeSettings(INSTANCE.lightningStrike);
         INSTANCE.arcaneProfiles = validateProfiles(INSTANCE.arcaneProfiles, INSTANCE.arcane, false);
         INSTANCE.railProfiles = validateProfiles(INSTANCE.railProfiles, INSTANCE.rail, true);
+        INSTANCE.lightningStrikeProfiles = validateLightningProfiles(INSTANCE.lightningStrikeProfiles, INSTANCE.lightningStrike);
         INSTANCE.selectedArcaneProfile = validateSelectedProfile(INSTANCE.selectedArcaneProfile, INSTANCE.arcaneProfiles);
         INSTANCE.selectedRailProfile = validateSelectedProfile(INSTANCE.selectedRailProfile, INSTANCE.railProfiles);
+        INSTANCE.selectedLightningStrikeProfile = validateSelectedLightningProfile(INSTANCE.selectedLightningStrikeProfile, INSTANCE.lightningStrikeProfiles);
         activateSelectedProfiles();
     }
 
@@ -105,7 +111,36 @@ public final class ArcaneBeamConfig {
         return validated;
     }
 
+    private static LinkedHashMap<String, LightningStrikeSettings> validateLightningProfiles(Map<String, LightningStrikeSettings> profiles, LightningStrikeSettings migrationSettings) {
+        LinkedHashMap<String, LightningStrikeSettings> validated = new LinkedHashMap<>();
+        if (profiles != null) {
+            for (Map.Entry<String, LightningStrikeSettings> entry : profiles.entrySet()) {
+                String name = normalizeProfileName(entry.getKey());
+                if (name.isEmpty()) {
+                    continue;
+                }
+                LightningStrikeSettings settings = entry.getValue() == null ? defaultLightningStrikeSettings() : entry.getValue();
+                validateLightningStrikeSettings(settings);
+                validated.put(uniqueProfileName(validated, name), settings);
+            }
+        }
+        if (validated.isEmpty()) {
+            LightningStrikeSettings settings = copyOf(migrationSettings == null ? defaultLightningStrikeSettings() : migrationSettings);
+            validateLightningStrikeSettings(settings);
+            validated.put(DEFAULT_PROFILE, settings);
+        }
+        return validated;
+    }
+
     private static String validateSelectedProfile(String selectedProfile, LinkedHashMap<String, BeamSettings> profiles) {
+        String normalized = normalizeProfileName(selectedProfile);
+        if (!normalized.isEmpty() && profiles.containsKey(normalized)) {
+            return normalized;
+        }
+        return profiles.keySet().iterator().next();
+    }
+
+    private static String validateSelectedLightningProfile(String selectedProfile, LinkedHashMap<String, LightningStrikeSettings> profiles) {
         String normalized = normalizeProfileName(selectedProfile);
         if (!normalized.isEmpty() && profiles.containsKey(normalized)) {
             return normalized;
@@ -116,6 +151,7 @@ public final class ArcaneBeamConfig {
     private static void activateSelectedProfiles() {
         INSTANCE.arcane = INSTANCE.arcaneProfiles.get(INSTANCE.selectedArcaneProfile);
         INSTANCE.rail = INSTANCE.railProfiles.get(INSTANCE.selectedRailProfile);
+        INSTANCE.lightningStrike = INSTANCE.lightningStrikeProfiles.get(INSTANCE.selectedLightningStrikeProfile);
         INSTANCE.shaderCompatibility = INSTANCE.arcane.shaderCompatibility;
     }
 
@@ -125,6 +161,9 @@ public final class ArcaneBeamConfig {
         }
         if (INSTANCE.railProfiles != null && INSTANCE.selectedRailProfile != null && INSTANCE.rail != null) {
             INSTANCE.railProfiles.put(INSTANCE.selectedRailProfile, INSTANCE.rail);
+        }
+        if (INSTANCE.lightningStrikeProfiles != null && INSTANCE.selectedLightningStrikeProfile != null && INSTANCE.lightningStrike != null) {
+            INSTANCE.lightningStrikeProfiles.put(INSTANCE.selectedLightningStrikeProfile, INSTANCE.lightningStrike);
         }
     }
 
@@ -216,6 +255,48 @@ public final class ArcaneBeamConfig {
         }
     }
 
+    private static void validateLightningStrikeSettings(LightningStrikeSettings settings) {
+        settings.startRadius = clampFloat(settings.startRadius <= 0.0F ? 1.5F : settings.startRadius, 0.1F, 32.0F);
+        settings.endRadius = clampFloat(settings.endRadius <= 0.0F ? 6.0F : settings.endRadius, settings.startRadius, 64.0F);
+        settings.lifetimeTicks = clampInt(settings.lifetimeTicks <= 0 ? 30 : settings.lifetimeTicks, 1, 200);
+        settings.ringThickness = clampFloat(settings.ringThickness <= 0.0F ? 0.18F : settings.ringThickness, 0.02F, 4.0F);
+        settings.ringSideCount = clampInt(settings.ringSideCount <= 0 ? 16 : settings.ringSideCount, 8, 96);
+        settings.renderYOffset = clampFloat(settings.renderYOffset, -4.0F, 8.0F);
+        if (settings.ringColor == 0) {
+            settings.ringColor = 0xBFEFFF;
+        }
+        if (settings.centerFlashColor == 0) {
+            settings.centerFlashColor = 0xFFFFFF;
+        }
+        settings.alpha = clampFloat(settings.alpha <= 0.0F ? 0.95F : settings.alpha, 0.0F, 1.0F);
+        if (!settings.shaderCompatibilityMigrated) {
+            ShaderCompatibility inherited = ShaderCompatibility.fromId(INSTANCE.shaderCompatibility);
+            if (settings.shaderCompatibility == null || ShaderCompatibility.fromId(settings.shaderCompatibility) == null
+                    || inherited == ShaderCompatibility.ON && ShaderCompatibility.OFF.id.equals(settings.shaderCompatibility)) {
+                settings.shaderCompatibility = inherited == null ? ShaderCompatibility.OFF.id : inherited.id;
+            }
+            settings.shaderCompatibilityMigrated = true;
+        }
+        if (settings.shaderCompatibility == null || ShaderCompatibility.fromId(settings.shaderCompatibility) == null) {
+            settings.shaderCompatibility = ShaderCompatibility.OFF.id;
+        }
+        if (settings.soundMode == null || LightningSoundMode.fromId(settings.soundMode) == null) {
+            settings.soundMode = LightningSoundMode.DEFAULT.id;
+        }
+        settings.soundVolume = clampFloat(settings.soundVolume, 0.0F, 2.0F);
+        settings.secondaryRippleCount = clampInt(settings.secondaryRippleCount, 0, 4);
+        settings.secondaryRippleSize = clampFloat(settings.secondaryRippleSize <= 0.0F ? 0.75F : settings.secondaryRippleSize, 0.1F, 1.5F);
+        settings.secondaryRippleDelayTicks = clampInt(settings.secondaryRippleDelayTicks < 0 ? 4 : settings.secondaryRippleDelayTicks, 0, 40);
+    }
+
+    private static int clampInt(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private static float clampFloat(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
     public static void save() {
         syncActiveProfiles();
         try {
@@ -233,6 +314,14 @@ public final class ArcaneBeamConfig {
 
     public static String selectedProfileName(boolean rail) {
         return rail ? INSTANCE.selectedRailProfile : INSTANCE.selectedArcaneProfile;
+    }
+
+    public static List<String> lightningProfileNames() {
+        return new ArrayList<>(INSTANCE.lightningStrikeProfiles.keySet());
+    }
+
+    public static String selectedLightningProfileName() {
+        return INSTANCE.selectedLightningStrikeProfile;
     }
 
     public static void selectProfile(boolean rail, String profileName) {
@@ -276,6 +365,33 @@ public final class ArcaneBeamConfig {
         return profileName;
     }
 
+    public static void selectLightningProfile(String profileName) {
+        String normalized = normalizeProfileName(profileName);
+        if (normalized.isEmpty() || !INSTANCE.lightningStrikeProfiles.containsKey(normalized)) {
+            return;
+        }
+        syncActiveProfiles();
+        INSTANCE.selectedLightningStrikeProfile = normalized;
+        INSTANCE.lightningStrike = INSTANCE.lightningStrikeProfiles.get(normalized);
+        save();
+    }
+
+    public static String addLightningProfile(String requestedName) {
+        String baseName = normalizeProfileName(requestedName);
+        if (baseName.isEmpty()) {
+            baseName = "Profile";
+        }
+        syncActiveProfiles();
+        String profileName = uniqueProfileName(INSTANCE.lightningStrikeProfiles, baseName);
+        LightningStrikeSettings settings = copyOf(INSTANCE.lightningStrike);
+        validateLightningStrikeSettings(settings);
+        INSTANCE.lightningStrikeProfiles.put(profileName, settings);
+        INSTANCE.selectedLightningStrikeProfile = profileName;
+        INSTANCE.lightningStrike = settings;
+        save();
+        return profileName;
+    }
+
     private static LinkedHashMap<String, BeamSettings> profileMap(boolean rail) {
         return rail ? INSTANCE.railProfiles : INSTANCE.arcaneProfiles;
     }
@@ -287,7 +403,7 @@ public final class ArcaneBeamConfig {
         return profileName.replaceAll("[\\r\\n\\t]+", " ").trim();
     }
 
-    private static String uniqueProfileName(Map<String, BeamSettings> profiles, String baseName) {
+    private static String uniqueProfileName(Map<String, ?> profiles, String baseName) {
         if (!profiles.containsKey(baseName)) {
             return baseName;
         }
@@ -341,14 +457,40 @@ public final class ArcaneBeamConfig {
         return copy;
     }
 
+    private static LightningStrikeSettings copyOf(LightningStrikeSettings source) {
+        LightningStrikeSettings copy = new LightningStrikeSettings();
+        copy.enabled = source.enabled;
+        copy.startRadius = source.startRadius;
+        copy.endRadius = source.endRadius;
+        copy.lifetimeTicks = source.lifetimeTicks;
+        copy.ringThickness = source.ringThickness;
+        copy.ringSideCount = source.ringSideCount;
+        copy.renderYOffset = source.renderYOffset;
+        copy.ringColor = source.ringColor;
+        copy.centerFlashColor = source.centerFlashColor;
+        copy.alpha = source.alpha;
+        copy.fullbright = source.fullbright;
+        copy.shaderCompatibility = source.shaderCompatibility;
+        copy.shaderCompatibilityMigrated = source.shaderCompatibilityMigrated;
+        copy.secondaryRippleCount = source.secondaryRippleCount;
+        copy.secondaryRippleSize = source.secondaryRippleSize;
+        copy.secondaryRippleDelayTicks = source.secondaryRippleDelayTicks;
+        copy.soundMode = source.soundMode;
+        copy.soundVolume = source.soundVolume;
+        return copy;
+    }
+
     public static final class Config {
         public String shaderCompatibility;
         public String selectedArcaneProfile = DEFAULT_PROFILE;
         public String selectedRailProfile = DEFAULT_PROFILE;
+        public String selectedLightningStrikeProfile = DEFAULT_PROFILE;
         public BeamSettings arcane = defaultArcaneSettings();
         public BeamSettings rail = defaultRailSettings();
+        public LightningStrikeSettings lightningStrike = defaultLightningStrikeSettings();
         public LinkedHashMap<String, BeamSettings> arcaneProfiles;
         public LinkedHashMap<String, BeamSettings> railProfiles;
+        public LinkedHashMap<String, LightningStrikeSettings> lightningStrikeProfiles;
     }
 
     public static final class BeamSettings {
@@ -439,6 +581,55 @@ public final class ArcaneBeamConfig {
             for (SoundChoice choice : values()) {
                 if (choice.id.equals(id)) {
                     return choice;
+                }
+            }
+            return null;
+        }
+    }
+
+    public static final class LightningStrikeSettings {
+        public boolean enabled = true;
+        public float startRadius = 1.5F;
+        public float endRadius = 6.0F;
+        public int lifetimeTicks = 30;
+        public float ringThickness = 0.18F;
+        public int ringSideCount = 16;
+        public float renderYOffset = 1.0F;
+        public int ringColor = 0xBFEFFF;
+        public int centerFlashColor = 0xFFFFFF;
+        public float alpha = 0.95F;
+        public boolean fullbright = true;
+        public String shaderCompatibility = ShaderCompatibility.OFF.id;
+        public boolean shaderCompatibilityMigrated = false;
+        public int secondaryRippleCount = 0;
+        public float secondaryRippleSize = 0.75F;
+        public int secondaryRippleDelayTicks = 4;
+        public String soundMode = LightningSoundMode.DEFAULT.id;
+        public float soundVolume = 1.00F;
+    }
+
+    private static LightningStrikeSettings defaultLightningStrikeSettings() {
+        return new LightningStrikeSettings();
+    }
+
+    public enum LightningSoundMode {
+        DEFAULT("default", "Default"),
+        SEISMIC_CHARGE("seismic_charge", "Seismic Charge"),
+        RESOURCEPACK_1("resourcepack_1", "Resourcepack1"),
+        RESOURCEPACK_2("resourcepack_2", "Resourcepack2");
+
+        public final String id;
+        public final String label;
+
+        LightningSoundMode(String id, String label) {
+            this.id = id;
+            this.label = label;
+        }
+
+        public static LightningSoundMode fromId(String id) {
+            for (LightningSoundMode mode : values()) {
+                if (mode.id.equals(id)) {
+                    return mode;
                 }
             }
             return null;

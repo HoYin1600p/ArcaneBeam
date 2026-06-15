@@ -42,6 +42,7 @@ public final class ArcaneBeamManager {
     private static final double MIN_LOOK_VECTOR_LENGTH_SQR = 1.0E-6D;
     private static final float FADE_OUT_GRACE_TICKS = 2.0F;
     private static final int LOCAL_ARCANE_LATCH_TICKS = 12;
+    private static final int LOCAL_ARCANE_PRIME_TICKS = 20;
     private static final int LOCAL_ARCANE_POST_DEACTIVATE_IGNORE_TICKS = 8;
     private static final int REMOTE_ACTIVITY_GRACE_TICKS = 4;
     private static final ResourceLocation ARCANE = new ResourceLocation("the_vault", "arcane");
@@ -55,6 +56,7 @@ public final class ArcaneBeamManager {
     private static long localArcaneFirstSeenGameTime = Long.MIN_VALUE;
     private static long lastLocalArcaneSignalGameTime = Long.MIN_VALUE;
     private static long lastLocalArcaneDeactivateGameTime = Long.MIN_VALUE;
+    private static long localArcanePrimedUntilGameTime = Long.MIN_VALUE;
     private static long localRailFirstSeenGameTime = Long.MIN_VALUE;
     private static long localRailLatchedUntilGameTime = Long.MIN_VALUE;
 
@@ -110,6 +112,7 @@ public final class ArcaneBeamManager {
             localArcaneFirstSeenGameTime = Long.MIN_VALUE;
             lastLocalArcaneSignalGameTime = Long.MIN_VALUE;
             lastLocalArcaneDeactivateGameTime = Long.MIN_VALUE;
+            localArcanePrimedUntilGameTime = Long.MIN_VALUE;
             localRailFirstSeenGameTime = Long.MIN_VALUE;
             localRailLatchedUntilGameTime = Long.MIN_VALUE;
             lastArcaneSeenGameTime = Long.MIN_VALUE;
@@ -121,7 +124,7 @@ public final class ArcaneBeamManager {
             UUID localPlayerId = minecraft.player.getUUID();
             syncLocalArcaneKeyState(localPlayerId, gameTime);
 
-            if (isLocalArcaneMaintained(gameTime)) {
+            if (isLocalArcaneMaintained(gameTime) || isLocalArcanePrimed(gameTime)) {
                 if (localArcaneFirstSeenGameTime == Long.MIN_VALUE) {
                     localArcaneFirstSeenGameTime = gameTime;
                 }
@@ -218,9 +221,18 @@ public final class ArcaneBeamManager {
         long gameTime = minecraft.level.getGameTime();
         if (kind == BeamKind.ARCANE) {
             if (!isLocalArcaneCastKeyHeld()) {
-                lastLocalArcaneSignalGameTime = Long.MIN_VALUE;
-                lastLocalArcaneDeactivateGameTime = gameTime;
-                forceLocalArcaneFadeOutStart(minecraft.player.getUUID(), gameTime);
+                if (localArcanePacketActive || isLocalArcanePrimed(gameTime)) {
+                    if (localArcaneFirstSeenGameTime == Long.MIN_VALUE) {
+                        localArcaneFirstSeenGameTime = gameTime;
+                    }
+                    lastLocalArcaneSignalGameTime = gameTime;
+                    lastArcaneSeenGameTime = gameTime;
+                    refreshLocalArcaneBeam(minecraft.player.getUUID(), gameTime);
+                } else {
+                    lastLocalArcaneSignalGameTime = Long.MIN_VALUE;
+                    lastLocalArcaneDeactivateGameTime = gameTime;
+                    forceLocalArcaneFadeOutStart(minecraft.player.getUUID(), gameTime);
+                }
                 return true;
             }
             if (!localArcanePacketActive && isWithinRecentWindow(lastLocalArcaneDeactivateGameTime, LOCAL_ARCANE_POST_DEACTIVATE_IGNORE_TICKS)) {
@@ -290,15 +302,18 @@ public final class ArcaneBeamManager {
                 localArcanePacketActive = false;
                 lastLocalArcaneSignalGameTime = Long.MIN_VALUE;
                 lastLocalArcaneDeactivateGameTime = gameTime;
+                localArcanePrimedUntilGameTime = Long.MIN_VALUE;
                 forceLocalArcaneFadeOutStart(minecraft.player.getUUID(), gameTime);
             } else {
-                if (!localArcaneKeyHeld) {
+                if (!isLocalArcaneCastKeyHeld() && !isLocalArcanePrimed(gameTime)) {
                     return;
                 }
-                if (!localArcanePacketActive || localArcaneFirstSeenGameTime == Long.MIN_VALUE) {
+                if (localArcaneFirstSeenGameTime == Long.MIN_VALUE) {
                     localArcaneFirstSeenGameTime = gameTime;
                 }
                 localArcanePacketActive = true;
+                localArcanePrimedUntilGameTime = Long.MIN_VALUE;
+                lastLocalArcaneSignalGameTime = gameTime;
                 lastLocalArcaneDeactivateGameTime = Long.MIN_VALUE;
                 refreshLocalArcaneBeam(minecraft.player.getUUID(), gameTime);
                 lastArcaneSeenGameTime = gameTime;
@@ -335,18 +350,35 @@ public final class ArcaneBeamManager {
 
         localArcaneKeyHeld = heldNow;
         if (heldNow) {
-            if (localArcaneFirstSeenGameTime == Long.MIN_VALUE) {
-                localArcaneFirstSeenGameTime = gameTime;
-            }
-            lastArcaneSeenGameTime = gameTime;
-            refreshLocalArcaneBeam(casterId, gameTime);
+            primeLocalArcane(casterId, gameTime);
             return;
         }
 
+        stopLocalArcaneImmediately(casterId, gameTime);
+    }
+
+    private static void primeLocalArcane(UUID casterId, long gameTime) {
+        if (localArcaneFirstSeenGameTime == Long.MIN_VALUE) {
+            localArcaneFirstSeenGameTime = gameTime;
+        }
+        // Keep the optimistic local beam alive long enough for the server ability packet or Vault particles to confirm it.
+        localArcanePrimedUntilGameTime = gameTime + LOCAL_ARCANE_PRIME_TICKS;
+        lastArcaneSeenGameTime = gameTime;
+        refreshLocalArcaneBeam(casterId, gameTime);
+    }
+
+    private static void stopLocalArcaneImmediately(UUID casterId, long gameTime) {
         localArcanePacketActive = false;
+        localArcaneFirstSeenGameTime = Long.MIN_VALUE;
         lastLocalArcaneSignalGameTime = Long.MIN_VALUE;
         lastLocalArcaneDeactivateGameTime = gameTime;
-        forceLocalArcaneFadeOutStart(casterId, gameTime);
+        localArcanePrimedUntilGameTime = Long.MIN_VALUE;
+
+        ActiveBeam existing = activeBeams.get(casterId);
+        if (existing != null && existing.kind == BeamKind.ARCANE) {
+            activeBeams.remove(casterId);
+            smoothedStarts.remove(casterId);
+        }
     }
 
     private static boolean isLocalArcaneCastKeyHeld() {
@@ -430,7 +462,7 @@ public final class ArcaneBeamManager {
         Minecraft minecraft = Minecraft.getInstance();
         ClientLevel level = minecraft.level;
         Screen screen = minecraft.screen;
-        if (level == null || !(screen instanceof ArcaneBeamConfigScreen configScreen) || minecraft.player == null) {
+        if (level == null || !(screen instanceof ArcaneBeamConfigScreen configScreen) || configScreen.lightningSelected() || minecraft.player == null) {
             return null;
         }
 
@@ -465,8 +497,22 @@ public final class ArcaneBeamManager {
     }
 
     public static boolean shouldSuppressArcaneCastSound() {
-        return getLocalActiveBeam(BeamKind.ARCANE) != null
-                && soundChoice(ArcaneBeamConfig.INSTANCE.arcane.sound) != ArcaneBeamConfig.SoundChoice.DEFAULT;
+        if (soundChoice(ArcaneBeamConfig.INSTANCE.arcane.sound) == ArcaneBeamConfig.SoundChoice.DEFAULT) {
+            return false;
+        }
+
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level != null && minecraft.player != null && isLocalArcaneCastKeyHeld()) {
+            localArcaneKeyHeld = true;
+            primeLocalArcane(minecraft.player.getUUID(), minecraft.level.getGameTime());
+            return true;
+        }
+
+        if (isWithinRecentWindow(lastLocalArcaneDeactivateGameTime, LOCAL_ARCANE_POST_DEACTIVATE_IGNORE_TICKS)) {
+            return true;
+        }
+
+        return getLocalActiveBeam(BeamKind.ARCANE) != null;
     }
 
     public static boolean shouldSuppressRailCastSound() {
@@ -491,6 +537,10 @@ public final class ArcaneBeamManager {
     private static boolean isLocalArcaneMaintained(long gameTime) {
         return gameTime - lastLocalArcaneSignalGameTime >= 0L
                 && gameTime - lastLocalArcaneSignalGameTime <= LOCAL_ARCANE_LATCH_TICKS;
+    }
+
+    private static boolean isLocalArcanePrimed(long gameTime) {
+        return gameTime <= localArcanePrimedUntilGameTime;
     }
 
     private static boolean isLocalRailLatched(long gameTime) {

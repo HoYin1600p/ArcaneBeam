@@ -6,11 +6,13 @@
   "refmap": "arcanebeam.refmap.json",
   "client": [
     "AbilityActivityMessageMixin",
+    "ChainLightningProjectileMixin",
     "ClientLevelMixin",
+    "LightningArrowRendererMixin",
     "SoundManagerMixin",
-    "SophisticatedStorageLimitedBarrelClientInteractionMixin",
     "SophisticatedStorageBarrelBakedModelBaseMixin",
-    "SophisticatedStorageDisplayItemRendererMixin"
+    "SophisticatedStorageDisplayItemRendererMixin",
+    "SophisticatedStorageLimitedBarrelClientInteractionMixin"
   ],
   "injectors": {
     "defaultRequire": 1

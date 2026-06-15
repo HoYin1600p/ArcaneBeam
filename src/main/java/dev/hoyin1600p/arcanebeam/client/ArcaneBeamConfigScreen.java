@@ -10,6 +10,7 @@ import net.minecraft.network.chat.TextComponent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 public class ArcaneBeamConfigScreen extends Screen {
     private static final int MIN_LAYOUT_WIDTH = 560;
@@ -32,6 +33,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     private final List<EditBox> colorBoxes = new ArrayList<>();
     private final List<EditBox> glowColorBoxes = new ArrayList<>();
     private final List<EditBox> originBoxes = new ArrayList<>();
+    private final List<Button> originLabelButtons = new ArrayList<>();
     private EditBox profileNameBox;
     private EditBox soundVolumeBox;
     private EditBox fadeInTicksBox;
@@ -42,14 +44,32 @@ public class ArcaneBeamConfigScreen extends Screen {
     private SettingSlider glowOpacitySlider;
     private SettingSlider colorShiftSlider;
     private SettingSlider glowRotationSlider;
+    private SettingSlider lightningStartRadiusSlider;
+    private SettingSlider lightningEndRadiusSlider;
+    private SettingSlider lightningThicknessSlider;
+    private SettingSlider lightningAlphaSlider;
+    private SettingSlider lightningSecondarySizeSlider;
     private Button soundButton;
     private Button handButton;
     private Button shaderCompatibilityButton;
     private Button fadeInModeButton;
     private Button fadeOutModeButton;
+    private Button profileAddButton;
     private Button profileDropdownButton;
+    private Button lightningEnabledButton;
+    private Button lightningShaderCompatibilityButton;
+    private Button lightningFullbrightButton;
+    private Button lightningSoundButton;
+    private EditBox lightningLifetimeBox;
+    private EditBox lightningSideCountBox;
+    private EditBox lightningRingColorBox;
+    private EditBox lightningFlashColorBox;
+    private EditBox lightningSecondaryCountBox;
+    private EditBox lightningSecondaryDelayBox;
+    private EditBox lightningSoundVolumeBox;
     private boolean profileDropdownOpen;
     private boolean railSelected;
+    private boolean lightningSelected;
     private boolean draggingPalette;
     private boolean draggingBrightness;
     private int brightnessDragBaseColor;
@@ -69,25 +89,40 @@ public class ArcaneBeamConfigScreen extends Screen {
         return railSelected ? ArcaneBeamManager.BeamKind.RAIL : ArcaneBeamManager.BeamKind.ARCANE;
     }
 
+    public boolean lightningSelected() {
+        return lightningSelected;
+    }
+
     @Override
     protected void init() {
         updateLayoutScale();
         colorBoxes.clear();
         glowColorBoxes.clear();
         originBoxes.clear();
+        originLabelButtons.clear();
         profileDropdownOpen = false;
         paletteX = layoutWidth / 2 - PALETTE_WIDTH / 2;
         paletteY = 72;
 
-        this.addRenderableWidget(new Button(layoutWidth / 2 - 92, 36, 90, 20, new TextComponent("Arcane"), button -> {
+        this.addRenderableWidget(new Button(layoutWidth / 2 - 139, 36, 90, 20, new TextComponent("Arcane"), button -> {
             railSelected = false;
+            lightningSelected = false;
             selectedSlot = 0;
             glowColorsSelected = false;
             profileDropdownOpen = false;
             refreshControls();
         }));
-        this.addRenderableWidget(new Button(layoutWidth / 2 + 2, 36, 90, 20, new TextComponent("Rail"), button -> {
+        this.addRenderableWidget(new Button(layoutWidth / 2 - 45, 36, 90, 20, new TextComponent("Rail"), button -> {
             railSelected = true;
+            lightningSelected = false;
+            selectedSlot = 0;
+            glowColorsSelected = false;
+            profileDropdownOpen = false;
+            refreshControls();
+        }));
+        this.addRenderableWidget(new Button(layoutWidth / 2 + 49, 36, 112, 20, new TextComponent("Lightning Strike"), button -> {
+            railSelected = false;
+            lightningSelected = true;
             selectedSlot = 0;
             glowColorsSelected = false;
             profileDropdownOpen = false;
@@ -99,7 +134,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         profileNameBox.setMaxLength(24);
         profileNameBox.setFilter(value -> value == null || !value.contains("\n") && !value.contains("\r") && !value.contains("\t"));
         this.addRenderableWidget(profileNameBox);
-        this.addRenderableWidget(new Button(profileX + 88, PROFILE_PANEL_Y + 18, 44, 20, new TextComponent("Add"), button -> addProfile()));
+        profileAddButton = this.addRenderableWidget(new Button(profileX + 88, PROFILE_PANEL_Y + 18, 44, 20, new TextComponent("Add"), button -> addProfile()));
         profileDropdownButton = this.addRenderableWidget(new Button(profileX, PROFILE_PANEL_Y + 42, PROFILE_PANEL_WIDTH, 20, TextComponent.EMPTY, button -> profileDropdownOpen = !profileDropdownOpen));
 
         int boxY = beamRowY();
@@ -195,8 +230,61 @@ public class ArcaneBeamConfigScreen extends Screen {
         addOriginBox(sliderX + 104, originY, "Y", 1);
         addOriginBox(sliderX + 208, originY, "Z", 2);
 
+        addLightningControls(sliderX, sliderY);
+
         this.addRenderableWidget(new Button(layoutWidth / 2 - 45, layoutHeight - 32, 90, 20, new TextComponent("Done"), button -> onClose()));
         refreshControls();
+    }
+
+    private void addLightningControls(int x, int y) {
+        int lightningColorY = beamRowY();
+        lightningRingColorBox = addLightningColorBox(slotStartX(0), lightningColorY, "Ring Color", this::updateLightningRingColorFromText);
+        lightningFlashColorBox = addLightningColorBox(slotStartX(1), lightningColorY, "Flash Color", this::updateLightningFlashColorFromText);
+
+        lightningEnabledButton = this.addRenderableWidget(new Button(x, y, 150, 20, TextComponent.EMPTY, button -> {
+            lightningSettings().enabled = !lightningSettings().enabled;
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        lightningShaderCompatibilityButton = this.addRenderableWidget(new Button(x + 158, y, 150, 20, TextComponent.EMPTY, button -> {
+            ArcaneBeamConfig.ShaderCompatibility current = lightningShaderCompatibility();
+            lightningSettings().shaderCompatibility = current == ArcaneBeamConfig.ShaderCompatibility.ON
+                    ? ArcaneBeamConfig.ShaderCompatibility.OFF.id
+                    : ArcaneBeamConfig.ShaderCompatibility.ON.id;
+            lightningSettings().shaderCompatibilityMigrated = true;
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        lightningStartRadiusSlider = new SettingSlider(x, y + 24, 308, 20, "Start Radius", 0.1D, 12.0D, () -> lightningSettings().startRadius, value -> {
+            lightningSettings().startRadius = (float) value;
+            lightningSettings().endRadius = Math.max(lightningSettings().endRadius, lightningSettings().startRadius);
+        });
+        lightningEndRadiusSlider = new SettingSlider(x, y + 48, 308, 20, "End Radius", 0.5D, 24.0D, () -> lightningSettings().endRadius, value -> lightningSettings().endRadius = Math.max((float) value, lightningSettings().startRadius));
+        lightningThicknessSlider = new SettingSlider(x, y + 72, 308, 20, "Ring Thickness", 0.02D, 1.0D, () -> lightningSettings().ringThickness, value -> lightningSettings().ringThickness = (float) value);
+        lightningAlphaSlider = new SettingSlider(x, y + 96, 308, 20, "Alpha", 0.0D, 1.0D, () -> lightningSettings().alpha, value -> lightningSettings().alpha = (float) value);
+        lightningSecondarySizeSlider = new SettingSlider(x, y + 120, 308, 20, "Secondary Size", 0.1D, 1.5D, () -> lightningSettings().secondaryRippleSize, value -> lightningSettings().secondaryRippleSize = (float) value);
+        this.addRenderableWidget(lightningStartRadiusSlider);
+        this.addRenderableWidget(lightningEndRadiusSlider);
+        this.addRenderableWidget(lightningThicknessSlider);
+        this.addRenderableWidget(lightningAlphaSlider);
+        this.addRenderableWidget(lightningSecondarySizeSlider);
+
+        lightningFullbrightButton = this.addRenderableWidget(new Button(x, y + 144, 150, 20, TextComponent.EMPTY, button -> {
+            lightningSettings().fullbright = !lightningSettings().fullbright;
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        lightningSoundButton = this.addRenderableWidget(new Button(x + 158, y + 144, 150, 20, TextComponent.EMPTY, button -> {
+            cycleLightningSound();
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+
+        lightningLifetimeBox = addLightningNumberBox(x, y + 172, 54, 3, "Lifetime", "[0-9]{0,3}", this::updateLightningLifetimeFromText);
+        lightningSideCountBox = addLightningNumberBox(x + 104, y + 172, 54, 2, "Sides", "[0-9]{0,2}", this::updateLightningSideCountFromText);
+        lightningSecondaryCountBox = addLightningNumberBox(x + 208, y + 172, 54, 1, "Ripples", "[0-9]{0,1}", this::updateLightningSecondaryCountFromText);
+        lightningSecondaryDelayBox = addLightningNumberBox(x, y + 200, 54, 2, "Delay", "[0-9]{0,2}", this::updateLightningSecondaryDelayFromText);
+        lightningSoundVolumeBox = addLightningSoundVolumeBox(x + 208, y + 200);
     }
 
     private void updateLayoutScale() {
@@ -211,14 +299,42 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void addOriginBox(int x, int y, String label, int axis) {
-        this.addRenderableWidget(new Button(x, y, 22, 20, new TextComponent(label), button -> {
+        Button labelButton = this.addRenderableWidget(new Button(x, y, 22, 20, new TextComponent(label), button -> {
         }));
+        originLabelButtons.add(labelButton);
         EditBox editBox = new EditBox(this.font, x + 25, y, 70, 20, new TextComponent(label + " Offset"));
         editBox.setMaxLength(7);
         editBox.setFilter(value -> value.isEmpty() || value.matches("-?[0-9]{0,2}(\\.[0-9]{0,2})?"));
         editBox.setResponder(value -> updateOriginFromText(axis, value));
         originBoxes.add(editBox);
         this.addRenderableWidget(editBox);
+    }
+
+    private EditBox addLightningNumberBox(int x, int y, int width, int maxLength, String label, String pattern, Consumer<String> responder) {
+        EditBox editBox = new EditBox(this.font, x + 50, y, width, 20, new TextComponent(label));
+        editBox.setMaxLength(maxLength);
+        editBox.setFilter(value -> value.isEmpty() || value.matches(pattern));
+        editBox.setResponder(responder);
+        this.addRenderableWidget(editBox);
+        return editBox;
+    }
+
+    private EditBox addLightningColorBox(int x, int y, String label, Consumer<String> responder) {
+        EditBox editBox = new EditBox(this.font, x + SLOT_PREVIEW_WIDTH + SLOT_INNER_GAP, y, SLOT_HEX_WIDTH, 20, new TextComponent(label));
+        editBox.setMaxLength(7);
+        editBox.setFilter(value -> value.isEmpty() || value.matches("#?[0-9a-fA-F]{0,6}"));
+        editBox.setResponder(responder);
+        this.addRenderableWidget(editBox);
+        return editBox;
+    }
+
+    private EditBox addLightningSoundVolumeBox(int x, int y) {
+        EditBox editBox = new EditBox(this.font, x + 50, y, 50, 20, new TextComponent("Sound Volume"));
+        editBox.setMaxLength(4);
+        editBox.setFilter(value -> value.isEmpty() || value.matches("[0-9]{0,1}(\\.[0-9]{0,2})?") || value.matches("2(\\.[0]{0,2})?"));
+        editBox.setResponder(this::updateLightningSoundVolumeFromText);
+        this.addRenderableWidget(editBox);
+        return editBox;
     }
 
     @Override
@@ -230,18 +346,24 @@ public class ArcaneBeamConfigScreen extends Screen {
         poseStack.pushPose();
         poseStack.scale(layoutScale, layoutScale, 1.0F);
         drawCenteredString(poseStack, this.font, this.title, layoutWidth / 2, 14, 0xFFFFFF);
-        drawCenteredString(poseStack, this.font, railSelected ? "Rail colors" : "Arcane colors", layoutWidth / 2, 60, 0xD8D8D8);
         renderProfilePanel(poseStack);
         renderPalette(poseStack);
         renderBrightnessStrip(poseStack);
-        renderInlinePreviews(poseStack);
-        if (soundVolumeBox != null) {
+        if (lightningSelected) {
+            drawCenteredString(poseStack, this.font, "Lightning Strike colors", layoutWidth / 2, 60, 0xD8D8D8);
+            renderLightningColorPreviews(poseStack);
+            renderLightningLabels(poseStack);
+        } else {
+            drawCenteredString(poseStack, this.font, railSelected ? "Rail colors" : "Arcane colors", layoutWidth / 2, 60, 0xD8D8D8);
+            renderInlinePreviews(poseStack);
+        }
+        if (!lightningSelected && soundVolumeBox != null) {
             drawString(poseStack, this.font, "Volume", soundVolumeBox.x - this.font.width("Volume") - 8, soundVolumeBox.y + 6, 0xD8D8D8);
         }
-        if (fadeInTicksBox != null) {
+        if (!lightningSelected && fadeInTicksBox != null) {
             drawString(poseStack, this.font, "Ticks", fadeInTicksBox.x - this.font.width("Ticks") - 10, fadeInTicksBox.y + 6, 0xD8D8D8);
         }
-        if (fadeOutTicksBox != null) {
+        if (!lightningSelected && fadeOutTicksBox != null) {
             drawString(poseStack, this.font, "Ticks", fadeOutTicksBox.x - this.font.width("Ticks") - 6, fadeOutTicksBox.y + 6, 0xD8D8D8);
         }
         super.render(poseStack, layoutMouseX, layoutMouseY, partialTick);
@@ -256,6 +378,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         if (button == 0 && handleProfileDropdownSelection(layoutMouseX, layoutMouseY)) {
             return true;
         }
+        selectLightningColorBox(layoutMouseX, layoutMouseY);
         if (button == 0 && handlePreviewSelection(layoutMouseX, layoutMouseY)) {
             return true;
         }
@@ -268,7 +391,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         int brightnessX = paletteX + PALETTE_WIDTH + 10;
         if (button == 0 && layoutMouseX >= brightnessX && layoutMouseX < brightnessX + BRIGHTNESS_WIDTH && layoutMouseY >= paletteY && layoutMouseY < paletteY + PALETTE_HEIGHT) {
             draggingBrightness = true;
-            brightnessDragBaseColor = activeColors()[selectedSlot];
+            brightnessDragBaseColor = selectedColor();
             updateBrightnessSelection(layoutMouseY);
             return true;
         }
@@ -305,26 +428,33 @@ public class ArcaneBeamConfigScreen extends Screen {
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         double layoutMouseX = toLayoutX(mouseX);
         double layoutMouseY = toLayoutY(mouseY);
-        if (soundVolumeBox != null && soundVolumeBox.isMouseOver(layoutMouseX, layoutMouseY)) {
+        if (!lightningSelected && soundVolumeBox != null && soundVolumeBox.isMouseOver(layoutMouseX, layoutMouseY)) {
             double step = hasShiftDown() ? 0.10D : 0.01D;
             nudgeSoundVolume(delta > 0.0D ? step : -step);
             refreshSoundVolumeBox();
             ArcaneBeamConfig.save();
             return true;
         }
-        if (fadeInTicksBox != null && fadeInTicksBox.isMouseOver(layoutMouseX, layoutMouseY)) {
+        if (lightningSelected && lightningSoundVolumeBox != null && lightningSoundVolumeBox.isMouseOver(layoutMouseX, layoutMouseY)) {
+            double step = hasShiftDown() ? 0.10D : 0.01D;
+            nudgeLightningSoundVolume(delta > 0.0D ? step : -step);
+            refreshLightningSoundVolumeBox();
+            ArcaneBeamConfig.save();
+            return true;
+        }
+        if (!lightningSelected && fadeInTicksBox != null && fadeInTicksBox.isMouseOver(layoutMouseX, layoutMouseY)) {
             nudgeFadeInTicks(delta > 0.0D ? 1 : -1);
             refreshFadeTickBoxes();
             ArcaneBeamConfig.save();
             return true;
         }
-        if (fadeOutTicksBox != null && fadeOutTicksBox.isMouseOver(layoutMouseX, layoutMouseY)) {
+        if (!lightningSelected && fadeOutTicksBox != null && fadeOutTicksBox.isMouseOver(layoutMouseX, layoutMouseY)) {
             nudgeFadeOutTicks(delta > 0.0D ? 1 : -1);
             refreshFadeTickBoxes();
             ArcaneBeamConfig.save();
             return true;
         }
-        for (int i = 0; i < originBoxes.size(); i++) {
+        for (int i = 0; !lightningSelected && i < originBoxes.size(); i++) {
             EditBox originBox = originBoxes.get(i);
             if (originBox.isMouseOver(layoutMouseX, layoutMouseY)) {
                 double step = hasShiftDown() ? 0.10D : 0.01D;
@@ -368,6 +498,19 @@ public class ArcaneBeamConfigScreen extends Screen {
         if (fadeOutTicksBox != null) {
             fadeOutTicksBox.tick();
         }
+        tickBox(lightningLifetimeBox);
+        tickBox(lightningSideCountBox);
+        tickBox(lightningRingColorBox);
+        tickBox(lightningFlashColorBox);
+        tickBox(lightningSecondaryCountBox);
+        tickBox(lightningSecondaryDelayBox);
+        tickBox(lightningSoundVolumeBox);
+    }
+
+    private static void tickBox(EditBox box) {
+        if (box != null) {
+            box.tick();
+        }
     }
 
     private void renderPalette(PoseStack poseStack) {
@@ -384,7 +527,7 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     private void renderBrightnessStrip(PoseStack poseStack) {
         int x = paletteX + PALETTE_WIDTH + 10;
-        int baseColor = draggingBrightness ? brightnessDragBaseColor : activeColors()[selectedSlot];
+        int baseColor = draggingBrightness ? brightnessDragBaseColor : selectedColor();
         for (int y = 0; y < PALETTE_HEIGHT; y++) {
             int color = 0xFF000000 | applyBrightness(baseColor, y);
             fill(poseStack, x, paletteY + y, x + BRIGHTNESS_WIDTH, paletteY + y + 1, color);
@@ -410,22 +553,45 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
     }
 
+    private void renderLightningColorPreviews(PoseStack poseStack) {
+        if (lightningRingColorBox == null || lightningFlashColorBox == null) {
+            return;
+        }
+        int labelX = rowStartX() - ROW_LABEL_GAP - this.font.width("Shockwave");
+        drawString(poseStack, this.font, "Shockwave", labelX, lightningRingColorBox.y + 6, 0xD8D8D8);
+        drawString(poseStack, this.font, "Ring", lightningRingColorBox.x + SLOT_HEX_WIDTH + 6, lightningRingColorBox.y + 6, 0xD8D8D8);
+        drawString(poseStack, this.font, "Flash", lightningFlashColorBox.x + SLOT_HEX_WIDTH + 6, lightningFlashColorBox.y + 6, 0xD8D8D8);
+        renderPreviewBox(poseStack, lightningRingColorBox.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP, lightningRingColorBox.y, lightningSettings().ringColor, selectedSlot == 0);
+        renderPreviewBox(poseStack, lightningFlashColorBox.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP, lightningFlashColorBox.y, lightningSettings().centerFlashColor, selectedSlot == 1);
+    }
+
     private void renderProfilePanel(PoseStack poseStack) {
-        drawString(poseStack, this.font, railSelected ? "Rail Profiles" : "Arcane Profiles", profilePanelX(), PROFILE_PANEL_Y, 0xD8D8D8);
+        drawString(poseStack, this.font, profileLabel(), profilePanelX(), PROFILE_PANEL_Y, 0xD8D8D8);
+    }
+
+    private void renderLightningLabels(PoseStack poseStack) {
+        if (lightningLifetimeBox == null || lightningSoundVolumeBox == null) {
+            return;
+        }
+        drawString(poseStack, this.font, "Lifetime", lightningLifetimeBox.x - 50, lightningLifetimeBox.y + 6, 0xD8D8D8);
+        drawString(poseStack, this.font, "Sides", lightningSideCountBox.x - 42, lightningSideCountBox.y + 6, 0xD8D8D8);
+        drawString(poseStack, this.font, "Ripples", lightningSecondaryCountBox.x - 48, lightningSecondaryCountBox.y + 6, 0xD8D8D8);
+        drawString(poseStack, this.font, "Delay", lightningSecondaryDelayBox.x - 42, lightningSecondaryDelayBox.y + 6, 0xD8D8D8);
+        drawString(poseStack, this.font, "Volume", lightningSoundVolumeBox.x - 50, lightningSoundVolumeBox.y + 6, 0xD8D8D8);
     }
 
     private void renderProfileDropdown(PoseStack poseStack) {
         if (!profileDropdownOpen) {
             return;
         }
-        List<String> profiles = ArcaneBeamConfig.profileNames(railSelected);
+        List<String> profiles = profileNames();
         int x = profilePanelX();
         int y = profileDropdownY();
         int height = profiles.size() * PROFILE_ROW_HEIGHT;
         fill(poseStack, x - 1, y - 1, x + PROFILE_PANEL_WIDTH + 1, y + height + 1, 0xFFFFFFFF);
         fill(poseStack, x, y, x + PROFILE_PANEL_WIDTH, y + height, 0xEE101018);
 
-        String selected = ArcaneBeamConfig.selectedProfileName(railSelected);
+        String selected = selectedProfileName();
         for (int i = 0; i < profiles.size(); i++) {
             int rowY = y + i * PROFILE_ROW_HEIGHT;
             String profile = profiles.get(i);
@@ -448,7 +614,7 @@ public class ArcaneBeamConfigScreen extends Screen {
 
         int x = profileX;
         int y = profileDropdownY();
-        List<String> profiles = ArcaneBeamConfig.profileNames(railSelected);
+        List<String> profiles = profileNames();
         int height = profiles.size() * PROFILE_ROW_HEIGHT;
         if (!isInside(mouseX, mouseY, x, y, PROFILE_PANEL_WIDTH, height)) {
             profileDropdownOpen = false;
@@ -457,7 +623,7 @@ public class ArcaneBeamConfigScreen extends Screen {
 
         int index = (int) ((mouseY - y) / PROFILE_ROW_HEIGHT);
         if (index >= 0 && index < profiles.size()) {
-            ArcaneBeamConfig.selectProfile(railSelected, profiles.get(index));
+            selectProfile(profiles.get(index));
             selectedSlot = 0;
             glowColorsSelected = false;
             profileDropdownOpen = false;
@@ -476,7 +642,11 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void addProfile() {
-        ArcaneBeamConfig.addProfile(railSelected, profileNameBox == null ? "" : profileNameBox.getValue());
+        if (lightningSelected) {
+            ArcaneBeamConfig.addLightningProfile(profileNameBox == null ? "" : profileNameBox.getValue());
+        } else {
+            ArcaneBeamConfig.addProfile(railSelected, profileNameBox == null ? "" : profileNameBox.getValue());
+        }
         if (profileNameBox != null) {
             profileNameBox.setValue("");
         }
@@ -506,6 +676,22 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private boolean handlePreviewSelection(double mouseX, double mouseY) {
+        if (lightningSelected) {
+            if (lightningRingColorBox == null || lightningFlashColorBox == null) {
+                return false;
+            }
+            int ringPreviewX = lightningRingColorBox.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP;
+            int flashPreviewX = lightningFlashColorBox.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP;
+            if (isInside(mouseX, mouseY, ringPreviewX, lightningRingColorBox.y, SLOT_PREVIEW_WIDTH, 20)) {
+                selectedSlot = 0;
+                return true;
+            }
+            if (isInside(mouseX, mouseY, flashPreviewX, lightningFlashColorBox.y, SLOT_PREVIEW_WIDTH, 20)) {
+                selectedSlot = 1;
+                return true;
+            }
+            return false;
+        }
         for (int i = 0; i < 4; i++) {
             int beamY = colorBoxes.get(i).y;
             int glowY = glowColorBoxes.get(i).y;
@@ -524,6 +710,17 @@ public class ArcaneBeamConfigScreen extends Screen {
         return false;
     }
 
+    private void selectLightningColorBox(double mouseX, double mouseY) {
+        if (!lightningSelected || lightningRingColorBox == null || lightningFlashColorBox == null) {
+            return;
+        }
+        if (isInside(mouseX, mouseY, lightningRingColorBox.x, lightningRingColorBox.y, SLOT_HEX_WIDTH, 20)) {
+            selectedSlot = 0;
+        } else if (isInside(mouseX, mouseY, lightningFlashColorBox.x, lightningFlashColorBox.y, SLOT_HEX_WIDTH, 20)) {
+            selectedSlot = 1;
+        }
+    }
+
     private int colorAt(int x, int y) {
         float hue = x / (float) Math.max(1, PALETTE_WIDTH - 1);
         float brightness = 1.0F - (y / (float) Math.max(1, PALETTE_HEIGHT - 1));
@@ -533,15 +730,13 @@ public class ArcaneBeamConfigScreen extends Screen {
     private void updatePaletteSelection(double mouseX, double mouseY) {
         int x = clamp((int) (mouseX - paletteX), 0, PALETTE_WIDTH - 1);
         int y = clamp((int) (mouseY - paletteY), 0, PALETTE_HEIGHT - 1);
-        activeColors()[selectedSlot] = colorAt(x, y);
-        syncPrimaryColors();
+        setSelectedColor(colorAt(x, y));
         refreshBoxes();
     }
 
     private void updateBrightnessSelection(double mouseY) {
         int y = clamp((int) (mouseY - paletteY), 0, PALETTE_HEIGHT - 1);
-        activeColors()[selectedSlot] = applyBrightness(brightnessDragBaseColor, y);
-        syncPrimaryColors();
+        setSelectedColor(applyBrightness(brightnessDragBaseColor, y));
         refreshBoxes();
     }
 
@@ -600,6 +795,15 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void refreshBoxes() {
+        if (lightningSelected) {
+            if (lightningRingColorBox != null) {
+                lightningRingColorBox.setValue(formatColor(lightningSettings().ringColor));
+            }
+            if (lightningFlashColorBox != null) {
+                lightningFlashColorBox.setValue(formatColor(lightningSettings().centerFlashColor));
+            }
+            return;
+        }
         for (int i = 0; i < colorBoxes.size(); i++) {
             colorBoxes.get(i).setValue(formatColor(settings().colors[i]));
         }
@@ -610,6 +814,7 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     private void refreshControls() {
         refreshBoxes();
+        updateWidgetVisibility();
         if (intensitySlider != null) {
             intensitySlider.refresh();
             opacitySlider.refresh();
@@ -622,11 +827,92 @@ public class ArcaneBeamConfigScreen extends Screen {
             handButton.setMessage(new TextComponent("Start: " + startHand().label));
             fadeInModeButton.setMessage(new TextComponent(fadeInStyle().label));
             fadeOutModeButton.setMessage(new TextComponent(fadeOutStyle().label));
-            profileDropdownButton.setMessage(new TextComponent("Profile: " + ellipsize(ArcaneBeamConfig.selectedProfileName(railSelected), 74)));
+            profileDropdownButton.setMessage(new TextComponent("Profile: " + ellipsize(selectedProfileName(), 74)));
             refreshOriginBoxes();
             refreshSoundVolumeBox();
             refreshFadeTickBoxes();
+            refreshLightningControls();
         }
+    }
+
+    private void updateWidgetVisibility() {
+        boolean beamVisible = !lightningSelected;
+        for (EditBox box : colorBoxes) {
+            box.visible = beamVisible;
+        }
+        for (EditBox box : glowColorBoxes) {
+            box.visible = beamVisible;
+        }
+        for (EditBox box : originBoxes) {
+            box.visible = beamVisible;
+        }
+        for (Button button : originLabelButtons) {
+            setVisible(button, beamVisible);
+        }
+        setVisible(profileNameBox, true);
+        setVisible(profileAddButton, true);
+        setVisible(profileDropdownButton, true);
+        setVisible(soundVolumeBox, beamVisible);
+        setVisible(fadeInTicksBox, beamVisible);
+        setVisible(fadeOutTicksBox, beamVisible);
+        setVisible(intensitySlider, beamVisible);
+        setVisible(opacitySlider, beamVisible);
+        setVisible(glowRadiusSlider, beamVisible);
+        setVisible(glowOpacitySlider, beamVisible);
+        setVisible(colorShiftSlider, beamVisible);
+        setVisible(glowRotationSlider, beamVisible);
+        setVisible(shaderCompatibilityButton, beamVisible);
+        setVisible(soundButton, beamVisible);
+        setVisible(handButton, beamVisible);
+        setVisible(fadeInModeButton, beamVisible);
+        setVisible(fadeOutModeButton, beamVisible);
+
+        setVisible(lightningEnabledButton, lightningSelected);
+        setVisible(lightningShaderCompatibilityButton, lightningSelected);
+        setVisible(lightningFullbrightButton, lightningSelected);
+        setVisible(lightningSoundButton, lightningSelected);
+        setVisible(lightningStartRadiusSlider, lightningSelected);
+        setVisible(lightningEndRadiusSlider, lightningSelected);
+        setVisible(lightningThicknessSlider, lightningSelected);
+        setVisible(lightningAlphaSlider, lightningSelected);
+        setVisible(lightningSecondarySizeSlider, lightningSelected);
+        setVisible(lightningLifetimeBox, lightningSelected);
+        setVisible(lightningSideCountBox, lightningSelected);
+        setVisible(lightningRingColorBox, lightningSelected);
+        setVisible(lightningFlashColorBox, lightningSelected);
+        setVisible(lightningSecondaryCountBox, lightningSelected);
+        setVisible(lightningSecondaryDelayBox, lightningSelected);
+        setVisible(lightningSoundVolumeBox, lightningSelected);
+    }
+
+    private static void setVisible(net.minecraft.client.gui.components.AbstractWidget widget, boolean visible) {
+        if (widget != null) {
+            widget.visible = visible;
+            widget.active = visible;
+        }
+    }
+
+    private void refreshLightningControls() {
+        if (lightningEnabledButton == null) {
+            return;
+        }
+        ArcaneBeamConfig.LightningStrikeSettings settings = lightningSettings();
+        lightningEnabledButton.setMessage(new TextComponent("Replacement: " + (settings.enabled ? "On" : "Off")));
+        lightningShaderCompatibilityButton.setMessage(new TextComponent("Shader Compatibility: " + lightningShaderCompatibility().label));
+        lightningFullbrightButton.setMessage(new TextComponent("Fullbright: " + (settings.fullbright ? "On" : "Off")));
+        lightningSoundButton.setMessage(new TextComponent("Sound: " + lightningSoundMode().label));
+        lightningStartRadiusSlider.refresh();
+        lightningEndRadiusSlider.refresh();
+        lightningThicknessSlider.refresh();
+        lightningAlphaSlider.refresh();
+        lightningSecondarySizeSlider.refresh();
+        lightningLifetimeBox.setValue(Integer.toString(settings.lifetimeTicks));
+        lightningSideCountBox.setValue(Integer.toString(settings.ringSideCount));
+        lightningRingColorBox.setValue(formatColor(settings.ringColor));
+        lightningFlashColorBox.setValue(formatColor(settings.centerFlashColor));
+        lightningSecondaryCountBox.setValue(Integer.toString(settings.secondaryRippleCount));
+        lightningSecondaryDelayBox.setValue(Integer.toString(settings.secondaryRippleDelayTicks));
+        refreshLightningSoundVolumeBox();
     }
 
     private void cycleShaderCompatibility() {
@@ -756,6 +1042,90 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
     }
 
+    private void updateLightningLifetimeFromText(String value) {
+        if (value == null || value.isEmpty()) {
+            return;
+        }
+        try {
+            lightningSettings().lifetimeTicks = clamp(Integer.parseInt(value), 1, 200);
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void updateLightningSideCountFromText(String value) {
+        if (value == null || value.isEmpty()) {
+            return;
+        }
+        try {
+            lightningSettings().ringSideCount = clamp(Integer.parseInt(value), 8, 96);
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void updateLightningSecondaryCountFromText(String value) {
+        if (value == null || value.isEmpty()) {
+            return;
+        }
+        try {
+            lightningSettings().secondaryRippleCount = clamp(Integer.parseInt(value), 0, 4);
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void updateLightningSecondaryDelayFromText(String value) {
+        if (value == null || value.isEmpty()) {
+            return;
+        }
+        try {
+            lightningSettings().secondaryRippleDelayTicks = clamp(Integer.parseInt(value), 0, 40);
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void updateLightningSoundVolumeFromText(String value) {
+        if (value == null || value.isEmpty() || ".".equals(value)) {
+            return;
+        }
+
+        try {
+            lightningSettings().soundVolume = clampSoundVolume((float) roundOffset(Double.parseDouble(value)));
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void updateLightningRingColorFromText(String value) {
+        updateLightningColor(value, true);
+    }
+
+    private void updateLightningFlashColorFromText(String value) {
+        updateLightningColor(value, false);
+    }
+
+    private void updateLightningColor(String value, boolean ring) {
+        if (value == null) {
+            return;
+        }
+        String normalized = value.startsWith("#") ? value.substring(1) : value;
+        if (normalized.length() != 6) {
+            return;
+        }
+        try {
+            int color = Integer.parseInt(normalized, 16);
+            if (ring) {
+                lightningSettings().ringColor = color;
+            } else {
+                lightningSettings().centerFlashColor = color;
+            }
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
     private void nudgeOrigin(int axis, double amount) {
         if (axis == 0) {
             settings().startOffsetX = roundOffset(settings().startOffsetX + amount);
@@ -770,6 +1140,10 @@ public class ArcaneBeamConfigScreen extends Screen {
         settings().soundVolume = clampSoundVolume((float) roundOffset(settings().soundVolume + amount));
     }
 
+    private void nudgeLightningSoundVolume(double amount) {
+        lightningSettings().soundVolume = clampSoundVolume((float) roundOffset(lightningSettings().soundVolume + amount));
+    }
+
     private void nudgeFadeInTicks(int amount) {
         settings().fadeInTicks = clampTicks(settings().fadeInTicks + amount);
     }
@@ -782,9 +1156,19 @@ public class ArcaneBeamConfigScreen extends Screen {
         return railSelected ? ArcaneBeamConfig.INSTANCE.rail : ArcaneBeamConfig.INSTANCE.arcane;
     }
 
+    private ArcaneBeamConfig.LightningStrikeSettings lightningSettings() {
+        return ArcaneBeamConfig.INSTANCE.lightningStrike;
+    }
+
     private void refreshSoundVolumeBox() {
         if (soundVolumeBox != null) {
             soundVolumeBox.setValue(formatOffset(settings().soundVolume));
+        }
+    }
+
+    private void refreshLightningSoundVolumeBox() {
+        if (lightningSoundVolumeBox != null) {
+            lightningSoundVolumeBox.setValue(formatOffset(lightningSettings().soundVolume));
         }
     }
 
@@ -801,9 +1185,52 @@ public class ArcaneBeamConfigScreen extends Screen {
         return glowColorsSelected ? settings().glowColors : settings().colors;
     }
 
+    private int selectedColor() {
+        if (lightningSelected) {
+            return selectedSlot == 1 ? lightningSettings().centerFlashColor : lightningSettings().ringColor;
+        }
+        return activeColors()[selectedSlot];
+    }
+
+    private void setSelectedColor(int color) {
+        if (lightningSelected) {
+            if (selectedSlot == 1) {
+                lightningSettings().centerFlashColor = color;
+            } else {
+                lightningSettings().ringColor = color;
+            }
+            return;
+        }
+        activeColors()[selectedSlot] = color;
+        syncPrimaryColors();
+    }
+
     private void syncPrimaryColors() {
         settings().color = settings().colors[0];
         settings().glowColor = settings().glowColors[0];
+    }
+
+    private List<String> profileNames() {
+        return lightningSelected ? ArcaneBeamConfig.lightningProfileNames() : ArcaneBeamConfig.profileNames(railSelected);
+    }
+
+    private String selectedProfileName() {
+        return lightningSelected ? ArcaneBeamConfig.selectedLightningProfileName() : ArcaneBeamConfig.selectedProfileName(railSelected);
+    }
+
+    private void selectProfile(String profileName) {
+        if (lightningSelected) {
+            ArcaneBeamConfig.selectLightningProfile(profileName);
+        } else {
+            ArcaneBeamConfig.selectProfile(railSelected, profileName);
+        }
+    }
+
+    private String profileLabel() {
+        if (lightningSelected) {
+            return "Lightning Profiles";
+        }
+        return railSelected ? "Rail Profiles" : "Arcane Profiles";
     }
 
     private ArcaneBeamConfig.SoundChoice soundChoice() {
@@ -819,6 +1246,23 @@ public class ArcaneBeamConfigScreen extends Screen {
     private ArcaneBeamConfig.ShaderCompatibility shaderCompatibility() {
         ArcaneBeamConfig.ShaderCompatibility compatibility = ArcaneBeamConfig.ShaderCompatibility.fromId(settings().shaderCompatibility);
         return compatibility == null ? ArcaneBeamConfig.ShaderCompatibility.OFF : compatibility;
+    }
+
+    private ArcaneBeamConfig.ShaderCompatibility lightningShaderCompatibility() {
+        ArcaneBeamConfig.ShaderCompatibility compatibility = ArcaneBeamConfig.ShaderCompatibility.fromId(lightningSettings().shaderCompatibility);
+        return compatibility == null ? ArcaneBeamConfig.ShaderCompatibility.OFF : compatibility;
+    }
+
+    private ArcaneBeamConfig.LightningSoundMode lightningSoundMode() {
+        ArcaneBeamConfig.LightningSoundMode mode = ArcaneBeamConfig.LightningSoundMode.fromId(lightningSettings().soundMode);
+        return mode == null ? ArcaneBeamConfig.LightningSoundMode.DEFAULT : mode;
+    }
+
+    private void cycleLightningSound() {
+        ArcaneBeamConfig.LightningSoundMode[] modes = ArcaneBeamConfig.LightningSoundMode.values();
+        ArcaneBeamConfig.LightningSoundMode current = lightningSoundMode();
+        int next = (current.ordinal() + 1) % modes.length;
+        lightningSettings().soundMode = modes[next].id;
     }
 
     private ArcaneBeamConfig.FadeInStyle fadeInStyle() {
