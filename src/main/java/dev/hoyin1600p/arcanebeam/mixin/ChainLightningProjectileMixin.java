@@ -15,7 +15,7 @@ public abstract class ChainLightningProjectileMixin {
     private void arcanebeam$spawnLightningStrikeShockwave(HitResult hitResult, CallbackInfo ci) {
         Entity projectile = (Entity) (Object) this;
         if (projectile.level.isClientSide && hitResult != null) {
-            LightningStrikeShockwaveManager.spawn(hitResult.getLocation());
+            LightningStrikeShockwaveManager.spawnFromProjectile((ChainLightningAbility.ChainLightningProjectile) (Object) this, hitResult.getLocation());
         }
     }
 }
