@@ -269,6 +269,24 @@ public final class ArcaneBeamConfig {
             settings.centerFlashColor = 0xFFFFFF;
         }
         settings.alpha = clampFloat(settings.alpha <= 0.0F ? 0.95F : settings.alpha, 0.0F, 1.0F);
+        settings.ringInteriorOpacity = clampFloat(settings.ringInteriorOpacity <= 0.0F ? 0.28F : settings.ringInteriorOpacity, 0.0F, 1.0F);
+        if (settings.sphereColor == 0) {
+            settings.sphereColor = settings.centerFlashColor == 0 ? 0xFFFFFF : settings.centerFlashColor;
+        }
+        settings.sphereRadius = clampFloat(settings.sphereRadius <= 0.0F ? 0.35F : settings.sphereRadius, 0.02F, 2.0F);
+        settings.sphereOpacity = clampFloat(settings.sphereOpacity <= 0.0F ? 0.85F : settings.sphereOpacity, 0.0F, 1.0F);
+        if (settings.coneColor == 0) {
+            settings.coneColor = settings.ringColor == 0 ? 0xBFEFFF : settings.ringColor;
+        }
+        settings.coneHeight = clampFloat(settings.coneHeight <= 0.0F ? 1.1F : settings.coneHeight, 0.05F, 6.0F);
+        settings.coneRadius = clampFloat(settings.coneRadius <= 0.0F ? 0.45F : settings.coneRadius, 0.02F, 4.0F);
+        settings.coneOpacity = clampFloat(settings.coneOpacity <= 0.0F ? 0.65F : settings.coneOpacity, 0.0F, 1.0F);
+        if (settings.spotColor == 0) {
+            settings.spotColor = 0xFFFFFF;
+        }
+        settings.spotCount = clampInt(settings.spotCount, 0, 128);
+        settings.spotSize = clampFloat(settings.spotSize <= 0.0F ? 0.2F : settings.spotSize, 0.02F, 1.5F);
+        settings.spotOpacity = clampFloat(settings.spotOpacity <= 0.0F ? 0.9F : settings.spotOpacity, 0.0F, 1.0F);
         if (!settings.shaderCompatibilityMigrated) {
             ShaderCompatibility inherited = ShaderCompatibility.fromId(INSTANCE.shaderCompatibility);
             if (settings.shaderCompatibility == null || ShaderCompatibility.fromId(settings.shaderCompatibility) == null
@@ -469,6 +487,18 @@ public final class ArcaneBeamConfig {
         copy.ringColor = source.ringColor;
         copy.centerFlashColor = source.centerFlashColor;
         copy.alpha = source.alpha;
+        copy.ringInteriorOpacity = source.ringInteriorOpacity;
+        copy.sphereColor = source.sphereColor;
+        copy.sphereRadius = source.sphereRadius;
+        copy.sphereOpacity = source.sphereOpacity;
+        copy.coneColor = source.coneColor;
+        copy.coneHeight = source.coneHeight;
+        copy.coneRadius = source.coneRadius;
+        copy.coneOpacity = source.coneOpacity;
+        copy.spotColor = source.spotColor;
+        copy.spotCount = source.spotCount;
+        copy.spotSize = source.spotSize;
+        copy.spotOpacity = source.spotOpacity;
         copy.fullbright = source.fullbright;
         copy.shaderCompatibility = source.shaderCompatibility;
         copy.shaderCompatibilityMigrated = source.shaderCompatibilityMigrated;
@@ -598,6 +628,18 @@ public final class ArcaneBeamConfig {
         public int ringColor = 0xBFEFFF;
         public int centerFlashColor = 0xFFFFFF;
         public float alpha = 0.95F;
+        public float ringInteriorOpacity = 0.28F;
+        public int sphereColor = 0xFFFFFF;
+        public float sphereRadius = 0.35F;
+        public float sphereOpacity = 0.85F;
+        public int coneColor = 0xBFEFFF;
+        public float coneHeight = 1.1F;
+        public float coneRadius = 0.45F;
+        public float coneOpacity = 0.65F;
+        public int spotColor = 0xFFFFFF;
+        public int spotCount = 18;
+        public float spotSize = 0.20F;
+        public float spotOpacity = 0.90F;
         public boolean fullbright = true;
         public String shaderCompatibility = ShaderCompatibility.OFF.id;
         public boolean shaderCompatibilityMigrated = false;
