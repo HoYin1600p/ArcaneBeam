@@ -592,14 +592,21 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
         int labelX = rowStartX() - ROW_LABEL_GAP - this.font.width("Shockwave");
         drawString(poseStack, this.font, "Shockwave", labelX, lightningRingColorBox.y + 6, 0xD8D8D8);
-        drawString(poseStack, this.font, "Ring", lightningRingColorBox.x + SLOT_HEX_WIDTH + 6, lightningRingColorBox.y + 6, 0xD8D8D8);
-        drawString(poseStack, this.font, "Sphere", lightningSphereColorBox.x + SLOT_HEX_WIDTH + 6, lightningSphereColorBox.y + 6, 0xD8D8D8);
-        drawString(poseStack, this.font, "Cone", lightningConeColorBox.x + SLOT_HEX_WIDTH + 6, lightningConeColorBox.y + 6, 0xD8D8D8);
-        drawString(poseStack, this.font, "Spots", lightningSpotColorBox.x + SLOT_HEX_WIDTH + 6, lightningSpotColorBox.y + 6, 0xD8D8D8);
         renderPreviewBox(poseStack, lightningRingColorBox.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP, lightningRingColorBox.y, lightningSettings().ringColor, selectedSlot == 0);
         renderPreviewBox(poseStack, lightningSphereColorBox.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP, lightningSphereColorBox.y, lightningSettings().sphereColor, selectedSlot == 1);
         renderPreviewBox(poseStack, lightningConeColorBox.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP, lightningConeColorBox.y, lightningSettings().coneColor, selectedSlot == 2);
         renderPreviewBox(poseStack, lightningSpotColorBox.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP, lightningSpotColorBox.y, lightningSettings().spotColor, selectedSlot == 3);
+        renderLightningColorLabel(poseStack, lightningRingColorBox, "Ring");
+        renderLightningColorLabel(poseStack, lightningSphereColorBox, "Sphere");
+        renderLightningColorLabel(poseStack, lightningConeColorBox, "Cone");
+        renderLightningColorLabel(poseStack, lightningSpotColorBox, "Spots");
+    }
+
+    private void renderLightningColorLabel(PoseStack poseStack, EditBox box, String label) {
+        int groupX = box.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP;
+        int groupWidth = SLOT_PREVIEW_WIDTH + SLOT_INNER_GAP + SLOT_HEX_WIDTH;
+        int textX = groupX + groupWidth / 2 - this.font.width(label) / 2;
+        drawString(poseStack, this.font, label, textX, box.y + 23, 0xD8D8D8);
     }
 
     private void renderProfilePanel(PoseStack poseStack) {
