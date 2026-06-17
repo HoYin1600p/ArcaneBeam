@@ -61,5 +61,14 @@
         "stream": false
       }
     ]
+  },
+  "vault_altar_beam": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/vault_altar_beam",
+        "stream": true
+      }
+    ]
   }
 }
