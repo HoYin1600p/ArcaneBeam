@@ -52,16 +52,22 @@ public final class ArcaneBeamConfig {
         if (INSTANCE.lightningStrike == null) {
             INSTANCE.lightningStrike = defaultLightningStrikeSettings();
         }
+        if (INSTANCE.vaultAltar == null) {
+            INSTANCE.vaultAltar = defaultVaultAltarSettings();
+        }
         validateShaderCompatibility();
         validateBeamSettings(INSTANCE.arcane, false);
         validateBeamSettings(INSTANCE.rail, true);
         validateLightningStrikeSettings(INSTANCE.lightningStrike);
+        validateVaultAltarSettings(INSTANCE.vaultAltar);
         INSTANCE.arcaneProfiles = validateProfiles(INSTANCE.arcaneProfiles, INSTANCE.arcane, false);
         INSTANCE.railProfiles = validateProfiles(INSTANCE.railProfiles, INSTANCE.rail, true);
         INSTANCE.lightningStrikeProfiles = validateLightningProfiles(INSTANCE.lightningStrikeProfiles, INSTANCE.lightningStrike);
+        INSTANCE.vaultAltarProfiles = validateVaultAltarProfiles(INSTANCE.vaultAltarProfiles, INSTANCE.vaultAltar);
         INSTANCE.selectedArcaneProfile = validateSelectedProfile(INSTANCE.selectedArcaneProfile, INSTANCE.arcaneProfiles);
         INSTANCE.selectedRailProfile = validateSelectedProfile(INSTANCE.selectedRailProfile, INSTANCE.railProfiles);
         INSTANCE.selectedLightningStrikeProfile = validateSelectedLightningProfile(INSTANCE.selectedLightningStrikeProfile, INSTANCE.lightningStrikeProfiles);
+        INSTANCE.selectedVaultAltarProfile = validateSelectedVaultAltarProfile(INSTANCE.selectedVaultAltarProfile, INSTANCE.vaultAltarProfiles);
         activateSelectedProfiles();
     }
 
@@ -111,6 +117,27 @@ public final class ArcaneBeamConfig {
         return validated;
     }
 
+    private static LinkedHashMap<String, VaultAltarSettings> validateVaultAltarProfiles(Map<String, VaultAltarSettings> profiles, VaultAltarSettings migrationSettings) {
+        LinkedHashMap<String, VaultAltarSettings> validated = new LinkedHashMap<>();
+        if (profiles != null) {
+            for (Map.Entry<String, VaultAltarSettings> entry : profiles.entrySet()) {
+                String name = normalizeProfileName(entry.getKey());
+                if (name.isEmpty()) {
+                    continue;
+                }
+                VaultAltarSettings settings = entry.getValue() == null ? defaultVaultAltarSettings() : entry.getValue();
+                validateVaultAltarSettings(settings);
+                validated.put(uniqueProfileName(validated, name), settings);
+            }
+        }
+        if (validated.isEmpty()) {
+            VaultAltarSettings settings = copyOf(migrationSettings == null ? defaultVaultAltarSettings() : migrationSettings);
+            validateVaultAltarSettings(settings);
+            validated.put(DEFAULT_PROFILE, settings);
+        }
+        return validated;
+    }
+
     private static LinkedHashMap<String, LightningStrikeSettings> validateLightningProfiles(Map<String, LightningStrikeSettings> profiles, LightningStrikeSettings migrationSettings) {
         LinkedHashMap<String, LightningStrikeSettings> validated = new LinkedHashMap<>();
         if (profiles != null) {
@@ -148,10 +175,19 @@ public final class ArcaneBeamConfig {
         return profiles.keySet().iterator().next();
     }
 
+    private static String validateSelectedVaultAltarProfile(String selectedProfile, LinkedHashMap<String, VaultAltarSettings> profiles) {
+        String normalized = normalizeProfileName(selectedProfile);
+        if (!normalized.isEmpty() && profiles.containsKey(normalized)) {
+            return normalized;
+        }
+        return profiles.keySet().iterator().next();
+    }
+
     private static void activateSelectedProfiles() {
         INSTANCE.arcane = INSTANCE.arcaneProfiles.get(INSTANCE.selectedArcaneProfile);
         INSTANCE.rail = INSTANCE.railProfiles.get(INSTANCE.selectedRailProfile);
         INSTANCE.lightningStrike = INSTANCE.lightningStrikeProfiles.get(INSTANCE.selectedLightningStrikeProfile);
+        INSTANCE.vaultAltar = INSTANCE.vaultAltarProfiles.get(INSTANCE.selectedVaultAltarProfile);
         INSTANCE.shaderCompatibility = INSTANCE.arcane.shaderCompatibility;
     }
 
@@ -164,6 +200,9 @@ public final class ArcaneBeamConfig {
         }
         if (INSTANCE.lightningStrikeProfiles != null && INSTANCE.selectedLightningStrikeProfile != null && INSTANCE.lightningStrike != null) {
             INSTANCE.lightningStrikeProfiles.put(INSTANCE.selectedLightningStrikeProfile, INSTANCE.lightningStrike);
+        }
+        if (INSTANCE.vaultAltarProfiles != null && INSTANCE.selectedVaultAltarProfile != null && INSTANCE.vaultAltar != null) {
+            INSTANCE.vaultAltarProfiles.put(INSTANCE.selectedVaultAltarProfile, INSTANCE.vaultAltar);
         }
     }
 
@@ -307,6 +346,37 @@ public final class ArcaneBeamConfig {
         settings.secondaryRippleDelayTicks = clampInt(settings.secondaryRippleDelayTicks < 0 ? 4 : settings.secondaryRippleDelayTicks, 0, 40);
     }
 
+    private static void validateVaultAltarSettings(VaultAltarSettings settings) {
+        if (settings.cornerColors == null || settings.cornerColors.length != 2) {
+            settings.cornerColors = new int[]{0x66DDFF, 0xFFFFFF};
+        }
+        if (settings.centerColors == null || settings.centerColors.length != 2) {
+            settings.centerColors = new int[]{0xD8FFFF, 0x5CB8FF};
+        }
+        if (settings.centerGlowColors == null || settings.centerGlowColors.length != 2) {
+            settings.centerGlowColors = new int[]{0x55CFFF, 0xFFFFFF};
+        }
+        if (settings.shaderCompatibility == null || ShaderCompatibility.fromId(settings.shaderCompatibility) == null) {
+            settings.shaderCompatibility = ShaderCompatibility.ON.id;
+        }
+        settings.cornerRadius = clampFloat(settings.cornerRadius <= 0.0F ? 0.035F : settings.cornerRadius, 0.005F, 0.20F);
+        settings.cornerOpacity = clampFloat(settings.cornerOpacity <= 0.0F ? 0.85F : settings.cornerOpacity, 0.0F, 1.0F);
+        settings.cornerVerticalTicks = clampInt(settings.cornerVerticalTicks < 0 ? 10 : settings.cornerVerticalTicks, 0, 60);
+        settings.cornerConvergeTicks = clampInt(settings.cornerConvergeTicks <= 0 ? 10 : settings.cornerConvergeTicks, 1, 80);
+        settings.centerHeight = clampFloat(settings.centerHeight <= 0.0F ? 3.0F : settings.centerHeight, 0.1F, 3.0F);
+        settings.centerFadeHeight = clampFloat(settings.centerFadeHeight <= 0.0F ? settings.centerHeight : settings.centerFadeHeight, 0.05F, 3.0F);
+        settings.centerBottomRadius = clampFloat(settings.centerBottomRadius <= 0.0F ? 0.06F : settings.centerBottomRadius, 0.005F, 0.50F);
+        settings.centerTopRadius = clampFloat(settings.centerTopRadius <= 0.0F ? 0.04F : settings.centerTopRadius, 0.005F, 0.50F);
+        settings.centerOpacity = clampFloat(settings.centerOpacity <= 0.0F ? 0.80F : settings.centerOpacity, 0.0F, 1.0F);
+        settings.centerGlowHeight = clampFloat(settings.centerGlowHeight <= 0.0F ? settings.centerHeight : settings.centerGlowHeight, 0.1F, 3.0F);
+        settings.centerGlowFadeHeight = clampFloat(settings.centerGlowFadeHeight <= 0.0F ? settings.centerGlowHeight : settings.centerGlowFadeHeight, 0.05F, 3.0F);
+        settings.centerGlowBottomRadius = clampFloat(settings.centerGlowBottomRadius <= 0.0F ? 0.11F : settings.centerGlowBottomRadius, 0.005F, 0.75F);
+        settings.centerGlowTopRadius = clampFloat(settings.centerGlowTopRadius <= 0.0F ? 0.08F : settings.centerGlowTopRadius, 0.005F, 0.75F);
+        settings.centerGlowOpacity = clampFloat(settings.centerGlowOpacity <= 0.0F ? 0.25F : settings.centerGlowOpacity, 0.0F, 1.0F);
+        settings.centerGlowRotationRpm = clampFloat(settings.centerGlowRotationRpm, 0.0F, 120.0F);
+        settings.soundVolume = clampFloat(settings.soundVolume, 0.0F, 2.0F);
+    }
+
     private static int clampInt(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
     }
@@ -340,6 +410,14 @@ public final class ArcaneBeamConfig {
 
     public static String selectedLightningProfileName() {
         return INSTANCE.selectedLightningStrikeProfile;
+    }
+
+    public static List<String> vaultAltarProfileNames() {
+        return new ArrayList<>(INSTANCE.vaultAltarProfiles.keySet());
+    }
+
+    public static String selectedVaultAltarProfileName() {
+        return INSTANCE.selectedVaultAltarProfile;
     }
 
     public static void selectProfile(boolean rail, String profileName) {
@@ -406,6 +484,33 @@ public final class ArcaneBeamConfig {
         INSTANCE.lightningStrikeProfiles.put(profileName, settings);
         INSTANCE.selectedLightningStrikeProfile = profileName;
         INSTANCE.lightningStrike = settings;
+        save();
+        return profileName;
+    }
+
+    public static void selectVaultAltarProfile(String profileName) {
+        String normalized = normalizeProfileName(profileName);
+        if (normalized.isEmpty() || !INSTANCE.vaultAltarProfiles.containsKey(normalized)) {
+            return;
+        }
+        syncActiveProfiles();
+        INSTANCE.selectedVaultAltarProfile = normalized;
+        INSTANCE.vaultAltar = INSTANCE.vaultAltarProfiles.get(normalized);
+        save();
+    }
+
+    public static String addVaultAltarProfile(String requestedName) {
+        String baseName = normalizeProfileName(requestedName);
+        if (baseName.isEmpty()) {
+            baseName = "Profile";
+        }
+        syncActiveProfiles();
+        String profileName = uniqueProfileName(INSTANCE.vaultAltarProfiles, baseName);
+        VaultAltarSettings settings = copyOf(INSTANCE.vaultAltar);
+        validateVaultAltarSettings(settings);
+        INSTANCE.vaultAltarProfiles.put(profileName, settings);
+        INSTANCE.selectedVaultAltarProfile = profileName;
+        INSTANCE.vaultAltar = settings;
         save();
         return profileName;
     }
@@ -510,17 +615,47 @@ public final class ArcaneBeamConfig {
         return copy;
     }
 
+    private static VaultAltarSettings copyOf(VaultAltarSettings source) {
+        VaultAltarSettings copy = new VaultAltarSettings();
+        copy.enabled = source.enabled;
+        copy.cornerColors = source.cornerColors == null ? null : source.cornerColors.clone();
+        copy.cornerRadius = source.cornerRadius;
+        copy.cornerOpacity = source.cornerOpacity;
+        copy.cornerVerticalTicks = source.cornerVerticalTicks;
+        copy.cornerConvergeTicks = source.cornerConvergeTicks;
+        copy.centerColors = source.centerColors == null ? null : source.centerColors.clone();
+        copy.centerHeight = source.centerHeight;
+        copy.centerFadeHeight = source.centerFadeHeight;
+        copy.centerBottomRadius = source.centerBottomRadius;
+        copy.centerTopRadius = source.centerTopRadius;
+        copy.centerOpacity = source.centerOpacity;
+        copy.centerGlowColors = source.centerGlowColors == null ? null : source.centerGlowColors.clone();
+        copy.centerGlowHeight = source.centerGlowHeight;
+        copy.centerGlowFadeHeight = source.centerGlowFadeHeight;
+        copy.centerGlowBottomRadius = source.centerGlowBottomRadius;
+        copy.centerGlowTopRadius = source.centerGlowTopRadius;
+        copy.centerGlowOpacity = source.centerGlowOpacity;
+        copy.centerGlowRotationRpm = source.centerGlowRotationRpm;
+        copy.fullbright = source.fullbright;
+        copy.shaderCompatibility = source.shaderCompatibility;
+        copy.soundVolume = source.soundVolume;
+        return copy;
+    }
+
     public static final class Config {
         public String shaderCompatibility;
         public String selectedArcaneProfile = DEFAULT_PROFILE;
         public String selectedRailProfile = DEFAULT_PROFILE;
         public String selectedLightningStrikeProfile = DEFAULT_PROFILE;
+        public String selectedVaultAltarProfile = DEFAULT_PROFILE;
         public BeamSettings arcane = defaultArcaneSettings();
         public BeamSettings rail = defaultRailSettings();
         public LightningStrikeSettings lightningStrike = defaultLightningStrikeSettings();
+        public VaultAltarSettings vaultAltar = defaultVaultAltarSettings();
         public LinkedHashMap<String, BeamSettings> arcaneProfiles;
         public LinkedHashMap<String, BeamSettings> railProfiles;
         public LinkedHashMap<String, LightningStrikeSettings> lightningStrikeProfiles;
+        public LinkedHashMap<String, VaultAltarSettings> vaultAltarProfiles;
     }
 
     public static final class BeamSettings {
@@ -652,6 +787,35 @@ public final class ArcaneBeamConfig {
 
     private static LightningStrikeSettings defaultLightningStrikeSettings() {
         return new LightningStrikeSettings();
+    }
+
+    public static final class VaultAltarSettings {
+        public boolean enabled = true;
+        public int[] cornerColors = new int[]{0x66DDFF, 0xFFFFFF};
+        public float cornerRadius = 0.035F;
+        public float cornerOpacity = 0.85F;
+        public int cornerVerticalTicks = 10;
+        public int cornerConvergeTicks = 10;
+        public int[] centerColors = new int[]{0xD8FFFF, 0x5CB8FF};
+        public float centerHeight = 3.0F;
+        public float centerFadeHeight = 3.0F;
+        public float centerBottomRadius = 0.06F;
+        public float centerTopRadius = 0.04F;
+        public float centerOpacity = 0.80F;
+        public int[] centerGlowColors = new int[]{0x55CFFF, 0xFFFFFF};
+        public float centerGlowHeight = 3.0F;
+        public float centerGlowFadeHeight = 3.0F;
+        public float centerGlowBottomRadius = 0.11F;
+        public float centerGlowTopRadius = 0.08F;
+        public float centerGlowOpacity = 0.25F;
+        public float centerGlowRotationRpm = 18.0F;
+        public boolean fullbright = true;
+        public String shaderCompatibility = ShaderCompatibility.ON.id;
+        public float soundVolume = 0.35F;
+    }
+
+    private static VaultAltarSettings defaultVaultAltarSettings() {
+        return new VaultAltarSettings();
     }
 
     public enum LightningSoundMode {

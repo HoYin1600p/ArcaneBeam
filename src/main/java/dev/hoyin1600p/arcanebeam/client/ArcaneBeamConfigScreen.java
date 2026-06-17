@@ -14,7 +14,7 @@ import java.util.function.Consumer;
 
 public class ArcaneBeamConfigScreen extends Screen {
     private static final int MIN_LAYOUT_WIDTH = 560;
-    private static final int MIN_LAYOUT_HEIGHT = 680;
+    private static final int MIN_LAYOUT_HEIGHT = 760;
     private static final int PROFILE_PANEL_Y = 68;
     private static final int PROFILE_PANEL_WIDTH = 132;
     private static final int PROFILE_PANEL_GAP = 20;
@@ -32,6 +32,7 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     private final List<EditBox> colorBoxes = new ArrayList<>();
     private final List<EditBox> glowColorBoxes = new ArrayList<>();
+    private final List<EditBox> altarColorBoxes = new ArrayList<>();
     private final List<EditBox> originBoxes = new ArrayList<>();
     private final List<Button> originLabelButtons = new ArrayList<>();
     private EditBox profileNameBox;
@@ -58,6 +59,19 @@ public class ArcaneBeamConfigScreen extends Screen {
     private SettingSlider lightningSpotSizeSlider;
     private SettingSlider lightningSpotOpacitySlider;
     private SettingSlider lightningSecondarySizeSlider;
+    private SettingSlider altarCornerRadiusSlider;
+    private SettingSlider altarCornerOpacitySlider;
+    private SettingSlider altarCenterHeightSlider;
+    private SettingSlider altarCenterFadeSlider;
+    private SettingSlider altarCenterBottomRadiusSlider;
+    private SettingSlider altarCenterTopRadiusSlider;
+    private SettingSlider altarCenterOpacitySlider;
+    private SettingSlider altarGlowHeightSlider;
+    private SettingSlider altarGlowFadeSlider;
+    private SettingSlider altarGlowBottomRadiusSlider;
+    private SettingSlider altarGlowTopRadiusSlider;
+    private SettingSlider altarGlowOpacitySlider;
+    private SettingSlider altarGlowRotationSlider;
     private Button soundButton;
     private Button handButton;
     private Button shaderCompatibilityButton;
@@ -78,9 +92,16 @@ public class ArcaneBeamConfigScreen extends Screen {
     private EditBox lightningSecondaryCountBox;
     private EditBox lightningSecondaryDelayBox;
     private EditBox lightningSoundVolumeBox;
+    private Button altarEnabledButton;
+    private Button altarShaderCompatibilityButton;
+    private Button altarFullbrightButton;
+    private EditBox altarVerticalTicksBox;
+    private EditBox altarConvergeTicksBox;
+    private EditBox altarSoundVolumeBox;
     private boolean profileDropdownOpen;
     private boolean railSelected;
     private boolean lightningSelected;
+    private boolean vaultAltarSelected;
     private boolean draggingPalette;
     private boolean draggingBrightness;
     private int brightnessDragBaseColor;
@@ -101,7 +122,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     public boolean lightningSelected() {
-        return lightningSelected;
+        return lightningSelected || vaultAltarSelected;
     }
 
     @Override
@@ -109,31 +130,44 @@ public class ArcaneBeamConfigScreen extends Screen {
         updateLayoutScale();
         colorBoxes.clear();
         glowColorBoxes.clear();
+        altarColorBoxes.clear();
         originBoxes.clear();
         originLabelButtons.clear();
         profileDropdownOpen = false;
         paletteX = layoutWidth / 2 - PALETTE_WIDTH / 2;
         paletteY = 72;
 
-        this.addRenderableWidget(new Button(layoutWidth / 2 - 139, 36, 90, 20, new TextComponent("Arcane"), button -> {
+        this.addRenderableWidget(new Button(layoutWidth / 2 - 190, 36, 80, 20, new TextComponent("Arcane"), button -> {
             railSelected = false;
             lightningSelected = false;
+            vaultAltarSelected = false;
             selectedSlot = 0;
             glowColorsSelected = false;
             profileDropdownOpen = false;
             refreshControls();
         }));
-        this.addRenderableWidget(new Button(layoutWidth / 2 - 45, 36, 90, 20, new TextComponent("Rail"), button -> {
+        this.addRenderableWidget(new Button(layoutWidth / 2 - 104, 36, 80, 20, new TextComponent("Rail"), button -> {
             railSelected = true;
             lightningSelected = false;
+            vaultAltarSelected = false;
             selectedSlot = 0;
             glowColorsSelected = false;
             profileDropdownOpen = false;
             refreshControls();
         }));
-        this.addRenderableWidget(new Button(layoutWidth / 2 + 49, 36, 112, 20, new TextComponent("Lightning Strike"), button -> {
+        this.addRenderableWidget(new Button(layoutWidth / 2 - 18, 36, 112, 20, new TextComponent("Lightning Strike"), button -> {
             railSelected = false;
             lightningSelected = true;
+            vaultAltarSelected = false;
+            selectedSlot = 0;
+            glowColorsSelected = false;
+            profileDropdownOpen = false;
+            refreshControls();
+        }));
+        this.addRenderableWidget(new Button(layoutWidth / 2 + 100, 36, 96, 20, new TextComponent("Vault Altar"), button -> {
+            railSelected = false;
+            lightningSelected = false;
+            vaultAltarSelected = true;
             selectedSlot = 0;
             glowColorsSelected = false;
             profileDropdownOpen = false;
@@ -242,6 +276,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         addOriginBox(sliderX + 208, originY, "Z", 2);
 
         addLightningControls(sliderX, sliderY);
+        addVaultAltarControls(sliderX, sliderY);
 
         this.addRenderableWidget(new Button(layoutWidth / 2 - 45, layoutHeight - 32, 90, 20, new TextComponent("Done"), button -> onClose()));
         refreshControls();
@@ -318,6 +353,65 @@ public class ArcaneBeamConfigScreen extends Screen {
         lightningSoundVolumeBox = addLightningSoundVolumeBox(x + 208, y + 296);
     }
 
+    private void addVaultAltarControls(int x, int y) {
+        int colorY = beamRowY();
+        addAltarColorBox(slotStartX(0), colorY, "Corner 1", 0);
+        addAltarColorBox(slotStartX(1), colorY, "Corner 2", 1);
+        addAltarColorBox(slotStartX(2), colorY, "Center 1", 2);
+        addAltarColorBox(slotStartX(3), colorY, "Center 2", 3);
+        addAltarColorBox(slotStartX(1), glowRowY(), "Glow 1", 4);
+        addAltarColorBox(slotStartX(2), glowRowY(), "Glow 2", 5);
+
+        altarEnabledButton = this.addRenderableWidget(new Button(x, y, 150, 20, TextComponent.EMPTY, button -> {
+            vaultAltarSettings().enabled = !vaultAltarSettings().enabled;
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        altarShaderCompatibilityButton = this.addRenderableWidget(new Button(x + 158, y, 150, 20, TextComponent.EMPTY, button -> {
+            ArcaneBeamConfig.ShaderCompatibility current = vaultAltarShaderCompatibility();
+            vaultAltarSettings().shaderCompatibility = current == ArcaneBeamConfig.ShaderCompatibility.ON
+                    ? ArcaneBeamConfig.ShaderCompatibility.OFF.id
+                    : ArcaneBeamConfig.ShaderCompatibility.ON.id;
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        altarCornerRadiusSlider = new SettingSlider(x, y + 24, 150, 20, "Corner Radius", 0.005D, 0.20D, () -> vaultAltarSettings().cornerRadius, value -> vaultAltarSettings().cornerRadius = (float) value);
+        altarCornerOpacitySlider = new SettingSlider(x + 158, y + 24, 150, 20, "Corner Opacity", 0.0D, 1.0D, () -> vaultAltarSettings().cornerOpacity, value -> vaultAltarSettings().cornerOpacity = (float) value);
+        altarCenterBottomRadiusSlider = new SettingSlider(x, y + 48, 150, 20, "Center Bottom", 0.005D, 0.50D, () -> vaultAltarSettings().centerBottomRadius, value -> vaultAltarSettings().centerBottomRadius = (float) value);
+        altarCenterTopRadiusSlider = new SettingSlider(x + 158, y + 48, 150, 20, "Center Top", 0.005D, 0.50D, () -> vaultAltarSettings().centerTopRadius, value -> vaultAltarSettings().centerTopRadius = (float) value);
+        altarCenterHeightSlider = new SettingSlider(x, y + 72, 150, 20, "Center Height", 0.1D, 3.0D, () -> vaultAltarSettings().centerHeight, value -> vaultAltarSettings().centerHeight = (float) value);
+        altarCenterFadeSlider = new SettingSlider(x + 158, y + 72, 150, 20, "Center Fade", 0.05D, 3.0D, () -> vaultAltarSettings().centerFadeHeight, value -> vaultAltarSettings().centerFadeHeight = (float) value);
+        altarCenterOpacitySlider = new SettingSlider(x, y + 96, 150, 20, "Center Opacity", 0.0D, 1.0D, () -> vaultAltarSettings().centerOpacity, value -> vaultAltarSettings().centerOpacity = (float) value);
+        altarGlowOpacitySlider = new SettingSlider(x + 158, y + 96, 150, 20, "Glow Opacity", 0.0D, 1.0D, () -> vaultAltarSettings().centerGlowOpacity, value -> vaultAltarSettings().centerGlowOpacity = (float) value);
+        altarGlowBottomRadiusSlider = new SettingSlider(x, y + 120, 150, 20, "Glow Bottom", 0.005D, 0.75D, () -> vaultAltarSettings().centerGlowBottomRadius, value -> vaultAltarSettings().centerGlowBottomRadius = (float) value);
+        altarGlowTopRadiusSlider = new SettingSlider(x + 158, y + 120, 150, 20, "Glow Top", 0.005D, 0.75D, () -> vaultAltarSettings().centerGlowTopRadius, value -> vaultAltarSettings().centerGlowTopRadius = (float) value);
+        altarGlowHeightSlider = new SettingSlider(x, y + 144, 150, 20, "Glow Height", 0.1D, 3.0D, () -> vaultAltarSettings().centerGlowHeight, value -> vaultAltarSettings().centerGlowHeight = (float) value);
+        altarGlowFadeSlider = new SettingSlider(x + 158, y + 144, 150, 20, "Glow Fade", 0.05D, 3.0D, () -> vaultAltarSettings().centerGlowFadeHeight, value -> vaultAltarSettings().centerGlowFadeHeight = (float) value);
+        altarGlowRotationSlider = new SettingSlider(x, y + 168, 308, 20, "Glow Rotation", 0.0D, 120.0D, () -> vaultAltarSettings().centerGlowRotationRpm, value -> vaultAltarSettings().centerGlowRotationRpm = (float) value);
+        this.addRenderableWidget(altarCornerRadiusSlider);
+        this.addRenderableWidget(altarCornerOpacitySlider);
+        this.addRenderableWidget(altarCenterBottomRadiusSlider);
+        this.addRenderableWidget(altarCenterTopRadiusSlider);
+        this.addRenderableWidget(altarCenterHeightSlider);
+        this.addRenderableWidget(altarCenterFadeSlider);
+        this.addRenderableWidget(altarCenterOpacitySlider);
+        this.addRenderableWidget(altarGlowOpacitySlider);
+        this.addRenderableWidget(altarGlowBottomRadiusSlider);
+        this.addRenderableWidget(altarGlowTopRadiusSlider);
+        this.addRenderableWidget(altarGlowHeightSlider);
+        this.addRenderableWidget(altarGlowFadeSlider);
+        this.addRenderableWidget(altarGlowRotationSlider);
+
+        altarFullbrightButton = this.addRenderableWidget(new Button(x, y + 196, 150, 20, TextComponent.EMPTY, button -> {
+            vaultAltarSettings().fullbright = !vaultAltarSettings().fullbright;
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        altarVerticalTicksBox = addAltarNumberBox(x, y + 224, 54, 2, "Vertical", "[0-9]{0,2}", this::updateAltarVerticalTicksFromText);
+        altarConvergeTicksBox = addAltarNumberBox(x + 128, y + 224, 54, 2, "Converge", "[0-9]{0,2}", this::updateAltarConvergeTicksFromText);
+        altarSoundVolumeBox = addAltarSoundVolumeBox(x + 208, y + 224);
+    }
+
     private void updateLayoutScale() {
         float widthScale = this.width / (float) MIN_LAYOUT_WIDTH;
         float heightScale = this.height / (float) MIN_LAYOUT_HEIGHT;
@@ -359,11 +453,38 @@ public class ArcaneBeamConfigScreen extends Screen {
         return editBox;
     }
 
+    private void addAltarColorBox(int x, int y, String label, int slot) {
+        EditBox editBox = new EditBox(this.font, x + SLOT_PREVIEW_WIDTH + SLOT_INNER_GAP, y, SLOT_HEX_WIDTH, 20, new TextComponent(label));
+        editBox.setMaxLength(7);
+        editBox.setFilter(value -> value.isEmpty() || value.matches("#?[0-9a-fA-F]{0,6}"));
+        editBox.setResponder(value -> updateAltarColorFromText(slot, value));
+        altarColorBoxes.add(editBox);
+        this.addRenderableWidget(editBox);
+    }
+
     private EditBox addLightningSoundVolumeBox(int x, int y) {
         EditBox editBox = new EditBox(this.font, x + 50, y, 50, 20, new TextComponent("Sound Volume"));
         editBox.setMaxLength(4);
         editBox.setFilter(value -> value.isEmpty() || value.matches("[0-9]{0,1}(\\.[0-9]{0,2})?") || value.matches("2(\\.[0]{0,2})?"));
         editBox.setResponder(this::updateLightningSoundVolumeFromText);
+        this.addRenderableWidget(editBox);
+        return editBox;
+    }
+
+    private EditBox addAltarNumberBox(int x, int y, int width, int maxLength, String label, String pattern, Consumer<String> responder) {
+        EditBox editBox = new EditBox(this.font, x + 58, y, width, 20, new TextComponent(label));
+        editBox.setMaxLength(maxLength);
+        editBox.setFilter(value -> value.isEmpty() || value.matches(pattern));
+        editBox.setResponder(responder);
+        this.addRenderableWidget(editBox);
+        return editBox;
+    }
+
+    private EditBox addAltarSoundVolumeBox(int x, int y) {
+        EditBox editBox = new EditBox(this.font, x + 50, y, 50, 20, new TextComponent("Sound Volume"));
+        editBox.setMaxLength(4);
+        editBox.setFilter(value -> value.isEmpty() || value.matches("[0-9]{0,1}(\\.[0-9]{0,2})?") || value.matches("2(\\.[0]{0,2})?"));
+        editBox.setResponder(this::updateAltarSoundVolumeFromText);
         this.addRenderableWidget(editBox);
         return editBox;
     }
@@ -380,7 +501,11 @@ public class ArcaneBeamConfigScreen extends Screen {
         renderProfilePanel(poseStack);
         renderPalette(poseStack);
         renderBrightnessStrip(poseStack);
-        if (lightningSelected) {
+        if (vaultAltarSelected) {
+            drawCenteredString(poseStack, this.font, "Vault Altar colors", layoutWidth / 2, 60, 0xD8D8D8);
+            renderVaultAltarColorPreviews(poseStack);
+            renderVaultAltarLabels(poseStack);
+        } else if (lightningSelected) {
             drawCenteredString(poseStack, this.font, "Lightning Strike colors", layoutWidth / 2, 60, 0xD8D8D8);
             renderLightningColorPreviews(poseStack);
             renderLightningLabels(poseStack);
@@ -473,6 +598,13 @@ public class ArcaneBeamConfigScreen extends Screen {
             ArcaneBeamConfig.save();
             return true;
         }
+        if (vaultAltarSelected && altarSoundVolumeBox != null && altarSoundVolumeBox.isMouseOver(layoutMouseX, layoutMouseY)) {
+            double step = hasShiftDown() ? 0.10D : 0.01D;
+            nudgeAltarSoundVolume(delta > 0.0D ? step : -step);
+            refreshAltarSoundVolumeBox();
+            ArcaneBeamConfig.save();
+            return true;
+        }
         if (!lightningSelected && fadeInTicksBox != null && fadeInTicksBox.isMouseOver(layoutMouseX, layoutMouseY)) {
             nudgeFadeInTicks(delta > 0.0D ? 1 : -1);
             refreshFadeTickBoxes();
@@ -538,6 +670,12 @@ public class ArcaneBeamConfigScreen extends Screen {
         tickBox(lightningSecondaryCountBox);
         tickBox(lightningSecondaryDelayBox);
         tickBox(lightningSoundVolumeBox);
+        for (EditBox altarColorBox : altarColorBoxes) {
+            altarColorBox.tick();
+        }
+        tickBox(altarVerticalTicksBox);
+        tickBox(altarConvergeTicksBox);
+        tickBox(altarSoundVolumeBox);
     }
 
     private static void tickBox(EditBox box) {
@@ -609,6 +747,28 @@ public class ArcaneBeamConfigScreen extends Screen {
         drawString(poseStack, this.font, label, textX, box.y + 23, 0xD8D8D8);
     }
 
+    private void renderVaultAltarColorPreviews(PoseStack poseStack) {
+        if (altarColorBoxes.size() < 6) {
+            return;
+        }
+        for (int i = 0; i < altarColorBoxes.size(); i++) {
+            EditBox box = altarColorBoxes.get(i);
+            renderPreviewBox(poseStack, box.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP, box.y, vaultAltarColor(i), selectedSlot == i);
+            renderLightningColorLabel(poseStack, box, vaultAltarColorLabel(i));
+        }
+    }
+
+    private String vaultAltarColorLabel(int slot) {
+        return switch (slot) {
+            case 0 -> "Corner 1";
+            case 1 -> "Corner 2";
+            case 2 -> "Center 1";
+            case 3 -> "Center 2";
+            case 4 -> "Glow 1";
+            default -> "Glow 2";
+        };
+    }
+
     private void renderProfilePanel(PoseStack poseStack) {
         drawString(poseStack, this.font, profileLabel(), profilePanelX(), PROFILE_PANEL_Y, 0xD8D8D8);
     }
@@ -622,6 +782,15 @@ public class ArcaneBeamConfigScreen extends Screen {
         drawString(poseStack, this.font, "Ripples", lightningSecondaryCountBox.x - 48, lightningSecondaryCountBox.y + 6, 0xD8D8D8);
         drawString(poseStack, this.font, "Delay", lightningSecondaryDelayBox.x - 42, lightningSecondaryDelayBox.y + 6, 0xD8D8D8);
         drawString(poseStack, this.font, "Volume", lightningSoundVolumeBox.x - 50, lightningSoundVolumeBox.y + 6, 0xD8D8D8);
+    }
+
+    private void renderVaultAltarLabels(PoseStack poseStack) {
+        if (altarVerticalTicksBox == null || altarSoundVolumeBox == null) {
+            return;
+        }
+        drawString(poseStack, this.font, "Vertical", altarVerticalTicksBox.x - 54, altarVerticalTicksBox.y + 6, 0xD8D8D8);
+        drawString(poseStack, this.font, "Converge", altarConvergeTicksBox.x - 58, altarConvergeTicksBox.y + 6, 0xD8D8D8);
+        drawString(poseStack, this.font, "Volume", altarSoundVolumeBox.x - 50, altarSoundVolumeBox.y + 6, 0xD8D8D8);
     }
 
     private void renderProfileDropdown(PoseStack poseStack) {
@@ -686,7 +855,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void addProfile() {
-        if (lightningSelected) {
+        if (vaultAltarSelected) {
+            ArcaneBeamConfig.addVaultAltarProfile(profileNameBox == null ? "" : profileNameBox.getValue());
+        } else if (lightningSelected) {
             ArcaneBeamConfig.addLightningProfile(profileNameBox == null ? "" : profileNameBox.getValue());
         } else {
             ArcaneBeamConfig.addProfile(railSelected, profileNameBox == null ? "" : profileNameBox.getValue());
@@ -720,6 +891,17 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private boolean handlePreviewSelection(double mouseX, double mouseY) {
+        if (vaultAltarSelected) {
+            for (int i = 0; i < altarColorBoxes.size(); i++) {
+                EditBox box = altarColorBoxes.get(i);
+                int previewX = box.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP;
+                if (isInside(mouseX, mouseY, previewX, box.y, SLOT_PREVIEW_WIDTH, 20)) {
+                    selectedSlot = i;
+                    return true;
+                }
+            }
+            return false;
+        }
         if (lightningSelected) {
             if (lightningRingColorBox == null || lightningSphereColorBox == null || lightningConeColorBox == null || lightningSpotColorBox == null) {
                 return false;
@@ -753,6 +935,16 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void selectLightningColorBox(double mouseX, double mouseY) {
+        if (vaultAltarSelected) {
+            for (int i = 0; i < altarColorBoxes.size(); i++) {
+                EditBox box = altarColorBoxes.get(i);
+                if (isInside(mouseX, mouseY, box.x, box.y, SLOT_HEX_WIDTH, 20)) {
+                    selectedSlot = i;
+                    return;
+                }
+            }
+            return;
+        }
         if (!lightningSelected || lightningRingColorBox == null || lightningSphereColorBox == null || lightningConeColorBox == null || lightningSpotColorBox == null) {
             return;
         }
@@ -839,6 +1031,12 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void refreshBoxes() {
+        if (vaultAltarSelected) {
+            for (int i = 0; i < altarColorBoxes.size(); i++) {
+                altarColorBoxes.get(i).setValue(formatColor(vaultAltarColor(i)));
+            }
+            return;
+        }
         if (lightningSelected) {
             if (lightningRingColorBox != null) {
                 lightningRingColorBox.setValue(formatColor(lightningSettings().ringColor));
@@ -882,11 +1080,12 @@ public class ArcaneBeamConfigScreen extends Screen {
             refreshSoundVolumeBox();
             refreshFadeTickBoxes();
             refreshLightningControls();
+            refreshVaultAltarControls();
         }
     }
 
     private void updateWidgetVisibility() {
-        boolean beamVisible = !lightningSelected;
+        boolean beamVisible = !lightningSelected && !vaultAltarSelected;
         for (EditBox box : colorBoxes) {
             box.visible = beamVisible;
         }
@@ -944,6 +1143,30 @@ public class ArcaneBeamConfigScreen extends Screen {
         setVisible(lightningSecondaryCountBox, lightningSelected);
         setVisible(lightningSecondaryDelayBox, lightningSelected);
         setVisible(lightningSoundVolumeBox, lightningSelected);
+
+        for (EditBox box : altarColorBoxes) {
+            box.visible = vaultAltarSelected;
+            box.active = vaultAltarSelected;
+        }
+        setVisible(altarEnabledButton, vaultAltarSelected);
+        setVisible(altarShaderCompatibilityButton, vaultAltarSelected);
+        setVisible(altarFullbrightButton, vaultAltarSelected);
+        setVisible(altarCornerRadiusSlider, vaultAltarSelected);
+        setVisible(altarCornerOpacitySlider, vaultAltarSelected);
+        setVisible(altarCenterHeightSlider, vaultAltarSelected);
+        setVisible(altarCenterFadeSlider, vaultAltarSelected);
+        setVisible(altarCenterBottomRadiusSlider, vaultAltarSelected);
+        setVisible(altarCenterTopRadiusSlider, vaultAltarSelected);
+        setVisible(altarCenterOpacitySlider, vaultAltarSelected);
+        setVisible(altarGlowHeightSlider, vaultAltarSelected);
+        setVisible(altarGlowFadeSlider, vaultAltarSelected);
+        setVisible(altarGlowBottomRadiusSlider, vaultAltarSelected);
+        setVisible(altarGlowTopRadiusSlider, vaultAltarSelected);
+        setVisible(altarGlowOpacitySlider, vaultAltarSelected);
+        setVisible(altarGlowRotationSlider, vaultAltarSelected);
+        setVisible(altarVerticalTicksBox, vaultAltarSelected);
+        setVisible(altarConvergeTicksBox, vaultAltarSelected);
+        setVisible(altarSoundVolumeBox, vaultAltarSelected);
     }
 
     private static void setVisible(net.minecraft.client.gui.components.AbstractWidget widget, boolean visible) {
@@ -985,6 +1208,32 @@ public class ArcaneBeamConfigScreen extends Screen {
         lightningSecondaryCountBox.setValue(Integer.toString(settings.secondaryRippleCount));
         lightningSecondaryDelayBox.setValue(Integer.toString(settings.secondaryRippleDelayTicks));
         refreshLightningSoundVolumeBox();
+    }
+
+    private void refreshVaultAltarControls() {
+        if (altarEnabledButton == null) {
+            return;
+        }
+        ArcaneBeamConfig.VaultAltarSettings settings = vaultAltarSettings();
+        altarEnabledButton.setMessage(new TextComponent("Replacement: " + (settings.enabled ? "On" : "Off")));
+        altarShaderCompatibilityButton.setMessage(new TextComponent("Shader Compatibility: " + vaultAltarShaderCompatibility().label));
+        altarFullbrightButton.setMessage(new TextComponent("Fullbright: " + (settings.fullbright ? "On" : "Off")));
+        altarCornerRadiusSlider.refresh();
+        altarCornerOpacitySlider.refresh();
+        altarCenterHeightSlider.refresh();
+        altarCenterFadeSlider.refresh();
+        altarCenterBottomRadiusSlider.refresh();
+        altarCenterTopRadiusSlider.refresh();
+        altarCenterOpacitySlider.refresh();
+        altarGlowHeightSlider.refresh();
+        altarGlowFadeSlider.refresh();
+        altarGlowBottomRadiusSlider.refresh();
+        altarGlowTopRadiusSlider.refresh();
+        altarGlowOpacitySlider.refresh();
+        altarGlowRotationSlider.refresh();
+        altarVerticalTicksBox.setValue(Integer.toString(settings.cornerVerticalTicks));
+        altarConvergeTicksBox.setValue(Integer.toString(settings.cornerConvergeTicks));
+        refreshAltarSoundVolumeBox();
     }
 
     private void cycleShaderCompatibility() {
@@ -1210,6 +1459,54 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
     }
 
+    private void updateAltarColorFromText(int slot, String value) {
+        if (value == null) {
+            return;
+        }
+        String normalized = value.startsWith("#") ? value.substring(1) : value;
+        if (normalized.length() != 6) {
+            return;
+        }
+        try {
+            setVaultAltarColor(slot, Integer.parseInt(normalized, 16));
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void updateAltarVerticalTicksFromText(String value) {
+        if (value == null || value.isEmpty()) {
+            return;
+        }
+        try {
+            vaultAltarSettings().cornerVerticalTicks = clamp(Integer.parseInt(value), 0, 60);
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void updateAltarConvergeTicksFromText(String value) {
+        if (value == null || value.isEmpty()) {
+            return;
+        }
+        try {
+            vaultAltarSettings().cornerConvergeTicks = clamp(Integer.parseInt(value), 1, 80);
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void updateAltarSoundVolumeFromText(String value) {
+        if (value == null || value.isEmpty() || ".".equals(value)) {
+            return;
+        }
+        try {
+            vaultAltarSettings().soundVolume = clampSoundVolume((float) roundOffset(Double.parseDouble(value)));
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
     private void nudgeOrigin(int axis, double amount) {
         if (axis == 0) {
             settings().startOffsetX = roundOffset(settings().startOffsetX + amount);
@@ -1228,6 +1525,10 @@ public class ArcaneBeamConfigScreen extends Screen {
         lightningSettings().soundVolume = clampSoundVolume((float) roundOffset(lightningSettings().soundVolume + amount));
     }
 
+    private void nudgeAltarSoundVolume(double amount) {
+        vaultAltarSettings().soundVolume = clampSoundVolume((float) roundOffset(vaultAltarSettings().soundVolume + amount));
+    }
+
     private void nudgeFadeInTicks(int amount) {
         settings().fadeInTicks = clampTicks(settings().fadeInTicks + amount);
     }
@@ -1244,6 +1545,10 @@ public class ArcaneBeamConfigScreen extends Screen {
         return ArcaneBeamConfig.INSTANCE.lightningStrike;
     }
 
+    private ArcaneBeamConfig.VaultAltarSettings vaultAltarSettings() {
+        return ArcaneBeamConfig.INSTANCE.vaultAltar;
+    }
+
     private void refreshSoundVolumeBox() {
         if (soundVolumeBox != null) {
             soundVolumeBox.setValue(formatOffset(settings().soundVolume));
@@ -1253,6 +1558,12 @@ public class ArcaneBeamConfigScreen extends Screen {
     private void refreshLightningSoundVolumeBox() {
         if (lightningSoundVolumeBox != null) {
             lightningSoundVolumeBox.setValue(formatOffset(lightningSettings().soundVolume));
+        }
+    }
+
+    private void refreshAltarSoundVolumeBox() {
+        if (altarSoundVolumeBox != null) {
+            altarSoundVolumeBox.setValue(formatOffset(vaultAltarSettings().soundVolume));
         }
     }
 
@@ -1270,6 +1581,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private int selectedColor() {
+        if (vaultAltarSelected) {
+            return vaultAltarColor(selectedSlot);
+        }
         if (lightningSelected) {
             return switch (selectedSlot) {
                 case 1 -> lightningSettings().sphereColor;
@@ -1282,6 +1596,10 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void setSelectedColor(int color) {
+        if (vaultAltarSelected) {
+            setVaultAltarColor(selectedSlot, color);
+            return;
+        }
         if (lightningSelected) {
             switch (selectedSlot) {
                 case 1 -> {
@@ -1298,21 +1616,54 @@ public class ArcaneBeamConfigScreen extends Screen {
         syncPrimaryColors();
     }
 
+    private int vaultAltarColor(int slot) {
+        return switch (slot) {
+            case 0 -> vaultAltarSettings().cornerColors[0];
+            case 1 -> vaultAltarSettings().cornerColors[1];
+            case 2 -> vaultAltarSettings().centerColors[0];
+            case 3 -> vaultAltarSettings().centerColors[1];
+            case 4 -> vaultAltarSettings().centerGlowColors[0];
+            case 5 -> vaultAltarSettings().centerGlowColors[1];
+            default -> vaultAltarSettings().cornerColors[0];
+        };
+    }
+
+    private void setVaultAltarColor(int slot, int color) {
+        switch (slot) {
+            case 0 -> vaultAltarSettings().cornerColors[0] = color;
+            case 1 -> vaultAltarSettings().cornerColors[1] = color;
+            case 2 -> vaultAltarSettings().centerColors[0] = color;
+            case 3 -> vaultAltarSettings().centerColors[1] = color;
+            case 4 -> vaultAltarSettings().centerGlowColors[0] = color;
+            case 5 -> vaultAltarSettings().centerGlowColors[1] = color;
+            default -> {
+            }
+        }
+    }
+
     private void syncPrimaryColors() {
         settings().color = settings().colors[0];
         settings().glowColor = settings().glowColors[0];
     }
 
     private List<String> profileNames() {
+        if (vaultAltarSelected) {
+            return ArcaneBeamConfig.vaultAltarProfileNames();
+        }
         return lightningSelected ? ArcaneBeamConfig.lightningProfileNames() : ArcaneBeamConfig.profileNames(railSelected);
     }
 
     private String selectedProfileName() {
+        if (vaultAltarSelected) {
+            return ArcaneBeamConfig.selectedVaultAltarProfileName();
+        }
         return lightningSelected ? ArcaneBeamConfig.selectedLightningProfileName() : ArcaneBeamConfig.selectedProfileName(railSelected);
     }
 
     private void selectProfile(String profileName) {
-        if (lightningSelected) {
+        if (vaultAltarSelected) {
+            ArcaneBeamConfig.selectVaultAltarProfile(profileName);
+        } else if (lightningSelected) {
             ArcaneBeamConfig.selectLightningProfile(profileName);
         } else {
             ArcaneBeamConfig.selectProfile(railSelected, profileName);
@@ -1320,6 +1671,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private String profileLabel() {
+        if (vaultAltarSelected) {
+            return "Vault Altar Profiles";
+        }
         if (lightningSelected) {
             return "Lightning Profiles";
         }
@@ -1343,6 +1697,11 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     private ArcaneBeamConfig.ShaderCompatibility lightningShaderCompatibility() {
         ArcaneBeamConfig.ShaderCompatibility compatibility = ArcaneBeamConfig.ShaderCompatibility.fromId(lightningSettings().shaderCompatibility);
+        return compatibility == null ? ArcaneBeamConfig.ShaderCompatibility.OFF : compatibility;
+    }
+
+    private ArcaneBeamConfig.ShaderCompatibility vaultAltarShaderCompatibility() {
+        ArcaneBeamConfig.ShaderCompatibility compatibility = ArcaneBeamConfig.ShaderCompatibility.fromId(vaultAltarSettings().shaderCompatibility);
         return compatibility == null ? ArcaneBeamConfig.ShaderCompatibility.OFF : compatibility;
     }
 
