@@ -9,6 +9,31 @@ Rules for future updates:
 - Keep the user-facing release text clean and ready to paste.
 - If Codex needs internal notes for a release, put them in a clearly separate `Internal Notes` subsection.
 
+## 0.1.9
+
+### Release Copy
+
+```markdown
+## 0.1.9
+
+- Added a configurable Vault Altar imbuement visual replacement
+- Replaced the altar activation particle column with four corner beams that converge on the altar center
+- Added a configurable center beam and center glow that grow upward after the corner beams converge
+- Added Vault Altar profile support in the config screen, matching the Arcane, Rail, and Lightning Strike tabs
+- Added Vault Altar color controls for corner beams, center beam, and center glow
+- Added Vault Altar shader compatibility support
+- Added configurable corner beam origin height and radius so ceiling-mounted emitters can be aligned in-world
+- Added configurable timing for the corner hold, convergence, and center beam growth phases
+- Added small rendered contact sparks at the corner beam impact points without using particle spam
+- Added Vault Altar sound modes for Default, Altar 1, Resource Pack 1, and Resource Pack 2
+- Added Vault Altar replacement sound volume control
+- Included the bundled Altar 1 imbuement sound
+- Updated the example resource pack zip with Vault Altar sound replacement paths
+- Suppressed the default altar activation and completion sounds when a custom Vault Altar sound is selected
+- Set the default Vault Altar settings to the tested in-game profile values
+- Improved the Vault Altar beam path so the beam contact points trace the altar surface during convergence
+```
+
 ## 0.1.8
 
 ### Release Copy

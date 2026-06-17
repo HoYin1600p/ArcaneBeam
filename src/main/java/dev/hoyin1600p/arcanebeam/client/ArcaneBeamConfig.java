@@ -807,32 +807,32 @@ public final class ArcaneBeamConfig {
 
     public static final class VaultAltarSettings {
         public boolean enabled = true;
-        public int[] cornerColors = new int[]{0x66DDFF, 0xFFFFFF};
+        public int[] cornerColors = new int[]{0xFF0D0D, 0xFAA40D};
         public float cornerRadius = 0.035F;
-        public float cornerOpacity = 0.85F;
+        public float cornerOpacity = 0.91549295F;
         public int cornerVerticalTicks = 20;
-        public int cornerConvergeTicks = 30;
-        public int centerGrowTicks = 40;
-        public float cornerOriginHeight = 2.0F;
-        public float cornerOriginRadius = 0.7F;
-        public boolean cornerOriginMigrated = false;
-        public int[] centerColors = new int[]{0xD8FFFF, 0x5CB8FF};
-        public float centerHeight = 3.0F;
-        public float centerFadeHeight = 3.0F;
+        public int cornerConvergeTicks = 40;
+        public int centerGrowTicks = 15;
+        public float cornerOriginHeight = 3.0F;
+        public float cornerOriginRadius = 2.0F;
+        public boolean cornerOriginMigrated = true;
+        public int[] centerColors = new int[]{0x0DFAEE, 0x0DAAFF};
+        public float centerHeight = 1.6316901F;
+        public float centerFadeHeight = 1.171831F;
         public float centerBottomRadius = 0.06F;
         public float centerTopRadius = 0.04F;
         public float centerOpacity = 0.80F;
-        public int[] centerGlowColors = new int[]{0x55CFFF, 0xFFFFFF};
-        public float centerGlowHeight = 3.0F;
-        public float centerGlowFadeHeight = 3.0F;
-        public float centerGlowBottomRadius = 0.11F;
-        public float centerGlowTopRadius = 0.08F;
+        public int[] centerGlowColors = new int[]{0xBBFD0D, 0x0DFFA2};
+        public float centerGlowHeight = 1.0802817F;
+        public float centerGlowFadeHeight = 0.94330984F;
+        public float centerGlowBottomRadius = 0.14140844F;
+        public float centerGlowTopRadius = 0.09419014F;
         public float centerGlowOpacity = 0.25F;
-        public float centerGlowRotationRpm = 18.0F;
+        public float centerGlowRotationRpm = 35.6F;
         public boolean fullbright = true;
         public String shaderCompatibility = ShaderCompatibility.ON.id;
-        public String soundMode = VaultAltarSoundMode.DEFAULT.id;
-        public float soundVolume = 0.35F;
+        public String soundMode = VaultAltarSoundMode.ALTAR_1.id;
+        public float soundVolume = 1.24F;
     }
 
     private static VaultAltarSettings defaultVaultAltarSettings() {
