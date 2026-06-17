@@ -17,6 +17,8 @@ import java.io.IOException;
 
 public final class ArcaneBeamSoundController {
     private static final int ARCANE_OPTION_2_STARTUP_TICKS = 49;
+    private static final int ONE_SHOT_LIFETIME_TICKS = 120;
+    private static final int VAULT_ALTAR_BEAM_LIFETIME_TICKS = 400;
     private static final String ARCANE_1_PATH = "abilities/arcane_1";
     private static final String ARCANE_2_STARTUP_PATH = "abilities/arcane_2_startup";
     private static final String ARCANE_2_LOOP_PATH = "abilities/arcane_2_loop";
@@ -144,7 +146,7 @@ public final class ArcaneBeamSoundController {
         if (minecraft == null || position == null || !hasSoundFile(minecraft, VAULT_ALTAR_BEAM_PATH)) {
             return;
         }
-        minecraft.getSoundManager().play(new PositionedFileSoundInstance(VAULT_ALTAR_BEAM_EVENT, VAULT_ALTAR_BEAM_PATH, position, volume));
+        minecraft.getSoundManager().play(new PositionedFileSoundInstance(VAULT_ALTAR_BEAM_EVENT, VAULT_ALTAR_BEAM_PATH, position, volume, true, VAULT_ALTAR_BEAM_LIFETIME_TICKS));
     }
 
     private static void playLightningStrikeSound(Minecraft minecraft, Vec3 position, boolean impact) {
@@ -229,9 +231,8 @@ public final class ArcaneBeamSoundController {
     }
 
     private static class FileSoundInstance extends AbstractTickableSoundInstance {
-        private static final int ONE_SHOT_LIFETIME_TICKS = 120;
-
         private final WeighedSoundEvents soundSet;
+        private final int maxAgeTicks;
         private int ageTicks;
 
         private FileSoundInstance(String path) {
@@ -243,8 +244,13 @@ public final class ArcaneBeamSoundController {
         }
 
         private FileSoundInstance(ResourceLocation eventId, ResourceLocation fileId, float volume, boolean stream) {
+            this(eventId, fileId, volume, stream, ONE_SHOT_LIFETIME_TICKS);
+        }
+
+        private FileSoundInstance(ResourceLocation eventId, ResourceLocation fileId, float volume, boolean stream, int maxAgeTicks) {
             super(new SoundEvent(eventId), SoundSource.PLAYERS);
             this.soundSet = new WeighedSoundEvents(eventId, null);
+            this.maxAgeTicks = maxAgeTicks;
             this.sound = new Sound(fileId.toString(), 1.0F, 1.0F, 1, Sound.Type.FILE, stream, false, 16);
             this.soundSet.addSound(this.sound);
             this.looping = false;
@@ -262,7 +268,7 @@ public final class ArcaneBeamSoundController {
 
         @Override
         public void tick() {
-            if (!this.looping && ++ageTicks >= ONE_SHOT_LIFETIME_TICKS) {
+            if (!this.looping && ++ageTicks >= maxAgeTicks) {
                 stop();
             }
         }
@@ -277,7 +283,11 @@ public final class ArcaneBeamSoundController {
 
     private static final class PositionedFileSoundInstance extends FileSoundInstance {
         private PositionedFileSoundInstance(String eventName, String path, Vec3 position, float volume) {
-            super(new ResourceLocation(ArcaneBeam.MOD_ID, eventName), new ResourceLocation(ArcaneBeam.MOD_ID, path), volume, false);
+            this(eventName, path, position, volume, false, ONE_SHOT_LIFETIME_TICKS);
+        }
+
+        private PositionedFileSoundInstance(String eventName, String path, Vec3 position, float volume, boolean stream, int maxAgeTicks) {
+            super(new ResourceLocation(ArcaneBeam.MOD_ID, eventName), new ResourceLocation(ArcaneBeam.MOD_ID, path), volume, stream, maxAgeTicks);
             this.relative = false;
             this.attenuation = Attenuation.LINEAR;
             this.x = position.x;
