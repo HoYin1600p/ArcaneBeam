@@ -28,6 +28,7 @@ public final class VaultAltarBeamManager {
     private static final int PARTICLE_REFRESH_GRACE_TICKS = 12;
     private static final double ALTAR_CENTER_TOLERANCE_SQR = 0.0125D;
     private static final double ALTAR_COMPLETION_DUST_TOLERANCE_SQR = 4.0D;
+    private static final double ALTAR_TOP_OFFSET = 17.25D / 16.0D;
     private static final Map<BlockPos, ActiveAltarBeam> activeBeams = new LinkedHashMap<>();
 
     private VaultAltarBeamManager() {
@@ -109,7 +110,7 @@ public final class VaultAltarBeamManager {
     }
 
     private static Vec3 altarTopCenter(BlockPos pos) {
-        return new Vec3(pos.getX() + 0.5D, pos.getY() + 1.0D, pos.getZ() + 0.5D);
+        return new Vec3(pos.getX() + 0.5D, pos.getY() + ALTAR_TOP_OFFSET, pos.getZ() + 0.5D);
     }
 
     @SubscribeEvent

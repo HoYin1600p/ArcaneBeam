@@ -21,6 +21,9 @@ import java.util.Collection;
 
 public class VaultAltarBeamRenderer extends RenderType {
     private static final int CYLINDER_SIDES = 8;
+    private static final int SPARK_COUNT = 7;
+    private static final double ALTAR_TOP_OFFSET = 17.25D / 16.0D;
+    private static final double CORNER_SOURCE_GAP = 3.0D;
     private static final ResourceLocation LOOT_BEAM_TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/entity/loot_beam.png");
     private static final ResourceLocation WHITE_TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/entity/white.png");
     private static final RenderType DEFAULT_BEAM = createUnlitRenderType("vault_altar_default", LOOT_BEAM_TEXTURE);
@@ -62,6 +65,8 @@ public class VaultAltarBeamRenderer extends RenderType {
         double x = pos.getX();
         double y = pos.getY();
         double z = pos.getZ();
+        double topY = y + ALTAR_TOP_OFFSET;
+        double sourceY = topY + CORNER_SOURCE_GAP;
 
         int cornerColor = animatedColor(settings.cornerColors(), age);
         float[] cornerRgb = rgb(cornerColor);
@@ -69,16 +74,22 @@ public class VaultAltarBeamRenderer extends RenderType {
         float cornerRadius = settings.cornerRadius();
         float convergeProgress = convergenceProgress(age, settings);
 
-        Vec3 center = new Vec3(x + 0.5D, y + 1.0D, z + 0.5D);
-        renderCornerBeam(poseStack, main, solid, new Vec3(x, y + 4.0D, z), new Vec3(x, y + 1.0D, z), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, shaderCompatibility);
-        renderCornerBeam(poseStack, main, solid, new Vec3(x + 1.0D, y + 4.0D, z), new Vec3(x + 1.0D, y + 1.0D, z), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, shaderCompatibility);
-        renderCornerBeam(poseStack, main, solid, new Vec3(x, y + 4.0D, z + 1.0D), new Vec3(x, y + 1.0D, z + 1.0D), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, shaderCompatibility);
-        renderCornerBeam(poseStack, main, solid, new Vec3(x + 1.0D, y + 4.0D, z + 1.0D), new Vec3(x + 1.0D, y + 1.0D, z + 1.0D), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, shaderCompatibility);
+        Vec3 center = new Vec3(x + 0.5D, topY, z + 0.5D);
+        renderCornerBeamWithSparks(poseStack, main, solid, new Vec3(x, sourceY, z), new Vec3(x, topY, z), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 0, shaderCompatibility);
+        renderCornerBeamWithSparks(poseStack, main, solid, new Vec3(x + 1.0D, sourceY, z), new Vec3(x + 1.0D, topY, z), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 1, shaderCompatibility);
+        renderCornerBeamWithSparks(poseStack, main, solid, new Vec3(x, sourceY, z + 1.0D), new Vec3(x, topY, z + 1.0D), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 2, shaderCompatibility);
+        renderCornerBeamWithSparks(poseStack, main, solid, new Vec3(x + 1.0D, sourceY, z + 1.0D), new Vec3(x + 1.0D, topY, z + 1.0D), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 3, shaderCompatibility);
 
         float centerGrowth = centerGrowthProgress(age, settings);
         if (centerGrowth > 0.0F) {
             renderCenterBeam(poseStack, main, solid, center, settings, age, centerGrowth, shaderCompatibility);
         }
+    }
+
+    private static void renderCornerBeamWithSparks(PoseStack poseStack, VertexConsumer main, VertexConsumer solid, Vec3 start, Vec3 verticalEnd, Vec3 centerEnd, float convergeProgress, float[] rgb, float alpha, float radius, float age, int cornerIndex, boolean shaderCompatibility) {
+        Vec3 contact = verticalEnd.lerp(centerEnd, convergeProgress);
+        renderCornerBeam(poseStack, main, solid, start, verticalEnd, centerEnd, convergeProgress, rgb, alpha, radius, shaderCompatibility);
+        renderSparkPlume(poseStack, solid, contact, cornerIndex, age, rgb, alpha, shaderCompatibility);
     }
 
     private static void renderCornerBeam(PoseStack poseStack, VertexConsumer main, VertexConsumer solid, Vec3 start, Vec3 verticalEnd, Vec3 centerEnd, float convergeProgress, float[] rgb, float alpha, float radius, boolean shaderCompatibility) {
@@ -95,6 +106,51 @@ public class VaultAltarBeamRenderer extends RenderType {
         renderTube(poseStack, main, rgb[0], rgb[1], rgb[2], alpha, 0.0F, height, radius, radius, shaderCompatibility);
         renderTube(poseStack, solid, rgb[0], rgb[1], rgb[2], alpha, 0.0F, height, radius * 0.35F, radius * 0.35F, shaderCompatibility);
         poseStack.popPose();
+    }
+
+    private static void renderSparkPlume(PoseStack poseStack, VertexConsumer builder, Vec3 contact, int cornerIndex, float age, float[] rgb, float alpha, boolean shaderCompatibility) {
+        if (alpha <= 0.001F) {
+            return;
+        }
+
+        poseStack.pushPose();
+        poseStack.translate(contact.x, contact.y + 0.006D, contact.z);
+        for (int i = 0; i < SPARK_COUNT; i++) {
+            float seed = cornerIndex * 13.37F + i * 7.91F;
+            float flicker = 0.45F + 0.55F * hash01(seed + Mth.floor(age * 1.7F) * 3.11F);
+            float sparkAlpha = alpha * 0.72F * flicker;
+            float angle = hash01(seed + 1.0F) * ((float) Math.PI * 2.0F) + age * (0.09F + hash01(seed + 2.0F) * 0.06F);
+            float height = 0.055F + hash01(seed + 3.0F) * 0.095F;
+            float lean = 0.015F + hash01(seed + 4.0F) * 0.045F;
+            float baseHalfWidth = 0.006F + hash01(seed + 5.0F) * 0.004F;
+            float tipHalfWidth = baseHalfWidth * 0.25F;
+            float tipX = Mth.cos(angle) * lean;
+            float tipZ = Mth.sin(angle) * lean;
+            float sideX = Mth.cos(angle + (float) Math.PI * 0.5F);
+            float sideZ = Mth.sin(angle + (float) Math.PI * 0.5F);
+
+            renderSparkQuad(poseStack, builder, rgb, sparkAlpha, tipX, tipZ, height, sideX, sideZ, baseHalfWidth, tipHalfWidth, shaderCompatibility);
+            renderSparkQuad(poseStack, builder, rgb, sparkAlpha * 0.55F, tipX * 0.72F, tipZ * 0.72F, height * 0.82F, -tipZ, tipX, baseHalfWidth * 0.65F, tipHalfWidth * 0.65F, shaderCompatibility);
+        }
+        poseStack.popPose();
+    }
+
+    private static void renderSparkQuad(PoseStack stack, VertexConsumer builder, float[] rgb, float alpha, float tipX, float tipZ, float height, float sideX, float sideZ, float baseHalfWidth, float tipHalfWidth, boolean shaderCompatibility) {
+        Matrix4f matrixPose = stack.last().pose();
+        float baseAlpha = Mth.clamp(alpha, 0.0F, 1.0F);
+        if (shaderCompatibility) {
+            Vector3f normal = new Vector3f(0.0F, 1.0F, 0.0F);
+            addLitPositionVertex(matrixPose, stack.last().normal(), builder, rgb[0], rgb[1], rgb[2], baseAlpha, -sideX * baseHalfWidth, 0.0F, -sideZ * baseHalfWidth, 0.0F, 1.0F, normal);
+            addLitPositionVertex(matrixPose, stack.last().normal(), builder, rgb[0], rgb[1], rgb[2], baseAlpha, sideX * baseHalfWidth, 0.0F, sideZ * baseHalfWidth, 1.0F, 1.0F, normal);
+            addLitPositionVertex(matrixPose, stack.last().normal(), builder, rgb[0], rgb[1], rgb[2], 0.0F, tipX + sideX * tipHalfWidth, height, tipZ + sideZ * tipHalfWidth, 1.0F, 0.0F, normal);
+            addLitPositionVertex(matrixPose, stack.last().normal(), builder, rgb[0], rgb[1], rgb[2], 0.0F, tipX - sideX * tipHalfWidth, height, tipZ - sideZ * tipHalfWidth, 0.0F, 0.0F, normal);
+            return;
+        }
+
+        addPositionVertex(matrixPose, builder, rgb[0], rgb[1], rgb[2], baseAlpha, -sideX * baseHalfWidth, 0.0F, -sideZ * baseHalfWidth, 0.0F, 1.0F);
+        addPositionVertex(matrixPose, builder, rgb[0], rgb[1], rgb[2], baseAlpha, sideX * baseHalfWidth, 0.0F, sideZ * baseHalfWidth, 1.0F, 1.0F);
+        addPositionVertex(matrixPose, builder, rgb[0], rgb[1], rgb[2], 0.0F, tipX + sideX * tipHalfWidth, height, tipZ + sideZ * tipHalfWidth, 1.0F, 0.0F);
+        addPositionVertex(matrixPose, builder, rgb[0], rgb[1], rgb[2], 0.0F, tipX - sideX * tipHalfWidth, height, tipZ - sideZ * tipHalfWidth, 0.0F, 0.0F);
     }
 
     private static void renderCenterBeam(PoseStack poseStack, VertexConsumer main, VertexConsumer solid, Vec3 center, VaultAltarBeamManager.VaultAltarRenderSettings settings, float age, float growProgress, boolean shaderCompatibility) {
@@ -210,6 +266,10 @@ public class VaultAltarBeamRenderer extends RenderType {
         return lerpColor(colors[0], colors[1], wave);
     }
 
+    private static float hash01(float value) {
+        return Mth.frac(Mth.sin(value * 12.9898F) * 43758.547F);
+    }
+
     private static void applyGlowRotation(PoseStack poseStack, VaultAltarBeamManager.VaultAltarRenderSettings settings, float age) {
         if (settings.centerGlowRotationRpm() <= 0.0F) {
             return;
@@ -248,7 +308,24 @@ public class VaultAltarBeamRenderer extends RenderType {
                 .endVertex();
     }
 
+    private static void addPositionVertex(Matrix4f pose, VertexConsumer builder, float red, float green, float blue, float alpha, float x, float y, float z, float u, float v) {
+        builder.vertex(pose, x, y, z)
+                .color(red, green, blue, alpha)
+                .uv(u, v)
+                .endVertex();
+    }
+
     private static void addLitVertex(Matrix4f pose, com.mojang.math.Matrix3f normalMatrix, VertexConsumer builder, float red, float green, float blue, float alpha, float y, float x, float z, float u, float v, Vector3f faceNormal) {
+        builder.vertex(pose, x, y, z)
+                .color(red, green, blue, alpha)
+                .uv(u, v)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(15728880)
+                .normal(normalMatrix, faceNormal.x(), faceNormal.y(), faceNormal.z())
+                .endVertex();
+    }
+
+    private static void addLitPositionVertex(Matrix4f pose, com.mojang.math.Matrix3f normalMatrix, VertexConsumer builder, float red, float green, float blue, float alpha, float x, float y, float z, float u, float v, Vector3f faceNormal) {
         builder.vertex(pose, x, y, z)
                 .color(red, green, blue, alpha)
                 .uv(u, v)
