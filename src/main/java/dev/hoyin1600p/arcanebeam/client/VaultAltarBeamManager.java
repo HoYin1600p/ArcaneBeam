@@ -88,6 +88,22 @@ public final class VaultAltarBeamManager {
         return true;
     }
 
+    public static boolean handleVaultAltarCompletionSound(double x, double y, double z) {
+        ArcaneBeamConfig.VaultAltarSettings settings = ArcaneBeamConfig.INSTANCE.vaultAltar;
+        if (settings == null || !settings.enabled || vaultAltarSoundMode() == ArcaneBeamConfig.VaultAltarSoundMode.DEFAULT) {
+            return false;
+        }
+
+        Minecraft minecraft = Minecraft.getInstance();
+        ClientLevel level = minecraft.level;
+        if (level == null) {
+            return false;
+        }
+
+        BlockPos altarPos = findAltarNearSound(level, x, y, z);
+        return altarPos != null && activeBeams.containsKey(altarPos);
+    }
+
     private static void refreshAltar(ClientLevel level, BlockPos altarPos, ArcaneBeamConfig.VaultAltarSettings settings) {
         long gameTime = level.getGameTime();
         ActiveAltarBeam existing = activeBeams.get(altarPos);

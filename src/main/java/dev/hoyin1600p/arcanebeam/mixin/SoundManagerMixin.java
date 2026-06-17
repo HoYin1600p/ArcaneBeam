@@ -17,6 +17,7 @@ public abstract class SoundManagerMixin {
     private static final ResourceLocation ARCANE_CAST = new ResourceLocation("minecraft", "block.fire.extinguish");
     private static final ResourceLocation RAIL_CAST = new ResourceLocation("minecraft", "block.beacon.deactivate");
     private static final ResourceLocation VAULT_ALTAR_START = new ResourceLocation("minecraft", "block.beacon.activate");
+    private static final ResourceLocation VAULT_ALTAR_COMPLETION = new ResourceLocation("minecraft", "entity.player.levelup");
     private static final ResourceLocation LIGHTNING_CAST = new ResourceLocation("minecraft", "item.trident.throw");
     private static final ResourceLocation LIGHTNING_CAST_ARROW_FALLBACK = new ResourceLocation("minecraft", "entity.arrow.shoot");
     private static final ResourceLocation LIGHTNING_IMPACT = new ResourceLocation("the_vault", "lightning_bolt");
@@ -37,6 +38,11 @@ public abstract class SoundManagerMixin {
         }
         if (VAULT_ALTAR_START.equals(sound.getLocation())
                 && VaultAltarBeamManager.handleVaultAltarStartSound(sound.getX(), sound.getY(), sound.getZ())) {
+            ci.cancel();
+            return;
+        }
+        if (VAULT_ALTAR_COMPLETION.equals(sound.getLocation())
+                && VaultAltarBeamManager.handleVaultAltarCompletionSound(sound.getX(), sound.getY(), sound.getZ())) {
             ci.cancel();
             return;
         }
