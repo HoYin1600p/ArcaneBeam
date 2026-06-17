@@ -75,8 +75,9 @@ public class VaultAltarBeamRenderer extends RenderType {
         renderCornerBeam(poseStack, main, solid, new Vec3(x, y + 4.0D, z + 1.0D), new Vec3(x, y + 1.0D, z + 1.0D), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, shaderCompatibility);
         renderCornerBeam(poseStack, main, solid, new Vec3(x + 1.0D, y + 4.0D, z + 1.0D), new Vec3(x + 1.0D, y + 1.0D, z + 1.0D), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, shaderCompatibility);
 
-        if (convergeProgress >= 1.0F) {
-            renderCenterBeam(poseStack, main, solid, center, settings, age, shaderCompatibility);
+        float centerGrowth = centerGrowthProgress(age, settings);
+        if (centerGrowth > 0.0F) {
+            renderCenterBeam(poseStack, main, solid, center, settings, age, centerGrowth, shaderCompatibility);
         }
     }
 
@@ -96,14 +97,14 @@ public class VaultAltarBeamRenderer extends RenderType {
         poseStack.popPose();
     }
 
-    private static void renderCenterBeam(PoseStack poseStack, VertexConsumer main, VertexConsumer solid, Vec3 center, VaultAltarBeamManager.VaultAltarRenderSettings settings, float age, boolean shaderCompatibility) {
+    private static void renderCenterBeam(PoseStack poseStack, VertexConsumer main, VertexConsumer solid, Vec3 center, VaultAltarBeamManager.VaultAltarRenderSettings settings, float age, float growProgress, boolean shaderCompatibility) {
         int glowColor = animatedColor(settings.centerGlowColors(), age);
         float[] glowRgb = rgb(glowColor);
         if (settings.centerGlowOpacity() > 0.001F) {
             poseStack.pushPose();
             poseStack.translate(center.x, center.y, center.z);
             applyGlowRotation(poseStack, settings, age);
-            renderTaperedFadeTube(poseStack, main, glowRgb, settings.centerGlowOpacity(), settings.centerGlowHeight(), settings.centerGlowFadeHeight(), settings.centerGlowBottomRadius(), settings.centerGlowTopRadius(), shaderCompatibility);
+            renderTaperedFadeTube(poseStack, main, glowRgb, settings.centerGlowOpacity(), settings.centerGlowHeight() * growProgress, settings.centerGlowFadeHeight() * growProgress, settings.centerGlowBottomRadius(), settings.centerGlowTopRadius(), shaderCompatibility);
             poseStack.popPose();
         }
 
@@ -112,8 +113,8 @@ public class VaultAltarBeamRenderer extends RenderType {
         if (settings.centerOpacity() > 0.001F) {
             poseStack.pushPose();
             poseStack.translate(center.x, center.y, center.z);
-            renderTaperedFadeTube(poseStack, main, centerRgb, settings.centerOpacity(), settings.centerHeight(), settings.centerFadeHeight(), settings.centerBottomRadius(), settings.centerTopRadius(), shaderCompatibility);
-            renderTaperedFadeTube(poseStack, solid, centerRgb, settings.centerOpacity(), settings.centerHeight(), settings.centerFadeHeight(), settings.centerBottomRadius() * 0.35F, settings.centerTopRadius() * 0.35F, shaderCompatibility);
+            renderTaperedFadeTube(poseStack, main, centerRgb, settings.centerOpacity(), settings.centerHeight() * growProgress, settings.centerFadeHeight() * growProgress, settings.centerBottomRadius(), settings.centerTopRadius(), shaderCompatibility);
+            renderTaperedFadeTube(poseStack, solid, centerRgb, settings.centerOpacity(), settings.centerHeight() * growProgress, settings.centerFadeHeight() * growProgress, settings.centerBottomRadius() * 0.35F, settings.centerTopRadius() * 0.35F, shaderCompatibility);
             poseStack.popPose();
         }
     }
@@ -188,6 +189,14 @@ public class VaultAltarBeamRenderer extends RenderType {
             return 0.0F;
         }
         return Mth.clamp((age - settings.cornerVerticalTicks()) / Math.max(1.0F, settings.cornerConvergeTicks()), 0.0F, 1.0F);
+    }
+
+    private static float centerGrowthProgress(float age, VaultAltarBeamManager.VaultAltarRenderSettings settings) {
+        float startAge = settings.cornerVerticalTicks() + settings.cornerConvergeTicks();
+        if (age <= startAge) {
+            return 0.0F;
+        }
+        return Mth.clamp((age - startAge) / Math.max(1.0F, settings.centerGrowTicks()), 0.0F, 1.0F);
     }
 
     private static int animatedColor(int[] colors, float age) {

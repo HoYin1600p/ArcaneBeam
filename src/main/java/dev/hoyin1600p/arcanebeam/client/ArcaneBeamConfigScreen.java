@@ -97,6 +97,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     private Button altarFullbrightButton;
     private EditBox altarVerticalTicksBox;
     private EditBox altarConvergeTicksBox;
+    private EditBox altarCenterGrowTicksBox;
     private EditBox altarSoundVolumeBox;
     private boolean profileDropdownOpen;
     private boolean railSelected;
@@ -359,15 +360,16 @@ public class ArcaneBeamConfigScreen extends Screen {
         addAltarColorBox(slotStartX(1), colorY, "Corner 2", 1);
         addAltarColorBox(slotStartX(2), colorY, "Center 1", 2);
         addAltarColorBox(slotStartX(3), colorY, "Center 2", 3);
-        addAltarColorBox(slotStartX(1), glowRowY(), "Glow 1", 4);
-        addAltarColorBox(slotStartX(2), glowRowY(), "Glow 2", 5);
+        addAltarColorBox(slotStartX(1), altarSecondColorRowY(), "Glow 1", 4);
+        addAltarColorBox(slotStartX(2), altarSecondColorRowY(), "Glow 2", 5);
 
-        altarEnabledButton = this.addRenderableWidget(new Button(x, y, 150, 20, TextComponent.EMPTY, button -> {
+        int controlY = altarSecondColorRowY() + 52;
+        altarEnabledButton = this.addRenderableWidget(new Button(x, controlY, 150, 20, TextComponent.EMPTY, button -> {
             vaultAltarSettings().enabled = !vaultAltarSettings().enabled;
             refreshControls();
             ArcaneBeamConfig.save();
         }));
-        altarShaderCompatibilityButton = this.addRenderableWidget(new Button(x + 158, y, 150, 20, TextComponent.EMPTY, button -> {
+        altarShaderCompatibilityButton = this.addRenderableWidget(new Button(x + 158, controlY, 150, 20, TextComponent.EMPTY, button -> {
             ArcaneBeamConfig.ShaderCompatibility current = vaultAltarShaderCompatibility();
             vaultAltarSettings().shaderCompatibility = current == ArcaneBeamConfig.ShaderCompatibility.ON
                     ? ArcaneBeamConfig.ShaderCompatibility.OFF.id
@@ -375,19 +377,19 @@ public class ArcaneBeamConfigScreen extends Screen {
             refreshControls();
             ArcaneBeamConfig.save();
         }));
-        altarCornerRadiusSlider = new SettingSlider(x, y + 24, 150, 20, "Corner Radius", 0.005D, 0.20D, () -> vaultAltarSettings().cornerRadius, value -> vaultAltarSettings().cornerRadius = (float) value);
-        altarCornerOpacitySlider = new SettingSlider(x + 158, y + 24, 150, 20, "Corner Opacity", 0.0D, 1.0D, () -> vaultAltarSettings().cornerOpacity, value -> vaultAltarSettings().cornerOpacity = (float) value);
-        altarCenterBottomRadiusSlider = new SettingSlider(x, y + 48, 150, 20, "Center Bottom", 0.005D, 0.50D, () -> vaultAltarSettings().centerBottomRadius, value -> vaultAltarSettings().centerBottomRadius = (float) value);
-        altarCenterTopRadiusSlider = new SettingSlider(x + 158, y + 48, 150, 20, "Center Top", 0.005D, 0.50D, () -> vaultAltarSettings().centerTopRadius, value -> vaultAltarSettings().centerTopRadius = (float) value);
-        altarCenterHeightSlider = new SettingSlider(x, y + 72, 150, 20, "Center Height", 0.1D, 3.0D, () -> vaultAltarSettings().centerHeight, value -> vaultAltarSettings().centerHeight = (float) value);
-        altarCenterFadeSlider = new SettingSlider(x + 158, y + 72, 150, 20, "Center Fade", 0.05D, 3.0D, () -> vaultAltarSettings().centerFadeHeight, value -> vaultAltarSettings().centerFadeHeight = (float) value);
-        altarCenterOpacitySlider = new SettingSlider(x, y + 96, 150, 20, "Center Opacity", 0.0D, 1.0D, () -> vaultAltarSettings().centerOpacity, value -> vaultAltarSettings().centerOpacity = (float) value);
-        altarGlowOpacitySlider = new SettingSlider(x + 158, y + 96, 150, 20, "Glow Opacity", 0.0D, 1.0D, () -> vaultAltarSettings().centerGlowOpacity, value -> vaultAltarSettings().centerGlowOpacity = (float) value);
-        altarGlowBottomRadiusSlider = new SettingSlider(x, y + 120, 150, 20, "Glow Bottom", 0.005D, 0.75D, () -> vaultAltarSettings().centerGlowBottomRadius, value -> vaultAltarSettings().centerGlowBottomRadius = (float) value);
-        altarGlowTopRadiusSlider = new SettingSlider(x + 158, y + 120, 150, 20, "Glow Top", 0.005D, 0.75D, () -> vaultAltarSettings().centerGlowTopRadius, value -> vaultAltarSettings().centerGlowTopRadius = (float) value);
-        altarGlowHeightSlider = new SettingSlider(x, y + 144, 150, 20, "Glow Height", 0.1D, 3.0D, () -> vaultAltarSettings().centerGlowHeight, value -> vaultAltarSettings().centerGlowHeight = (float) value);
-        altarGlowFadeSlider = new SettingSlider(x + 158, y + 144, 150, 20, "Glow Fade", 0.05D, 3.0D, () -> vaultAltarSettings().centerGlowFadeHeight, value -> vaultAltarSettings().centerGlowFadeHeight = (float) value);
-        altarGlowRotationSlider = new SettingSlider(x, y + 168, 308, 20, "Glow Rotation", 0.0D, 120.0D, () -> vaultAltarSettings().centerGlowRotationRpm, value -> vaultAltarSettings().centerGlowRotationRpm = (float) value);
+        altarCornerRadiusSlider = new SettingSlider(x, controlY + 24, 150, 20, "Corner Radius", 0.005D, 0.20D, () -> vaultAltarSettings().cornerRadius, value -> vaultAltarSettings().cornerRadius = (float) value);
+        altarCornerOpacitySlider = new SettingSlider(x + 158, controlY + 24, 150, 20, "Corner Opacity", 0.0D, 1.0D, () -> vaultAltarSettings().cornerOpacity, value -> vaultAltarSettings().cornerOpacity = (float) value);
+        altarCenterBottomRadiusSlider = new SettingSlider(x, controlY + 48, 150, 20, "Center Bottom", 0.005D, 0.50D, () -> vaultAltarSettings().centerBottomRadius, value -> vaultAltarSettings().centerBottomRadius = (float) value);
+        altarCenterTopRadiusSlider = new SettingSlider(x + 158, controlY + 48, 150, 20, "Center Top", 0.005D, 0.50D, () -> vaultAltarSettings().centerTopRadius, value -> vaultAltarSettings().centerTopRadius = (float) value);
+        altarCenterHeightSlider = new SettingSlider(x, controlY + 72, 150, 20, "Center Height", 0.1D, 3.0D, () -> vaultAltarSettings().centerHeight, value -> vaultAltarSettings().centerHeight = (float) value);
+        altarCenterFadeSlider = new SettingSlider(x + 158, controlY + 72, 150, 20, "Center Fade", 0.05D, 3.0D, () -> vaultAltarSettings().centerFadeHeight, value -> vaultAltarSettings().centerFadeHeight = (float) value);
+        altarCenterOpacitySlider = new SettingSlider(x, controlY + 96, 150, 20, "Center Opacity", 0.0D, 1.0D, () -> vaultAltarSettings().centerOpacity, value -> vaultAltarSettings().centerOpacity = (float) value);
+        altarGlowOpacitySlider = new SettingSlider(x + 158, controlY + 96, 150, 20, "Glow Opacity", 0.0D, 1.0D, () -> vaultAltarSettings().centerGlowOpacity, value -> vaultAltarSettings().centerGlowOpacity = (float) value);
+        altarGlowBottomRadiusSlider = new SettingSlider(x, controlY + 120, 150, 20, "Glow Bottom", 0.005D, 0.75D, () -> vaultAltarSettings().centerGlowBottomRadius, value -> vaultAltarSettings().centerGlowBottomRadius = (float) value);
+        altarGlowTopRadiusSlider = new SettingSlider(x + 158, controlY + 120, 150, 20, "Glow Top", 0.005D, 0.75D, () -> vaultAltarSettings().centerGlowTopRadius, value -> vaultAltarSettings().centerGlowTopRadius = (float) value);
+        altarGlowHeightSlider = new SettingSlider(x, controlY + 144, 150, 20, "Glow Height", 0.1D, 3.0D, () -> vaultAltarSettings().centerGlowHeight, value -> vaultAltarSettings().centerGlowHeight = (float) value);
+        altarGlowFadeSlider = new SettingSlider(x + 158, controlY + 144, 150, 20, "Glow Fade", 0.05D, 3.0D, () -> vaultAltarSettings().centerGlowFadeHeight, value -> vaultAltarSettings().centerGlowFadeHeight = (float) value);
+        altarGlowRotationSlider = new SettingSlider(x, controlY + 168, 308, 20, "Glow Rotation", 0.0D, 120.0D, () -> vaultAltarSettings().centerGlowRotationRpm, value -> vaultAltarSettings().centerGlowRotationRpm = (float) value);
         this.addRenderableWidget(altarCornerRadiusSlider);
         this.addRenderableWidget(altarCornerOpacitySlider);
         this.addRenderableWidget(altarCenterBottomRadiusSlider);
@@ -402,14 +404,15 @@ public class ArcaneBeamConfigScreen extends Screen {
         this.addRenderableWidget(altarGlowFadeSlider);
         this.addRenderableWidget(altarGlowRotationSlider);
 
-        altarFullbrightButton = this.addRenderableWidget(new Button(x, y + 196, 150, 20, TextComponent.EMPTY, button -> {
+        altarFullbrightButton = this.addRenderableWidget(new Button(x, controlY + 196, 150, 20, TextComponent.EMPTY, button -> {
             vaultAltarSettings().fullbright = !vaultAltarSettings().fullbright;
             refreshControls();
             ArcaneBeamConfig.save();
         }));
-        altarVerticalTicksBox = addAltarNumberBox(x, y + 224, 54, 2, "Vertical", "[0-9]{0,2}", this::updateAltarVerticalTicksFromText);
-        altarConvergeTicksBox = addAltarNumberBox(x + 128, y + 224, 54, 2, "Converge", "[0-9]{0,2}", this::updateAltarConvergeTicksFromText);
-        altarSoundVolumeBox = addAltarSoundVolumeBox(x + 208, y + 224);
+        altarVerticalTicksBox = addAltarNumberBox(x, controlY + 224, 42, 2, "Vertical", "[0-9]{0,2}", this::updateAltarVerticalTicksFromText);
+        altarConvergeTicksBox = addAltarNumberBox(x + 108, controlY + 224, 42, 3, "Converge", "[0-9]{0,3}", this::updateAltarConvergeTicksFromText);
+        altarCenterGrowTicksBox = addAltarNumberBox(x + 222, controlY + 224, 42, 3, "Grow", "[0-9]{0,3}", this::updateAltarCenterGrowTicksFromText);
+        altarSoundVolumeBox = addAltarSoundVolumeBox(x + 208, controlY + 252);
     }
 
     private void updateLayoutScale() {
@@ -675,6 +678,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
         tickBox(altarVerticalTicksBox);
         tickBox(altarConvergeTicksBox);
+        tickBox(altarCenterGrowTicksBox);
         tickBox(altarSoundVolumeBox);
     }
 
@@ -785,11 +789,12 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void renderVaultAltarLabels(PoseStack poseStack) {
-        if (altarVerticalTicksBox == null || altarSoundVolumeBox == null) {
+        if (altarVerticalTicksBox == null || altarCenterGrowTicksBox == null || altarSoundVolumeBox == null) {
             return;
         }
         drawString(poseStack, this.font, "Vertical", altarVerticalTicksBox.x - 54, altarVerticalTicksBox.y + 6, 0xD8D8D8);
         drawString(poseStack, this.font, "Converge", altarConvergeTicksBox.x - 58, altarConvergeTicksBox.y + 6, 0xD8D8D8);
+        drawString(poseStack, this.font, "Grow", altarCenterGrowTicksBox.x - 36, altarCenterGrowTicksBox.y + 6, 0xD8D8D8);
         drawString(poseStack, this.font, "Volume", altarSoundVolumeBox.x - 50, altarSoundVolumeBox.y + 6, 0xD8D8D8);
     }
 
@@ -1022,6 +1027,10 @@ public class ArcaneBeamConfigScreen extends Screen {
         return beamRowY() + GLOW_ROW_GAP;
     }
 
+    private int altarSecondColorRowY() {
+        return beamRowY() + 52;
+    }
+
     private static int rowWidth() {
         return slotWidth() * 4 + SLOT_GAP * 3;
     }
@@ -1166,6 +1175,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         setVisible(altarGlowRotationSlider, vaultAltarSelected);
         setVisible(altarVerticalTicksBox, vaultAltarSelected);
         setVisible(altarConvergeTicksBox, vaultAltarSelected);
+        setVisible(altarCenterGrowTicksBox, vaultAltarSelected);
         setVisible(altarSoundVolumeBox, vaultAltarSelected);
     }
 
@@ -1233,6 +1243,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         altarGlowRotationSlider.refresh();
         altarVerticalTicksBox.setValue(Integer.toString(settings.cornerVerticalTicks));
         altarConvergeTicksBox.setValue(Integer.toString(settings.cornerConvergeTicks));
+        altarCenterGrowTicksBox.setValue(Integer.toString(settings.centerGrowTicks));
         refreshAltarSoundVolumeBox();
     }
 
@@ -1490,7 +1501,18 @@ public class ArcaneBeamConfigScreen extends Screen {
             return;
         }
         try {
-            vaultAltarSettings().cornerConvergeTicks = clamp(Integer.parseInt(value), 1, 80);
+            vaultAltarSettings().cornerConvergeTicks = clamp(Integer.parseInt(value), 1, 120);
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void updateAltarCenterGrowTicksFromText(String value) {
+        if (value == null || value.isEmpty()) {
+            return;
+        }
+        try {
+            vaultAltarSettings().centerGrowTicks = clamp(Integer.parseInt(value), 1, 160);
             ArcaneBeamConfig.save();
         } catch (NumberFormatException ignored) {
         }

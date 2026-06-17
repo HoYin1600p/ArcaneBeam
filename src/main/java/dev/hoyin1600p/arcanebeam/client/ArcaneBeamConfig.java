@@ -362,7 +362,8 @@ public final class ArcaneBeamConfig {
         settings.cornerRadius = clampFloat(settings.cornerRadius <= 0.0F ? 0.035F : settings.cornerRadius, 0.005F, 0.20F);
         settings.cornerOpacity = clampFloat(settings.cornerOpacity <= 0.0F ? 0.85F : settings.cornerOpacity, 0.0F, 1.0F);
         settings.cornerVerticalTicks = clampInt(settings.cornerVerticalTicks < 0 ? 10 : settings.cornerVerticalTicks, 0, 60);
-        settings.cornerConvergeTicks = clampInt(settings.cornerConvergeTicks <= 0 ? 10 : settings.cornerConvergeTicks, 1, 80);
+        settings.cornerConvergeTicks = clampInt(settings.cornerConvergeTicks <= 0 || settings.cornerConvergeTicks == 10 ? 30 : settings.cornerConvergeTicks, 1, 120);
+        settings.centerGrowTicks = clampInt(settings.centerGrowTicks <= 0 ? 40 : settings.centerGrowTicks, 1, 160);
         settings.centerHeight = clampFloat(settings.centerHeight <= 0.0F ? 3.0F : settings.centerHeight, 0.1F, 3.0F);
         settings.centerFadeHeight = clampFloat(settings.centerFadeHeight <= 0.0F ? settings.centerHeight : settings.centerFadeHeight, 0.05F, 3.0F);
         settings.centerBottomRadius = clampFloat(settings.centerBottomRadius <= 0.0F ? 0.06F : settings.centerBottomRadius, 0.005F, 0.50F);
@@ -623,6 +624,7 @@ public final class ArcaneBeamConfig {
         copy.cornerOpacity = source.cornerOpacity;
         copy.cornerVerticalTicks = source.cornerVerticalTicks;
         copy.cornerConvergeTicks = source.cornerConvergeTicks;
+        copy.centerGrowTicks = source.centerGrowTicks;
         copy.centerColors = source.centerColors == null ? null : source.centerColors.clone();
         copy.centerHeight = source.centerHeight;
         copy.centerFadeHeight = source.centerFadeHeight;
@@ -795,7 +797,8 @@ public final class ArcaneBeamConfig {
         public float cornerRadius = 0.035F;
         public float cornerOpacity = 0.85F;
         public int cornerVerticalTicks = 10;
-        public int cornerConvergeTicks = 10;
+        public int cornerConvergeTicks = 30;
+        public int centerGrowTicks = 40;
         public int[] centerColors = new int[]{0xD8FFFF, 0x5CB8FF};
         public float centerHeight = 3.0F;
         public float centerFadeHeight = 3.0F;
