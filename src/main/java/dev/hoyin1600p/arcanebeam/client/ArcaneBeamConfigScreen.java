@@ -529,13 +529,13 @@ public class ArcaneBeamConfigScreen extends Screen {
             drawCenteredString(poseStack, this.font, railSelected ? "Rail colors" : "Arcane colors", layoutWidth / 2, 60, 0xD8D8D8);
             renderInlinePreviews(poseStack);
         }
-        if (!lightningSelected && soundVolumeBox != null) {
+        if (!lightningSelected && !vaultAltarSelected && soundVolumeBox != null) {
             drawString(poseStack, this.font, "Volume", soundVolumeBox.x - this.font.width("Volume") - 8, soundVolumeBox.y + 6, 0xD8D8D8);
         }
-        if (!lightningSelected && fadeInTicksBox != null) {
+        if (!lightningSelected && !vaultAltarSelected && fadeInTicksBox != null) {
             drawString(poseStack, this.font, "Ticks", fadeInTicksBox.x - this.font.width("Ticks") - 10, fadeInTicksBox.y + 6, 0xD8D8D8);
         }
-        if (!lightningSelected && fadeOutTicksBox != null) {
+        if (!lightningSelected && !vaultAltarSelected && fadeOutTicksBox != null) {
             drawString(poseStack, this.font, "Ticks", fadeOutTicksBox.x - this.font.width("Ticks") - 6, fadeOutTicksBox.y + 6, 0xD8D8D8);
         }
         super.render(poseStack, layoutMouseX, layoutMouseY, partialTick);
