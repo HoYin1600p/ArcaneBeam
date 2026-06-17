@@ -23,8 +23,9 @@ public class VaultAltarBeamRenderer extends RenderType {
     private static final int CYLINDER_SIDES = 8;
     private static final int SPARK_COUNT = 12;
     private static final double ALTAR_TOP_OFFSET = 17.25D / 16.0D;
+    private static final double ALTAR_CORNER_TOP_OFFSET = 20.0D / 16.0D;
     private static final double CORNER_SOURCE_GAP = 3.0D;
-    private static final double CORNER_BEAM_Y_OFFSET = -1.0D;
+    private static final double CORNER_SOURCE_Y_OFFSET = -1.0D;
     private static final ResourceLocation LOOT_BEAM_TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/entity/loot_beam.png");
     private static final ResourceLocation WHITE_TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/entity/white.png");
     private static final RenderType DEFAULT_BEAM = createUnlitRenderType("vault_altar_default", LOOT_BEAM_TEXTURE);
@@ -67,8 +68,8 @@ public class VaultAltarBeamRenderer extends RenderType {
         double y = pos.getY();
         double z = pos.getZ();
         double topY = y + ALTAR_TOP_OFFSET;
-        double cornerTopY = topY + CORNER_BEAM_Y_OFFSET;
-        double sourceY = cornerTopY + CORNER_SOURCE_GAP;
+        double cornerTopY = y + ALTAR_CORNER_TOP_OFFSET;
+        double sourceY = topY + CORNER_SOURCE_GAP + CORNER_SOURCE_Y_OFFSET;
 
         int cornerColor = animatedColor(settings.cornerColors(), age);
         float[] cornerRgb = rgb(cornerColor);
