@@ -23,6 +23,7 @@ public class VaultAltarBeamRenderer extends RenderType {
     private static final int CYLINDER_SIDES = 8;
     private static final int SPARK_COUNT = 12;
     private static final double ALTAR_TOP_OFFSET = 17.25D / 16.0D;
+    private static final double ALTAR_LOW_TOP_OFFSET = 16.0D / 16.0D;
     private static final double ALTAR_CORNER_TOP_OFFSET = 20.0D / 16.0D;
     private static final ResourceLocation LOOT_BEAM_TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/entity/loot_beam.png");
     private static final ResourceLocation WHITE_TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/entity/white.png");
@@ -93,14 +94,27 @@ public class VaultAltarBeamRenderer extends RenderType {
     }
 
     private static void renderCornerBeamWithSparks(PoseStack poseStack, VertexConsumer main, VertexConsumer solid, Vec3 start, Vec3 verticalEnd, Vec3 centerEnd, float convergeProgress, float[] rgb, float alpha, float radius, float age, int cornerIndex, boolean shaderCompatibility) {
-        Vec3 contact = verticalEnd.lerp(centerEnd, convergeProgress);
-        renderCornerBeam(poseStack, main, solid, start, verticalEnd, centerEnd, convergeProgress, rgb, alpha, radius, shaderCompatibility);
+        Vec3 contact = surfaceContact(verticalEnd, centerEnd, convergeProgress);
+        renderCornerBeam(poseStack, main, solid, start, contact, rgb, alpha, radius, shaderCompatibility);
         renderSparkPlume(poseStack, main, contact, cornerIndex, age, rgb, alpha * 0.75F, 1.45F, shaderCompatibility);
         renderSparkPlume(poseStack, solid, contact, cornerIndex, age, new float[]{1.0F, 1.0F, 1.0F}, alpha, 1.0F, shaderCompatibility);
     }
 
-    private static void renderCornerBeam(PoseStack poseStack, VertexConsumer main, VertexConsumer solid, Vec3 start, Vec3 verticalEnd, Vec3 centerEnd, float convergeProgress, float[] rgb, float alpha, float radius, boolean shaderCompatibility) {
-        Vec3 end = verticalEnd.lerp(centerEnd, convergeProgress);
+    private static Vec3 surfaceContact(Vec3 cornerEnd, Vec3 centerEnd, float progress) {
+        Vec3 flatContact = cornerEnd.lerp(centerEnd, progress);
+        double lowTopY = Math.min(cornerEnd.y, centerEnd.y) - (ALTAR_TOP_OFFSET - ALTAR_LOW_TOP_OFFSET);
+        double surfaceY;
+        if (progress < 0.18F) {
+            surfaceY = Mth.lerp(progress / 0.18D, cornerEnd.y, lowTopY);
+        } else if (progress > 0.82F) {
+            surfaceY = Mth.lerp((progress - 0.82D) / 0.18D, lowTopY, centerEnd.y);
+        } else {
+            surfaceY = lowTopY;
+        }
+        return new Vec3(flatContact.x, surfaceY, flatContact.z);
+    }
+
+    private static void renderCornerBeam(PoseStack poseStack, VertexConsumer main, VertexConsumer solid, Vec3 start, Vec3 end, float[] rgb, float alpha, float radius, boolean shaderCompatibility) {
         Vec3 direction = end.subtract(start);
         float height = (float) direction.length();
         if (height <= 0.001F || alpha <= 0.001F || radius <= 0.0005F) {
