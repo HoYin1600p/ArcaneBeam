@@ -35,7 +35,11 @@ public final class ArcaneBeamSoundController {
     private static final String LIGHTNING_RESOURCEPACK_2_CAST_PATH = "abilities/lightning_resourcepack_2_cast";
     private static final String LIGHTNING_RESOURCEPACK_2_IMPACT_PATH = "abilities/lightning_resourcepack_2_impact";
     private static final String VAULT_ALTAR_BEAM_PATH = "abilities/vault_altar_beam";
+    private static final String VAULT_ALTAR_RESOURCEPACK_1_PATH = "abilities/vault_altar_resourcepack_1";
+    private static final String VAULT_ALTAR_RESOURCEPACK_2_PATH = "abilities/vault_altar_resourcepack_2";
     private static final String VAULT_ALTAR_BEAM_EVENT = "vault_altar_beam";
+    private static final String VAULT_ALTAR_RESOURCEPACK_1_EVENT = "vault_altar_resourcepack_1";
+    private static final String VAULT_ALTAR_RESOURCEPACK_2_EVENT = "vault_altar_resourcepack_2";
     private static final String LIGHTNING_SEISMIC_CHARGE_CAST_EVENT = "lightning_seismic_charge_cast";
     private static final String LIGHTNING_SEISMIC_CHARGE_IMPACT_EVENT = "lightning_seismic_charge_impact";
     private static final String LIGHTNING_RESOURCEPACK_1_CAST_EVENT = "lightning_resourcepack_1_cast";
@@ -143,10 +147,11 @@ public final class ArcaneBeamSoundController {
     }
 
     public static void playVaultAltarBeamStart(Minecraft minecraft, Vec3 position, float volume) {
-        if (minecraft == null || position == null || !hasSoundFile(minecraft, VAULT_ALTAR_BEAM_PATH)) {
+        VaultAltarSoundSlot slot = vaultAltarSoundSlot(vaultAltarSoundMode());
+        if (minecraft == null || position == null || slot == null || !hasSoundFile(minecraft, slot.soundPath())) {
             return;
         }
-        minecraft.getSoundManager().play(new PositionedFileSoundInstance(VAULT_ALTAR_BEAM_EVENT, VAULT_ALTAR_BEAM_PATH, position, volume, true, VAULT_ALTAR_BEAM_LIFETIME_TICKS));
+        minecraft.getSoundManager().play(new PositionedFileSoundInstance(slot.eventName(), slot.soundPath(), position, volume, true, VAULT_ALTAR_BEAM_LIFETIME_TICKS));
     }
 
     private static void playLightningStrikeSound(Minecraft minecraft, Vec3 position, boolean impact) {
@@ -195,6 +200,11 @@ public final class ArcaneBeamSoundController {
         return mode == null ? ArcaneBeamConfig.LightningSoundMode.DEFAULT : mode;
     }
 
+    private static ArcaneBeamConfig.VaultAltarSoundMode vaultAltarSoundMode() {
+        ArcaneBeamConfig.VaultAltarSoundMode mode = ArcaneBeamConfig.VaultAltarSoundMode.fromId(ArcaneBeamConfig.INSTANCE.vaultAltar.soundMode);
+        return mode == null ? ArcaneBeamConfig.VaultAltarSoundMode.DEFAULT : mode;
+    }
+
     private static LightningSoundSlot lightningSoundSlot(ArcaneBeamConfig.LightningSoundMode mode, boolean impact) {
         return switch (mode) {
             case SEISMIC_CHARGE -> impact
@@ -211,6 +221,18 @@ public final class ArcaneBeamSoundController {
     }
 
     private record LightningSoundSlot(String eventName, String soundPath) {
+    }
+
+    private static VaultAltarSoundSlot vaultAltarSoundSlot(ArcaneBeamConfig.VaultAltarSoundMode mode) {
+        return switch (mode) {
+            case ALTAR_1 -> new VaultAltarSoundSlot(VAULT_ALTAR_BEAM_EVENT, VAULT_ALTAR_BEAM_PATH);
+            case RESOURCEPACK_1 -> new VaultAltarSoundSlot(VAULT_ALTAR_RESOURCEPACK_1_EVENT, VAULT_ALTAR_RESOURCEPACK_1_PATH);
+            case RESOURCEPACK_2 -> new VaultAltarSoundSlot(VAULT_ALTAR_RESOURCEPACK_2_EVENT, VAULT_ALTAR_RESOURCEPACK_2_PATH);
+            default -> null;
+        };
+    }
+
+    private record VaultAltarSoundSlot(String eventName, String soundPath) {
     }
 
     private static final class ArcaneLoopSound extends FileSoundInstance {
