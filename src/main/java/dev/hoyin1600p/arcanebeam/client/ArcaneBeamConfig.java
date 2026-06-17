@@ -364,6 +364,13 @@ public final class ArcaneBeamConfig {
         settings.cornerVerticalTicks = clampInt(settings.cornerVerticalTicks < 0 || settings.cornerVerticalTicks == 10 ? 20 : settings.cornerVerticalTicks, 0, 60);
         settings.cornerConvergeTicks = clampInt(settings.cornerConvergeTicks <= 0 || settings.cornerConvergeTicks == 10 ? 30 : settings.cornerConvergeTicks, 1, 120);
         settings.centerGrowTicks = clampInt(settings.centerGrowTicks <= 0 ? 40 : settings.centerGrowTicks, 1, 160);
+        if (!settings.cornerOriginMigrated) {
+            settings.cornerOriginHeight = 2.0F;
+            settings.cornerOriginRadius = 0.7F;
+            settings.cornerOriginMigrated = true;
+        }
+        settings.cornerOriginHeight = clampFloat(settings.cornerOriginHeight, 0.0F, 15.0F);
+        settings.cornerOriginRadius = clampFloat(settings.cornerOriginRadius, 0.0F, 15.0F);
         settings.centerHeight = clampFloat(settings.centerHeight <= 0.0F ? 3.0F : settings.centerHeight, 0.1F, 3.0F);
         settings.centerFadeHeight = clampFloat(settings.centerFadeHeight <= 0.0F ? settings.centerHeight : settings.centerFadeHeight, 0.05F, 3.0F);
         settings.centerBottomRadius = clampFloat(settings.centerBottomRadius <= 0.0F ? 0.06F : settings.centerBottomRadius, 0.005F, 0.50F);
@@ -625,6 +632,9 @@ public final class ArcaneBeamConfig {
         copy.cornerVerticalTicks = source.cornerVerticalTicks;
         copy.cornerConvergeTicks = source.cornerConvergeTicks;
         copy.centerGrowTicks = source.centerGrowTicks;
+        copy.cornerOriginHeight = source.cornerOriginHeight;
+        copy.cornerOriginRadius = source.cornerOriginRadius;
+        copy.cornerOriginMigrated = source.cornerOriginMigrated;
         copy.centerColors = source.centerColors == null ? null : source.centerColors.clone();
         copy.centerHeight = source.centerHeight;
         copy.centerFadeHeight = source.centerFadeHeight;
@@ -799,6 +809,9 @@ public final class ArcaneBeamConfig {
         public int cornerVerticalTicks = 20;
         public int cornerConvergeTicks = 30;
         public int centerGrowTicks = 40;
+        public float cornerOriginHeight = 2.0F;
+        public float cornerOriginRadius = 0.7F;
+        public boolean cornerOriginMigrated = false;
         public int[] centerColors = new int[]{0xD8FFFF, 0x5CB8FF};
         public float centerHeight = 3.0F;
         public float centerFadeHeight = 3.0F;

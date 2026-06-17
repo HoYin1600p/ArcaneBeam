@@ -98,6 +98,8 @@ public class ArcaneBeamConfigScreen extends Screen {
     private EditBox altarVerticalTicksBox;
     private EditBox altarConvergeTicksBox;
     private EditBox altarCenterGrowTicksBox;
+    private EditBox altarOriginHeightBox;
+    private EditBox altarOriginRadiusBox;
     private EditBox altarSoundVolumeBox;
     private boolean profileDropdownOpen;
     private boolean railSelected;
@@ -412,7 +414,9 @@ public class ArcaneBeamConfigScreen extends Screen {
         altarVerticalTicksBox = addAltarNumberBox(x, controlY + 224, 42, 2, "Vertical", "[0-9]{0,2}", this::updateAltarVerticalTicksFromText);
         altarConvergeTicksBox = addAltarNumberBox(x + 108, controlY + 224, 42, 3, "Converge", "[0-9]{0,3}", this::updateAltarConvergeTicksFromText);
         altarCenterGrowTicksBox = addAltarNumberBox(x + 222, controlY + 224, 42, 3, "Grow", "[0-9]{0,3}", this::updateAltarCenterGrowTicksFromText);
-        altarSoundVolumeBox = addAltarSoundVolumeBox(x + 208, controlY + 252);
+        altarOriginHeightBox = addAltarDecimalBox(x, controlY + 252, this::updateAltarOriginHeightFromText);
+        altarOriginRadiusBox = addAltarDecimalBox(x + 158, controlY + 252, this::updateAltarOriginRadiusFromText);
+        altarSoundVolumeBox = addAltarSoundVolumeBox(x + 208, controlY + 280);
     }
 
     private void updateLayoutScale() {
@@ -488,6 +492,15 @@ public class ArcaneBeamConfigScreen extends Screen {
         editBox.setMaxLength(4);
         editBox.setFilter(value -> value.isEmpty() || value.matches("[0-9]{0,1}(\\.[0-9]{0,2})?") || value.matches("2(\\.[0]{0,2})?"));
         editBox.setResponder(this::updateAltarSoundVolumeFromText);
+        this.addRenderableWidget(editBox);
+        return editBox;
+    }
+
+    private EditBox addAltarDecimalBox(int x, int y, Consumer<String> responder) {
+        EditBox editBox = new EditBox(this.font, x + 58, y, 50, 20, new TextComponent("Altar Decimal"));
+        editBox.setMaxLength(4);
+        editBox.setFilter(value -> value.isEmpty() || value.matches("[0-9]{0,2}(\\.[0-9]?)?"));
+        editBox.setResponder(responder);
         this.addRenderableWidget(editBox);
         return editBox;
     }
@@ -608,6 +621,18 @@ public class ArcaneBeamConfigScreen extends Screen {
             ArcaneBeamConfig.save();
             return true;
         }
+        if (vaultAltarSelected && altarOriginHeightBox != null && altarOriginHeightBox.isMouseOver(layoutMouseX, layoutMouseY)) {
+            nudgeAltarOriginHeight(delta > 0.0D ? 0.1D : -0.1D);
+            refreshAltarOriginBoxes();
+            ArcaneBeamConfig.save();
+            return true;
+        }
+        if (vaultAltarSelected && altarOriginRadiusBox != null && altarOriginRadiusBox.isMouseOver(layoutMouseX, layoutMouseY)) {
+            nudgeAltarOriginRadius(delta > 0.0D ? 0.1D : -0.1D);
+            refreshAltarOriginBoxes();
+            ArcaneBeamConfig.save();
+            return true;
+        }
         if (!lightningSelected && fadeInTicksBox != null && fadeInTicksBox.isMouseOver(layoutMouseX, layoutMouseY)) {
             nudgeFadeInTicks(delta > 0.0D ? 1 : -1);
             refreshFadeTickBoxes();
@@ -679,6 +704,8 @@ public class ArcaneBeamConfigScreen extends Screen {
         tickBox(altarVerticalTicksBox);
         tickBox(altarConvergeTicksBox);
         tickBox(altarCenterGrowTicksBox);
+        tickBox(altarOriginHeightBox);
+        tickBox(altarOriginRadiusBox);
         tickBox(altarSoundVolumeBox);
     }
 
@@ -789,12 +816,14 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void renderVaultAltarLabels(PoseStack poseStack) {
-        if (altarVerticalTicksBox == null || altarCenterGrowTicksBox == null || altarSoundVolumeBox == null) {
+        if (altarVerticalTicksBox == null || altarCenterGrowTicksBox == null || altarOriginHeightBox == null || altarOriginRadiusBox == null || altarSoundVolumeBox == null) {
             return;
         }
         drawString(poseStack, this.font, "Vertical", altarVerticalTicksBox.x - 54, altarVerticalTicksBox.y + 6, 0xD8D8D8);
         drawString(poseStack, this.font, "Converge", altarConvergeTicksBox.x - 58, altarConvergeTicksBox.y + 6, 0xD8D8D8);
         drawString(poseStack, this.font, "Grow", altarCenterGrowTicksBox.x - 36, altarCenterGrowTicksBox.y + 6, 0xD8D8D8);
+        drawString(poseStack, this.font, "Height", altarOriginHeightBox.x - 46, altarOriginHeightBox.y + 6, 0xD8D8D8);
+        drawString(poseStack, this.font, "Radius", altarOriginRadiusBox.x - 48, altarOriginRadiusBox.y + 6, 0xD8D8D8);
         drawString(poseStack, this.font, "Volume", altarSoundVolumeBox.x - 50, altarSoundVolumeBox.y + 6, 0xD8D8D8);
     }
 
@@ -1176,6 +1205,8 @@ public class ArcaneBeamConfigScreen extends Screen {
         setVisible(altarVerticalTicksBox, vaultAltarSelected);
         setVisible(altarConvergeTicksBox, vaultAltarSelected);
         setVisible(altarCenterGrowTicksBox, vaultAltarSelected);
+        setVisible(altarOriginHeightBox, vaultAltarSelected);
+        setVisible(altarOriginRadiusBox, vaultAltarSelected);
         setVisible(altarSoundVolumeBox, vaultAltarSelected);
     }
 
@@ -1244,6 +1275,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         altarVerticalTicksBox.setValue(Integer.toString(settings.cornerVerticalTicks));
         altarConvergeTicksBox.setValue(Integer.toString(settings.cornerConvergeTicks));
         altarCenterGrowTicksBox.setValue(Integer.toString(settings.centerGrowTicks));
+        refreshAltarOriginBoxes();
         refreshAltarSoundVolumeBox();
     }
 
@@ -1518,6 +1550,28 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
     }
 
+    private void updateAltarOriginHeightFromText(String value) {
+        if (value == null || value.isEmpty() || ".".equals(value)) {
+            return;
+        }
+        try {
+            vaultAltarSettings().cornerOriginHeight = clampTenths((float) roundTenths(Double.parseDouble(value)), 0.0F, 15.0F);
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void updateAltarOriginRadiusFromText(String value) {
+        if (value == null || value.isEmpty() || ".".equals(value)) {
+            return;
+        }
+        try {
+            vaultAltarSettings().cornerOriginRadius = clampTenths((float) roundTenths(Double.parseDouble(value)), 0.0F, 15.0F);
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
     private void updateAltarSoundVolumeFromText(String value) {
         if (value == null || value.isEmpty() || ".".equals(value)) {
             return;
@@ -1549,6 +1603,14 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     private void nudgeAltarSoundVolume(double amount) {
         vaultAltarSettings().soundVolume = clampSoundVolume((float) roundOffset(vaultAltarSettings().soundVolume + amount));
+    }
+
+    private void nudgeAltarOriginHeight(double amount) {
+        vaultAltarSettings().cornerOriginHeight = clampTenths((float) roundTenths(vaultAltarSettings().cornerOriginHeight + amount), 0.0F, 15.0F);
+    }
+
+    private void nudgeAltarOriginRadius(double amount) {
+        vaultAltarSettings().cornerOriginRadius = clampTenths((float) roundTenths(vaultAltarSettings().cornerOriginRadius + amount), 0.0F, 15.0F);
     }
 
     private void nudgeFadeInTicks(int amount) {
@@ -1586,6 +1648,15 @@ public class ArcaneBeamConfigScreen extends Screen {
     private void refreshAltarSoundVolumeBox() {
         if (altarSoundVolumeBox != null) {
             altarSoundVolumeBox.setValue(formatOffset(vaultAltarSettings().soundVolume));
+        }
+    }
+
+    private void refreshAltarOriginBoxes() {
+        if (altarOriginHeightBox != null) {
+            altarOriginHeightBox.setValue(formatTenths(vaultAltarSettings().cornerOriginHeight));
+        }
+        if (altarOriginRadiusBox != null) {
+            altarOriginRadiusBox.setValue(formatTenths(vaultAltarSettings().cornerOriginRadius));
         }
     }
 
@@ -1759,6 +1830,18 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     private static double roundOffset(double value) {
         return Math.round(value * 100.0D) / 100.0D;
+    }
+
+    private static String formatTenths(double value) {
+        return String.format(Locale.ROOT, "%.1f", value);
+    }
+
+    private static double roundTenths(double value) {
+        return Math.round(value * 10.0D) / 10.0D;
+    }
+
+    private static float clampTenths(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private static float clampSoundVolume(float value) {

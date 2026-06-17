@@ -24,8 +24,6 @@ public class VaultAltarBeamRenderer extends RenderType {
     private static final int SPARK_COUNT = 12;
     private static final double ALTAR_TOP_OFFSET = 17.25D / 16.0D;
     private static final double ALTAR_CORNER_TOP_OFFSET = 20.0D / 16.0D;
-    private static final double CORNER_SOURCE_GAP = 3.0D;
-    private static final double CORNER_SOURCE_Y_OFFSET = -1.0D;
     private static final ResourceLocation LOOT_BEAM_TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/entity/loot_beam.png");
     private static final ResourceLocation WHITE_TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/entity/white.png");
     private static final RenderType DEFAULT_BEAM = createUnlitRenderType("vault_altar_default", LOOT_BEAM_TEXTURE);
@@ -69,7 +67,8 @@ public class VaultAltarBeamRenderer extends RenderType {
         double z = pos.getZ();
         double topY = y + ALTAR_TOP_OFFSET;
         double cornerTopY = y + ALTAR_CORNER_TOP_OFFSET;
-        double sourceY = topY + CORNER_SOURCE_GAP + CORNER_SOURCE_Y_OFFSET;
+        double sourceY = topY + settings.cornerOriginHeight();
+        double sourceDiagonalOffset = settings.cornerOriginRadius() / Math.sqrt(2.0D);
 
         int cornerColor = animatedColor(settings.cornerColors(), age);
         float[] cornerRgb = rgb(cornerColor);
@@ -78,15 +77,19 @@ public class VaultAltarBeamRenderer extends RenderType {
         float convergeProgress = convergenceProgress(age, settings);
 
         Vec3 center = new Vec3(x + 0.5D, topY, z + 0.5D);
-        renderCornerBeamWithSparks(poseStack, main, solid, new Vec3(x, sourceY, z), new Vec3(x, cornerTopY, z), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 0, shaderCompatibility);
-        renderCornerBeamWithSparks(poseStack, main, solid, new Vec3(x + 1.0D, sourceY, z), new Vec3(x + 1.0D, cornerTopY, z), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 1, shaderCompatibility);
-        renderCornerBeamWithSparks(poseStack, main, solid, new Vec3(x, sourceY, z + 1.0D), new Vec3(x, cornerTopY, z + 1.0D), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 2, shaderCompatibility);
-        renderCornerBeamWithSparks(poseStack, main, solid, new Vec3(x + 1.0D, sourceY, z + 1.0D), new Vec3(x + 1.0D, cornerTopY, z + 1.0D), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 3, shaderCompatibility);
+        renderCornerBeamWithSparks(poseStack, main, solid, cornerOrigin(center, sourceY, -sourceDiagonalOffset, -sourceDiagonalOffset), new Vec3(x, cornerTopY, z), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 0, shaderCompatibility);
+        renderCornerBeamWithSparks(poseStack, main, solid, cornerOrigin(center, sourceY, sourceDiagonalOffset, -sourceDiagonalOffset), new Vec3(x + 1.0D, cornerTopY, z), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 1, shaderCompatibility);
+        renderCornerBeamWithSparks(poseStack, main, solid, cornerOrigin(center, sourceY, -sourceDiagonalOffset, sourceDiagonalOffset), new Vec3(x, cornerTopY, z + 1.0D), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 2, shaderCompatibility);
+        renderCornerBeamWithSparks(poseStack, main, solid, cornerOrigin(center, sourceY, sourceDiagonalOffset, sourceDiagonalOffset), new Vec3(x + 1.0D, cornerTopY, z + 1.0D), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 3, shaderCompatibility);
 
         float centerGrowth = centerGrowthProgress(age, settings);
         if (centerGrowth > 0.0F) {
             renderCenterBeam(poseStack, main, solid, center, settings, age, centerGrowth, shaderCompatibility);
         }
+    }
+
+    private static Vec3 cornerOrigin(Vec3 center, double sourceY, double offsetX, double offsetZ) {
+        return new Vec3(center.x + offsetX, sourceY, center.z + offsetZ);
     }
 
     private static void renderCornerBeamWithSparks(PoseStack poseStack, VertexConsumer main, VertexConsumer solid, Vec3 start, Vec3 verticalEnd, Vec3 centerEnd, float convergeProgress, float[] rgb, float alpha, float radius, float age, int cornerIndex, boolean shaderCompatibility) {
