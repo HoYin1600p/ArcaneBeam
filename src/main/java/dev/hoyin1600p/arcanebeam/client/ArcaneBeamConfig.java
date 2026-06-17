@@ -382,6 +382,9 @@ public final class ArcaneBeamConfig {
         settings.centerGlowTopRadius = clampFloat(settings.centerGlowTopRadius <= 0.0F ? 0.08F : settings.centerGlowTopRadius, 0.005F, 0.75F);
         settings.centerGlowOpacity = clampFloat(settings.centerGlowOpacity <= 0.0F ? 0.25F : settings.centerGlowOpacity, 0.0F, 1.0F);
         settings.centerGlowRotationRpm = clampFloat(settings.centerGlowRotationRpm, 0.0F, 120.0F);
+        if (settings.soundMode == null || VaultAltarSoundMode.fromId(settings.soundMode) == null) {
+            settings.soundMode = VaultAltarSoundMode.DEFAULT.id;
+        }
         settings.soundVolume = clampFloat(settings.soundVolume, 0.0F, 2.0F);
     }
 
@@ -650,6 +653,7 @@ public final class ArcaneBeamConfig {
         copy.centerGlowRotationRpm = source.centerGlowRotationRpm;
         copy.fullbright = source.fullbright;
         copy.shaderCompatibility = source.shaderCompatibility;
+        copy.soundMode = source.soundMode;
         copy.soundVolume = source.soundVolume;
         return copy;
     }
@@ -827,6 +831,7 @@ public final class ArcaneBeamConfig {
         public float centerGlowRotationRpm = 18.0F;
         public boolean fullbright = true;
         public String shaderCompatibility = ShaderCompatibility.ON.id;
+        public String soundMode = VaultAltarSoundMode.DEFAULT.id;
         public float soundVolume = 0.35F;
     }
 
@@ -850,6 +855,30 @@ public final class ArcaneBeamConfig {
 
         public static LightningSoundMode fromId(String id) {
             for (LightningSoundMode mode : values()) {
+                if (mode.id.equals(id)) {
+                    return mode;
+                }
+            }
+            return null;
+        }
+    }
+
+    public enum VaultAltarSoundMode {
+        DEFAULT("default", "Default"),
+        ALTAR_1("altar_1", "Altar 1"),
+        RESOURCEPACK_1("resourcepack_1", "Resourcepack1"),
+        RESOURCEPACK_2("resourcepack_2", "Resourcepack2");
+
+        public final String id;
+        public final String label;
+
+        VaultAltarSoundMode(String id, String label) {
+            this.id = id;
+            this.label = label;
+        }
+
+        public static VaultAltarSoundMode fromId(String id) {
+            for (VaultAltarSoundMode mode : values()) {
                 if (mode.id.equals(id)) {
                     return mode;
                 }

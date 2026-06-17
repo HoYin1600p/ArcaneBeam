@@ -21,6 +21,8 @@ public final class ArcaneBeamSounds {
     public static final RegistryObject<SoundEvent> LIGHTNING_RESOURCEPACK_2_CAST = register("lightning_resourcepack_2_cast");
     public static final RegistryObject<SoundEvent> LIGHTNING_RESOURCEPACK_2_IMPACT = register("lightning_resourcepack_2_impact");
     public static final RegistryObject<SoundEvent> VAULT_ALTAR_BEAM = register("vault_altar_beam");
+    public static final RegistryObject<SoundEvent> VAULT_ALTAR_RESOURCEPACK_1 = register("vault_altar_resourcepack_1");
+    public static final RegistryObject<SoundEvent> VAULT_ALTAR_RESOURCEPACK_2 = register("vault_altar_resourcepack_2");
 
     private ArcaneBeamSounds() {
     }

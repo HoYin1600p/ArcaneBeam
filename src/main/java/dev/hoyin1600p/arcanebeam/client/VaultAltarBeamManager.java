@@ -28,6 +28,7 @@ public final class VaultAltarBeamManager {
     private static final int PARTICLE_REFRESH_GRACE_TICKS = 12;
     private static final double ALTAR_CENTER_TOLERANCE_SQR = 0.0125D;
     private static final double ALTAR_COMPLETION_DUST_TOLERANCE_SQR = 4.0D;
+    private static final double ALTAR_SOUND_TOLERANCE_SQR = 9.0D;
     private static final double ALTAR_TOP_OFFSET = 17.25D / 16.0D;
     private static final Map<BlockPos, ActiveAltarBeam> activeBeams = new LinkedHashMap<>();
 
@@ -64,6 +65,27 @@ public final class VaultAltarBeamManager {
 
         // The completion burst spreads green DustParticleOptions around the same altar top-center.
         return activeBeams.containsKey(altarPos);
+    }
+
+    public static boolean handleVaultAltarStartSound(double x, double y, double z) {
+        ArcaneBeamConfig.VaultAltarSettings settings = ArcaneBeamConfig.INSTANCE.vaultAltar;
+        if (settings == null || !settings.enabled || vaultAltarSoundMode() == ArcaneBeamConfig.VaultAltarSoundMode.DEFAULT) {
+            return false;
+        }
+
+        Minecraft minecraft = Minecraft.getInstance();
+        ClientLevel level = minecraft.level;
+        if (level == null) {
+            return false;
+        }
+
+        BlockPos altarPos = findAltarNearSound(level, x, y, z);
+        if (altarPos == null) {
+            return false;
+        }
+
+        refreshAltar(level, altarPos, settings);
+        return true;
     }
 
     private static void refreshAltar(ClientLevel level, BlockPos altarPos, ArcaneBeamConfig.VaultAltarSettings settings) {
@@ -111,6 +133,34 @@ public final class VaultAltarBeamManager {
 
     private static Vec3 altarTopCenter(BlockPos pos) {
         return new Vec3(pos.getX() + 0.5D, pos.getY() + ALTAR_TOP_OFFSET, pos.getZ() + 0.5D);
+    }
+
+    private static BlockPos findAltarNearSound(ClientLevel level, double x, double y, double z) {
+        BlockPos base = new BlockPos(x, y, z);
+        BlockPos best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dy = -2; dy <= 2; dy++) {
+                for (int dz = -2; dz <= 2; dz++) {
+                    BlockPos candidate = base.offset(dx, dy, dz);
+                    BlockEntity blockEntity = level.getBlockEntity(candidate);
+                    if (!(blockEntity instanceof VaultAltarTileEntity)) {
+                        continue;
+                    }
+                    double distance = Vec3.atCenterOf(candidate).distanceToSqr(x, y, z);
+                    if (distance <= ALTAR_SOUND_TOLERANCE_SQR && distance < bestDistance) {
+                        best = candidate.immutable();
+                        bestDistance = distance;
+                    }
+                }
+            }
+        }
+        return best;
+    }
+
+    private static ArcaneBeamConfig.VaultAltarSoundMode vaultAltarSoundMode() {
+        ArcaneBeamConfig.VaultAltarSoundMode mode = ArcaneBeamConfig.VaultAltarSoundMode.fromId(ArcaneBeamConfig.INSTANCE.vaultAltar.soundMode);
+        return mode == null ? ArcaneBeamConfig.VaultAltarSoundMode.DEFAULT : mode;
     }
 
     @SubscribeEvent

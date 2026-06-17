@@ -95,6 +95,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     private Button altarEnabledButton;
     private Button altarShaderCompatibilityButton;
     private Button altarFullbrightButton;
+    private Button altarSoundButton;
     private EditBox altarVerticalTicksBox;
     private EditBox altarConvergeTicksBox;
     private EditBox altarCenterGrowTicksBox;
@@ -408,6 +409,11 @@ public class ArcaneBeamConfigScreen extends Screen {
 
         altarFullbrightButton = this.addRenderableWidget(new Button(x, controlY + 196, 150, 20, TextComponent.EMPTY, button -> {
             vaultAltarSettings().fullbright = !vaultAltarSettings().fullbright;
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        altarSoundButton = this.addRenderableWidget(new Button(x + 158, controlY + 196, 150, 20, TextComponent.EMPTY, button -> {
+            cycleVaultAltarSound();
             refreshControls();
             ArcaneBeamConfig.save();
         }));
@@ -1189,6 +1195,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         setVisible(altarEnabledButton, vaultAltarSelected);
         setVisible(altarShaderCompatibilityButton, vaultAltarSelected);
         setVisible(altarFullbrightButton, vaultAltarSelected);
+        setVisible(altarSoundButton, vaultAltarSelected);
         setVisible(altarCornerRadiusSlider, vaultAltarSelected);
         setVisible(altarCornerOpacitySlider, vaultAltarSelected);
         setVisible(altarCenterHeightSlider, vaultAltarSelected);
@@ -1259,6 +1266,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         altarEnabledButton.setMessage(new TextComponent("Replacement: " + (settings.enabled ? "On" : "Off")));
         altarShaderCompatibilityButton.setMessage(new TextComponent("Shader Compatibility: " + vaultAltarShaderCompatibility().label));
         altarFullbrightButton.setMessage(new TextComponent("Fullbright: " + (settings.fullbright ? "On" : "Off")));
+        altarSoundButton.setMessage(new TextComponent("Sound: " + vaultAltarSoundMode().label));
         altarCornerRadiusSlider.refresh();
         altarCornerOpacitySlider.refresh();
         altarCenterHeightSlider.refresh();
@@ -1803,11 +1811,23 @@ public class ArcaneBeamConfigScreen extends Screen {
         return mode == null ? ArcaneBeamConfig.LightningSoundMode.DEFAULT : mode;
     }
 
+    private ArcaneBeamConfig.VaultAltarSoundMode vaultAltarSoundMode() {
+        ArcaneBeamConfig.VaultAltarSoundMode mode = ArcaneBeamConfig.VaultAltarSoundMode.fromId(vaultAltarSettings().soundMode);
+        return mode == null ? ArcaneBeamConfig.VaultAltarSoundMode.DEFAULT : mode;
+    }
+
     private void cycleLightningSound() {
         ArcaneBeamConfig.LightningSoundMode[] modes = ArcaneBeamConfig.LightningSoundMode.values();
         ArcaneBeamConfig.LightningSoundMode current = lightningSoundMode();
         int next = (current.ordinal() + 1) % modes.length;
         lightningSettings().soundMode = modes[next].id;
+    }
+
+    private void cycleVaultAltarSound() {
+        ArcaneBeamConfig.VaultAltarSoundMode[] modes = ArcaneBeamConfig.VaultAltarSoundMode.values();
+        ArcaneBeamConfig.VaultAltarSoundMode current = vaultAltarSoundMode();
+        int next = (current.ordinal() + 1) % modes.length;
+        vaultAltarSettings().soundMode = modes[next].id;
     }
 
     private ArcaneBeamConfig.FadeInStyle fadeInStyle() {
