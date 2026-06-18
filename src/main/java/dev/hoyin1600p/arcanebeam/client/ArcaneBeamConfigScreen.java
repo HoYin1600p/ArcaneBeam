@@ -521,7 +521,7 @@ public class ArcaneBeamConfigScreen extends Screen {
             refreshControls();
             ArcaneBeamConfig.save();
         }));
-        stormArrowSoundButton = this.addRenderableWidget(new Button(x, y + 172, 308, 20, TextComponent.EMPTY, button -> {
+        stormArrowSoundButton = this.addRenderableWidget(new Button(x, y + 172, 150, 20, TextComponent.EMPTY, button -> {
             cycleStormArrowSound();
             refreshControls();
             ArcaneBeamConfig.save();
@@ -1342,6 +1342,11 @@ public class ArcaneBeamConfigScreen extends Screen {
             fadeInModeButton.setMessage(new TextComponent(fadeInStyle().label));
             fadeOutModeButton.setMessage(new TextComponent(fadeOutStyle().label));
             profileDropdownButton.setMessage(new TextComponent("Profile: " + ellipsize(selectedProfileName(), 74)));
+            fitButton(shaderCompatibilityButton, 150);
+            fitButton(handButton, 150);
+            fitButton(soundButton, 184);
+            fitButton(fadeInModeButton, 122);
+            fitButton(fadeOutModeButton, 122);
             refreshOriginBoxes();
             refreshSoundVolumeBox();
             refreshFadeTickBoxes();
@@ -1470,6 +1475,12 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
     }
 
+    private void fitButton(Button button, int maxWidth) {
+        if (button != null) {
+            button.setWidth(Math.min(maxWidth, Math.max(44, this.font.width(button.getMessage().getString()) + 18)));
+        }
+    }
+
     private void refreshLightningControls() {
         if (lightningEnabledButton == null) {
             return;
@@ -1480,6 +1491,11 @@ public class ArcaneBeamConfigScreen extends Screen {
         lightningFullbrightButton.setMessage(new TextComponent("Fullbright: " + (settings.fullbright ? "On" : "Off")));
         lightningSoundButton.setMessage(new TextComponent("Impact: " + lightningSoundMode().label));
         lightningProjectileSoundButton.setMessage(new TextComponent("Projectile: " + lightningProjectileSoundMode().label));
+        fitButton(lightningEnabledButton, 150);
+        fitButton(lightningShaderCompatibilityButton, 150);
+        fitButton(lightningFullbrightButton, 150);
+        fitButton(lightningSoundButton, 150);
+        fitButton(lightningProjectileSoundButton, 150);
         lightningStartRadiusSlider.refresh();
         lightningEndRadiusSlider.refresh();
         lightningThicknessSlider.refresh();
@@ -1514,6 +1530,10 @@ public class ArcaneBeamConfigScreen extends Screen {
         altarShaderCompatibilityButton.setMessage(new TextComponent("Shader Compatibility: " + vaultAltarShaderCompatibility().label));
         altarFullbrightButton.setMessage(new TextComponent("Fullbright: " + (settings.fullbright ? "On" : "Off")));
         altarSoundButton.setMessage(new TextComponent("Sound: " + vaultAltarSoundMode().label));
+        fitButton(altarEnabledButton, 150);
+        fitButton(altarShaderCompatibilityButton, 150);
+        fitButton(altarFullbrightButton, 150);
+        fitButton(altarSoundButton, 150);
         altarCornerRadiusSlider.refresh();
         altarCornerOpacitySlider.refresh();
         altarCenterHeightSlider.refresh();
@@ -1546,6 +1566,13 @@ public class ArcaneBeamConfigScreen extends Screen {
         stormArrowFullbrightButton.setMessage(new TextComponent("Fullbright: " + (settings.fullbright ? "On" : "Off")));
         stormArrowImpactFlashButton.setMessage(new TextComponent("Impact Flash: " + (settings.impactFlashEnabled ? "On" : "Off")));
         stormArrowSoundButton.setMessage(new TextComponent("Sound: " + stormArrowSoundMode().label));
+        fitButton(stormArrowEnabledButton, 150);
+        fitButton(stormArrowTargetingCircleButton, 150);
+        fitButton(stormArrowActualRadiusButton, 150);
+        fitButton(stormArrowShaderCompatibilityButton, 150);
+        fitButton(stormArrowFullbrightButton, 150);
+        fitButton(stormArrowImpactFlashButton, 150);
+        fitButton(stormArrowSoundButton, 150);
         stormArrowCircleAlphaSlider.refresh();
         stormArrowCircleThicknessSlider.refresh();
         stormArrowBlasterAlphaSlider.refresh();
