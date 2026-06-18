@@ -171,7 +171,7 @@ public final class ArcaneBeamSoundController {
         if (minecraft == null || position == null || slot == null || !hasSoundFile(minecraft, slot.soundPath())) {
             return false;
         }
-        minecraft.getSoundManager().play(new PositionedFileSoundInstance(slot.eventName(), slot.soundPath(), position, ArcaneBeamConfig.INSTANCE.stormArrow.soundVolume));
+        minecraft.getSoundManager().play(new PositionedFileSoundInstance(slot.eventName(), slot.soundPath(), position, ArcaneBeamConfig.INSTANCE.stormArrow.soundVolume, stormArrowAudioRange()));
         return true;
     }
 
@@ -185,7 +185,7 @@ public final class ArcaneBeamSoundController {
         if (minecraft == null || position == null || slot == null || !hasSoundFile(minecraft, slot.soundPath())) {
             return false;
         }
-        minecraft.getSoundManager().play(new PositionedFileSoundInstance(slot.eventName(), slot.soundPath(), position, ArcaneBeamConfig.INSTANCE.stormArrow.soundVolume));
+        minecraft.getSoundManager().play(new PositionedFileSoundInstance(slot.eventName(), slot.soundPath(), position, ArcaneBeamConfig.INSTANCE.stormArrow.soundVolume, stormArrowAudioRange()));
         return true;
     }
 
@@ -217,6 +217,10 @@ public final class ArcaneBeamSoundController {
         } catch (IOException ignored) {
             return false;
         }
+    }
+
+    private static int stormArrowAudioRange() {
+        return Math.max(16, Math.min(32, ArcaneBeamConfig.INSTANCE.stormArrow.audioRange));
     }
 
     private static void stopArcaneSounds(Minecraft minecraft) {
@@ -341,10 +345,14 @@ public final class ArcaneBeamSoundController {
         }
 
         private FileSoundInstance(ResourceLocation eventId, ResourceLocation fileId, float volume, boolean stream, int maxAgeTicks) {
+            this(eventId, fileId, volume, stream, maxAgeTicks, 16);
+        }
+
+        private FileSoundInstance(ResourceLocation eventId, ResourceLocation fileId, float volume, boolean stream, int maxAgeTicks, int attenuationDistance) {
             super(new SoundEvent(eventId), SoundSource.PLAYERS);
             this.soundSet = new WeighedSoundEvents(eventId, null);
             this.maxAgeTicks = maxAgeTicks;
-            this.sound = new Sound(fileId.toString(), 1.0F, 1.0F, 1, Sound.Type.FILE, stream, false, 16);
+            this.sound = new Sound(fileId.toString(), 1.0F, 1.0F, 1, Sound.Type.FILE, stream, false, attenuationDistance);
             this.soundSet.addSound(this.sound);
             this.looping = false;
             this.delay = 0;
@@ -379,8 +387,16 @@ public final class ArcaneBeamSoundController {
             this(eventName, path, position, volume, false, ONE_SHOT_LIFETIME_TICKS);
         }
 
+        private PositionedFileSoundInstance(String eventName, String path, Vec3 position, float volume, int attenuationDistance) {
+            this(eventName, path, position, volume, false, ONE_SHOT_LIFETIME_TICKS, attenuationDistance);
+        }
+
         private PositionedFileSoundInstance(String eventName, String path, Vec3 position, float volume, boolean stream, int maxAgeTicks) {
-            super(new ResourceLocation(ArcaneBeam.MOD_ID, eventName), new ResourceLocation(ArcaneBeam.MOD_ID, path), volume, stream, maxAgeTicks);
+            this(eventName, path, position, volume, stream, maxAgeTicks, 16);
+        }
+
+        private PositionedFileSoundInstance(String eventName, String path, Vec3 position, float volume, boolean stream, int maxAgeTicks, int attenuationDistance) {
+            super(new ResourceLocation(ArcaneBeam.MOD_ID, eventName), new ResourceLocation(ArcaneBeam.MOD_ID, path), volume, stream, maxAgeTicks, attenuationDistance);
             this.relative = false;
             this.attenuation = Attenuation.LINEAR;
             this.x = position.x;

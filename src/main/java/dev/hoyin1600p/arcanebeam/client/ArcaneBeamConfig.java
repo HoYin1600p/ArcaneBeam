@@ -459,6 +459,7 @@ public final class ArcaneBeamConfig {
             settings.projectileSoundMode = StormArrowProjectileSoundMode.OPTION_1.id;
         }
         settings.soundVolume = clampFloat(settings.soundVolume, 0.0F, 2.0F);
+        settings.audioRange = clampInt(settings.audioRange <= 0 ? 16 : settings.audioRange, 16, 32);
     }
 
     private static int clampInt(int value, int min, int max) {
@@ -790,6 +791,7 @@ public final class ArcaneBeamConfig {
         copy.soundMode = source.soundMode;
         copy.projectileSoundMode = source.projectileSoundMode;
         copy.soundVolume = source.soundVolume;
+        copy.audioRange = source.audioRange;
         return copy;
     }
 
@@ -1000,6 +1002,7 @@ public final class ArcaneBeamConfig {
         public String soundMode = StormArrowSoundMode.DEFAULT.id;
         public String projectileSoundMode = StormArrowProjectileSoundMode.OPTION_1.id;
         public float soundVolume = 1.0F;
+        public int audioRange = 16;
     }
 
     private static StormArrowSettings defaultStormArrowSettings() {
