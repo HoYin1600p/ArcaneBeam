@@ -21,6 +21,7 @@ import java.util.Collection;
 public class StormArrowVisualRenderer extends RenderType {
     private static final int CIRCLE_SEGMENTS = 96;
     private static final int FLASH_SEGMENTS = 28;
+    private static final int IMPACT_SPARK_COUNT = 48;
     private static final ResourceLocation WHITE_TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/entity/white.png");
     private static final RenderType NORMAL = createUnlitRenderType("storm_arrow_normal");
     private static final RenderType SHADER_SAFE = createLitRenderType("storm_arrow_shader");
@@ -126,6 +127,7 @@ public class StormArrowVisualRenderer extends RenderType {
         if (settings.impactFlashEnabled() && progress >= 0.72F) {
             float flashAlpha = settings.blasterAlpha() * Mth.clamp((progress - 0.72F) / 0.18F, 0.0F, 1.0F) * Mth.clamp((1.0F - progress) / 0.10F, 0.0F, 1.0F);
             renderImpactFlash(poseStack, builder, settings, flashAlpha, shaderCompatibility);
+            renderImpactSparks(poseStack, builder, settings, flashAlpha, progress, impact, shaderCompatibility);
         }
         poseStack.popPose();
     }
@@ -168,6 +170,48 @@ public class StormArrowVisualRenderer extends RenderType {
         }
     }
 
+    private static void renderImpactSparks(PoseStack stack, VertexConsumer builder, StormArrowVisualManager.StormArrowRenderSettings settings, float alpha, float progress, Vec3 impact, boolean shaderCompatibility) {
+        if (alpha <= 0.001F) {
+            return;
+        }
+
+        // These are render-only tapered quads, not particles. They appear only at the target impact point.
+        float[] sparkRgb = rgb(settings.impactFlashColor());
+        float[] coreRgb = rgb(settings.coreColor());
+        float seedBase = (float) (impact.x * 17.37D + impact.y * 5.91D + impact.z * 23.43D);
+        float impactAge = progress * Math.max(1.0F, settings.lifetimeTicks());
+        float plumeScale = 4.0F;
+
+        for (int i = 0; i < IMPACT_SPARK_COUNT; i++) {
+            float seed = seedBase + i * 7.91F;
+            float flicker = 0.55F + 0.45F * hash01(seed + Mth.floor(impactAge * 2.3F) * 3.11F);
+            float sparkAlpha = alpha * 1.35F * flicker;
+            float angle = hash01(seed + 1.0F) * ((float) Math.PI * 2.0F) + impactAge * (0.12F + hash01(seed + 2.0F) * 0.08F);
+            float height = (0.10F + hash01(seed + 3.0F) * 0.12F) * plumeScale;
+            float lean = (0.025F + hash01(seed + 4.0F) * 0.075F) * plumeScale;
+            float baseHalfWidth = (0.010F + hash01(seed + 5.0F) * 0.009F) * plumeScale;
+            float tipHalfWidth = baseHalfWidth * 0.25F;
+            float tipX = Mth.cos(angle) * lean;
+            float tipZ = Mth.sin(angle) * lean;
+            float sideX = Mth.cos(angle + (float) Math.PI * 0.5F);
+            float sideZ = Mth.sin(angle + (float) Math.PI * 0.5F);
+            float[] rgb = i % 3 == 0 ? coreRgb : sparkRgb;
+
+            renderSparkQuad(stack, builder, rgb, sparkAlpha, tipX, tipZ, height, sideX, sideZ, baseHalfWidth, tipHalfWidth, shaderCompatibility, settings.fullbright());
+            renderSparkQuad(stack, builder, rgb, sparkAlpha * 0.55F, tipX * 0.72F, tipZ * 0.72F, height * 0.82F, -tipZ, tipX, baseHalfWidth * 0.65F, tipHalfWidth * 0.65F, shaderCompatibility, settings.fullbright());
+        }
+    }
+
+    private static void renderSparkQuad(PoseStack stack, VertexConsumer builder, float[] rgb, float alpha, float tipX, float tipZ, float height, float sideX, float sideZ, float baseHalfWidth, float tipHalfWidth, boolean shaderCompatibility, boolean fullbright) {
+        Matrix4f pose = stack.last().pose();
+        Matrix3f normal = stack.last().normal();
+        float baseAlpha = Mth.clamp(alpha, 0.0F, 1.0F);
+        addRawVertex(pose, normal, builder, rgb, baseAlpha, -sideX * baseHalfWidth, 0.012F, -sideZ * baseHalfWidth, 0.0F, 1.0F, shaderCompatibility, fullbright, Vector3f.YP);
+        addRawVertex(pose, normal, builder, rgb, baseAlpha, sideX * baseHalfWidth, 0.012F, sideZ * baseHalfWidth, 1.0F, 1.0F, shaderCompatibility, fullbright, Vector3f.YP);
+        addRawVertex(pose, normal, builder, rgb, 0.0F, tipX + sideX * tipHalfWidth, height, tipZ + sideZ * tipHalfWidth, 1.0F, 0.0F, shaderCompatibility, fullbright, Vector3f.YP);
+        addRawVertex(pose, normal, builder, rgb, 0.0F, tipX - sideX * tipHalfWidth, height, tipZ - sideZ * tipHalfWidth, 0.0F, 0.0F, shaderCompatibility, fullbright, Vector3f.YP);
+    }
+
     private static void addCircleVertex(Matrix4f pose, Matrix3f normal, VertexConsumer builder, float[] rgb, float alpha, float radius, float angle, float u, float v, boolean shaderCompatibility, boolean fullbright) {
         addRawVertex(pose, normal, builder, rgb, alpha, (float) Math.cos(angle) * radius, 0.0F, (float) Math.sin(angle) * radius, u, v, shaderCompatibility, fullbright, Vector3f.YP);
     }
@@ -199,6 +243,10 @@ public class StormArrowVisualRenderer extends RenderType {
                 ((color >> 8) & 0xFF) / 255.0F,
                 (color & 0xFF) / 255.0F
         };
+    }
+
+    private static float hash01(float value) {
+        return Mth.frac(Mth.sin(value * 12.9898F) * 43758.547F);
     }
 
     private static RenderType createUnlitRenderType(String type) {
