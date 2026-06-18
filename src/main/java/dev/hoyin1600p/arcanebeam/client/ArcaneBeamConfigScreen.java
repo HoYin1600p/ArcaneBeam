@@ -493,7 +493,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         stormArrowCircleThicknessSlider = new SettingSlider(x + 158, y + 48, 150, 20, "Circle Width", 0.02D, 1.0D, () -> stormArrowSettings().circleThickness, value -> stormArrowSettings().circleThickness = (float) value);
         stormArrowBlasterAlphaSlider = new SettingSlider(x, y + 72, 150, 20, "Blaster Alpha", 0.0D, 1.0D, () -> stormArrowSettings().blasterAlpha, value -> stormArrowSettings().blasterAlpha = (float) value);
         stormArrowBlasterWidthSlider = new SettingSlider(x + 158, y + 72, 150, 20, "Blaster Width", 0.01D, 1.0D, () -> stormArrowSettings().blasterWidth, value -> stormArrowSettings().blasterWidth = (float) value);
-        stormArrowSegmentLengthSlider = new SettingSlider(x, y + 96, 150, 20, "Segment Length", 0.1D, 12.0D, () -> stormArrowSettings().segmentLength, value -> stormArrowSettings().segmentLength = (float) value);
+        stormArrowSegmentLengthSlider = new SettingSlider(x, y + 96, 150, 20, "Bolt Length", 0.1D, 12.0D, () -> stormArrowSettings().segmentLength, value -> stormArrowSettings().segmentLength = (float) value);
         stormArrowSegmentGapSlider = new SettingSlider(x + 158, y + 96, 150, 20, "Segment Gap", 0.0D, 12.0D, () -> stormArrowSettings().segmentGap, value -> stormArrowSettings().segmentGap = (float) value);
         stormArrowImpactFlashSizeSlider = new SettingSlider(x, y + 120, 308, 20, "Impact Flash Size", 0.05D, 4.0D, () -> stormArrowSettings().impactFlashSize, value -> stormArrowSettings().impactFlashSize = (float) value);
         this.addRenderableWidget(stormArrowCircleAlphaSlider);
@@ -1415,7 +1415,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         setVisible(stormArrowBlasterAlphaSlider, stormArrowSelected);
         setVisible(stormArrowBlasterWidthSlider, stormArrowSelected);
         setVisible(stormArrowSegmentLengthSlider, stormArrowSelected);
-        setVisible(stormArrowSegmentGapSlider, stormArrowSelected);
+        setVisible(stormArrowSegmentGapSlider, false);
         setVisible(stormArrowImpactFlashSizeSlider, stormArrowSelected);
         setVisible(stormArrowLifetimeBox, stormArrowSelected);
         setVisible(stormArrowOriginHeightBox, stormArrowSelected);

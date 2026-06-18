@@ -445,8 +445,8 @@ public final class ArcaneBeamConfig {
         settings.blasterAlpha = clampFloat(settings.blasterAlpha <= 0.0F ? 0.92F : settings.blasterAlpha, 0.0F, 1.0F);
         settings.blasterWidth = clampFloat(settings.blasterWidth <= 0.0F ? 0.11F : settings.blasterWidth, 0.01F, 1.0F);
         settings.segmentLength = clampFloat(settings.segmentLength <= 0.0F ? 2.4F : settings.segmentLength, 0.1F, 12.0F);
-        settings.segmentGap = clampFloat(settings.segmentGap < 0.0F ? 0.8F : settings.segmentGap, 0.0F, 12.0F);
-        settings.lifetimeTicks = clampInt(settings.lifetimeTicks <= 0 ? 10 : settings.lifetimeTicks, 1, 80);
+        settings.segmentGap = clampFloat(settings.segmentGap < 0.0F ? 0.0F : settings.segmentGap, 0.0F, 12.0F);
+        settings.lifetimeTicks = clampInt(settings.lifetimeTicks <= 0 || settings.lifetimeTicks == 10 ? 5 : settings.lifetimeTicks, 1, 80);
         settings.originHeight = clampFloat(settings.originHeight <= 0.0F ? 24.0F : settings.originHeight, 2.0F, 64.0F);
         settings.impactFlashSize = clampFloat(settings.impactFlashSize <= 0.0F ? 0.75F : settings.impactFlashSize, 0.05F, 4.0F);
         if (settings.shaderCompatibility == null || ShaderCompatibility.fromId(settings.shaderCompatibility) == null) {
@@ -983,8 +983,8 @@ public final class ArcaneBeamConfig {
         public float blasterAlpha = 0.92F;
         public float blasterWidth = 0.11F;
         public float segmentLength = 2.4F;
-        public float segmentGap = 0.8F;
-        public int lifetimeTicks = 10;
+        public float segmentGap = 0.0F;
+        public int lifetimeTicks = 5;
         public float originHeight = 24.0F;
         public boolean impactFlashEnabled = true;
         public int impactFlashColor = 0xFFFFFF;

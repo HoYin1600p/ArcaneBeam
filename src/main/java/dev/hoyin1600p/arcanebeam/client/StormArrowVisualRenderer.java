@@ -109,27 +109,23 @@ public class StormArrowVisualRenderer extends RenderType {
 
         boolean shaderCompatibility = shaderCompatibility(settings);
         VertexConsumer builder = buffer.getBuffer(shaderCompatibility ? SHADER_SAFE : NORMAL);
-        float fade = 1.0F - progress;
-        float alpha = settings.blasterAlpha() * Mth.clamp(fade / 0.35F, 0.0F, 1.0F);
+        float alpha = settings.blasterAlpha();
         Vec3 impact = strike.impact().add(0.0D, 0.08D, 0.0D);
         poseStack.pushPose();
         poseStack.translate(impact.x, impact.y, impact.z);
 
-        // Segment timing is visual only. The server already decided when the lightning hit; this only animates the replacement shot.
-        float length = settings.originHeight();
-        float segmentLength = settings.segmentLength();
-        float segmentGap = settings.segmentGap();
-        float period = Math.max(0.05F, segmentLength + segmentGap);
-        float scroll = progress * period * 1.8F;
-        for (float y = scroll % period; y < length; y += period) {
-            float bottom = Math.max(0.0F, y);
-            float top = Math.min(length, y + segmentLength);
-            if (top > bottom) {
-                renderBlasterSegment(poseStack, builder, settings, bottom, top, alpha, shaderCompatibility);
-            }
+        // The Vault strike is instant. This keeps gameplay timing intact and only animates one visual bolt from orbit to impact.
+        float originY = settings.originHeight();
+        float segmentLength = Math.min(settings.segmentLength(), originY + settings.segmentLength());
+        float headY = Mth.lerp(progress, originY, 0.0F);
+        float bottom = Math.max(0.0F, headY);
+        float top = headY + segmentLength;
+        if (top > bottom) {
+            renderBlasterSegment(poseStack, builder, settings, bottom, top, alpha, shaderCompatibility);
         }
-        if (settings.impactFlashEnabled()) {
-            renderImpactFlash(poseStack, builder, settings, alpha, shaderCompatibility);
+        if (settings.impactFlashEnabled() && progress >= 0.72F) {
+            float flashAlpha = settings.blasterAlpha() * Mth.clamp((progress - 0.72F) / 0.18F, 0.0F, 1.0F) * Mth.clamp((1.0F - progress) / 0.10F, 0.0F, 1.0F);
+            renderImpactFlash(poseStack, builder, settings, flashAlpha, shaderCompatibility);
         }
         poseStack.popPose();
     }
