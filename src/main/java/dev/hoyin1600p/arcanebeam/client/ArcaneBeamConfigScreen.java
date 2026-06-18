@@ -119,6 +119,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     private Button stormArrowSoundButton;
     private EditBox stormArrowLifetimeBox;
     private EditBox stormArrowOriginHeightBox;
+    private EditBox stormArrowSoundVolumeBox;
     private boolean profileDropdownOpen;
     private boolean railSelected;
     private boolean lightningSelected;
@@ -521,6 +522,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         }));
         stormArrowLifetimeBox = addStormArrowNumberBox(x, y + 200, 54, 2, "Lifetime", "[0-9]{0,2}", this::updateStormArrowLifetimeFromText);
         stormArrowOriginHeightBox = addStormArrowNumberBox(x + 158, y + 200, 54, 4, "Height", "[0-9]{0,2}(\\.[0-9]?)?", this::updateStormArrowOriginHeightFromText);
+        stormArrowSoundVolumeBox = addStormArrowSoundVolumeBox(x + 208, y + 228);
     }
 
     private void updateLayoutScale() {
@@ -623,6 +625,15 @@ public class ArcaneBeamConfigScreen extends Screen {
         editBox.setMaxLength(maxLength);
         editBox.setFilter(value -> value.isEmpty() || value.matches(pattern));
         editBox.setResponder(responder);
+        this.addRenderableWidget(editBox);
+        return editBox;
+    }
+
+    private EditBox addStormArrowSoundVolumeBox(int x, int y) {
+        EditBox editBox = new EditBox(this.font, x + 50, y, 50, 20, new TextComponent("Sound Volume"));
+        editBox.setMaxLength(4);
+        editBox.setFilter(value -> value.isEmpty() || value.matches("[0-9]{0,1}(\\.[0-9]{0,2})?") || value.matches("2(\\.[0]{0,2})?"));
+        editBox.setResponder(this::updateStormArrowSoundVolumeFromText);
         this.addRenderableWidget(editBox);
         return editBox;
     }
@@ -747,6 +758,27 @@ public class ArcaneBeamConfigScreen extends Screen {
             ArcaneBeamConfig.save();
             return true;
         }
+        if (stormArrowSelected && stormArrowSoundVolumeBox != null && stormArrowSoundVolumeBox.isMouseOver(layoutMouseX, layoutMouseY)) {
+            double step = hasShiftDown() ? 0.10D : 0.01D;
+            nudgeStormArrowSoundVolume(delta > 0.0D ? step : -step);
+            refreshStormArrowSoundVolumeBox();
+            ArcaneBeamConfig.save();
+            return true;
+        }
+        if (stormArrowSelected && stormArrowLifetimeBox != null && stormArrowLifetimeBox.isMouseOver(layoutMouseX, layoutMouseY)) {
+            int step = hasShiftDown() ? 10 : 1;
+            nudgeStormArrowLifetime(delta > 0.0D ? step : -step);
+            refreshStormArrowControls();
+            ArcaneBeamConfig.save();
+            return true;
+        }
+        if (stormArrowSelected && stormArrowOriginHeightBox != null && stormArrowOriginHeightBox.isMouseOver(layoutMouseX, layoutMouseY)) {
+            double step = hasShiftDown() ? 1.0D : 0.1D;
+            nudgeStormArrowOriginHeight(delta > 0.0D ? step : -step);
+            refreshStormArrowControls();
+            ArcaneBeamConfig.save();
+            return true;
+        }
         if (vaultAltarSelected && altarOriginHeightBox != null && altarOriginHeightBox.isMouseOver(layoutMouseX, layoutMouseY)) {
             nudgeAltarOriginHeight(delta > 0.0D ? 0.1D : -0.1D);
             refreshAltarOriginBoxes();
@@ -838,6 +870,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         tickBox(altarSoundVolumeBox);
         tickBox(stormArrowLifetimeBox);
         tickBox(stormArrowOriginHeightBox);
+        tickBox(stormArrowSoundVolumeBox);
     }
 
     private static void tickBox(EditBox box) {
@@ -979,11 +1012,12 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void renderStormArrowLabels(PoseStack poseStack) {
-        if (stormArrowLifetimeBox == null || stormArrowOriginHeightBox == null) {
+        if (stormArrowLifetimeBox == null || stormArrowOriginHeightBox == null || stormArrowSoundVolumeBox == null) {
             return;
         }
         drawString(poseStack, this.font, "Lifetime", stormArrowLifetimeBox.x - 54, stormArrowLifetimeBox.y + 6, 0xD8D8D8);
         drawString(poseStack, this.font, "Height", stormArrowOriginHeightBox.x - 46, stormArrowOriginHeightBox.y + 6, 0xD8D8D8);
+        drawString(poseStack, this.font, "Volume", stormArrowSoundVolumeBox.x - 50, stormArrowSoundVolumeBox.y + 6, 0xD8D8D8);
     }
 
     private void renderProfileDropdown(PoseStack poseStack) {
@@ -1419,6 +1453,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         setVisible(stormArrowImpactFlashSizeSlider, stormArrowSelected);
         setVisible(stormArrowLifetimeBox, stormArrowSelected);
         setVisible(stormArrowOriginHeightBox, stormArrowSelected);
+        setVisible(stormArrowSoundVolumeBox, stormArrowSelected);
     }
 
     private static void setVisible(net.minecraft.client.gui.components.AbstractWidget widget, boolean visible) {
@@ -1512,6 +1547,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         stormArrowImpactFlashSizeSlider.refresh();
         stormArrowLifetimeBox.setValue(Integer.toString(settings.lifetimeTicks));
         stormArrowOriginHeightBox.setValue(formatTenths(settings.originHeight));
+        refreshStormArrowSoundVolumeBox();
     }
 
     private void cycleShaderCompatibility() {
@@ -1855,6 +1891,17 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
     }
 
+    private void updateStormArrowSoundVolumeFromText(String value) {
+        if (value == null || value.isEmpty() || ".".equals(value)) {
+            return;
+        }
+        try {
+            stormArrowSettings().soundVolume = clampSoundVolume((float) roundOffset(Double.parseDouble(value)));
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
     private void nudgeOrigin(int axis, double amount) {
         if (axis == 0) {
             settings().startOffsetX = roundOffset(settings().startOffsetX + amount);
@@ -1875,6 +1922,18 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     private void nudgeAltarSoundVolume(double amount) {
         vaultAltarSettings().soundVolume = clampSoundVolume((float) roundOffset(vaultAltarSettings().soundVolume + amount));
+    }
+
+    private void nudgeStormArrowSoundVolume(double amount) {
+        stormArrowSettings().soundVolume = clampSoundVolume((float) roundOffset(stormArrowSettings().soundVolume + amount));
+    }
+
+    private void nudgeStormArrowLifetime(int amount) {
+        stormArrowSettings().lifetimeTicks = clamp(stormArrowSettings().lifetimeTicks + amount, 1, 80);
+    }
+
+    private void nudgeStormArrowOriginHeight(double amount) {
+        stormArrowSettings().originHeight = clampTenths((float) roundTenths(stormArrowSettings().originHeight + amount), 2.0F, 64.0F);
     }
 
     private void nudgeAltarOriginHeight(double amount) {
@@ -1924,6 +1983,12 @@ public class ArcaneBeamConfigScreen extends Screen {
     private void refreshAltarSoundVolumeBox() {
         if (altarSoundVolumeBox != null) {
             altarSoundVolumeBox.setValue(formatOffset(vaultAltarSettings().soundVolume));
+        }
+    }
+
+    private void refreshStormArrowSoundVolumeBox() {
+        if (stormArrowSoundVolumeBox != null) {
+            stormArrowSoundVolumeBox.setValue(formatOffset(stormArrowSettings().soundVolume));
         }
     }
 

@@ -455,6 +455,7 @@ public final class ArcaneBeamConfig {
         if (settings.soundMode == null || StormArrowSoundMode.fromId(settings.soundMode) == null) {
             settings.soundMode = StormArrowSoundMode.DEFAULT.id;
         }
+        settings.soundVolume = clampFloat(settings.soundVolume, 0.0F, 2.0F);
     }
 
     private static int clampInt(int value, int min, int max) {
@@ -784,6 +785,7 @@ public final class ArcaneBeamConfig {
         copy.fullbright = source.fullbright;
         copy.shaderCompatibility = source.shaderCompatibility;
         copy.soundMode = source.soundMode;
+        copy.soundVolume = source.soundVolume;
         return copy;
     }
 
@@ -992,6 +994,7 @@ public final class ArcaneBeamConfig {
         public boolean fullbright = true;
         public String shaderCompatibility = ShaderCompatibility.ON.id;
         public String soundMode = StormArrowSoundMode.DEFAULT.id;
+        public float soundVolume = 1.0F;
     }
 
     private static StormArrowSettings defaultStormArrowSettings() {

@@ -165,7 +165,7 @@ public final class ArcaneBeamSoundController {
         if (minecraft == null || position == null || slot == null || !hasSoundFile(minecraft, slot.soundPath())) {
             return false;
         }
-        minecraft.getSoundManager().play(new PositionedFileSoundInstance(slot.eventName(), slot.soundPath(), position, 1.0F));
+        minecraft.getSoundManager().play(new PositionedFileSoundInstance(slot.eventName(), slot.soundPath(), position, ArcaneBeamConfig.INSTANCE.stormArrow.soundVolume));
         return true;
     }
 
