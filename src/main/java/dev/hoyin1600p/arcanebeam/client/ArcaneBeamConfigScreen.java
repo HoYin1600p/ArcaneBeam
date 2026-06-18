@@ -380,12 +380,12 @@ public class ArcaneBeamConfigScreen extends Screen {
             refreshControls();
             ArcaneBeamConfig.save();
         }));
-        lightningSoundButton = this.addRenderableWidget(new Button(x + 158, y + 240, 150, 20, TextComponent.EMPTY, button -> {
+        lightningSoundButton = this.addRenderableWidget(new Button(x, y + 268, 150, 20, TextComponent.EMPTY, button -> {
             cycleLightningSound();
             refreshControls();
             ArcaneBeamConfig.save();
         }));
-        lightningProjectileSoundButton = this.addRenderableWidget(new Button(x, y + 268, 308, 20, TextComponent.EMPTY, button -> {
+        lightningProjectileSoundButton = this.addRenderableWidget(new Button(x + 158, y + 268, 150, 20, TextComponent.EMPTY, button -> {
             cycleLightningProjectileSound();
             refreshControls();
             ArcaneBeamConfig.save();
@@ -1478,8 +1478,8 @@ public class ArcaneBeamConfigScreen extends Screen {
         lightningEnabledButton.setMessage(new TextComponent("Replacement: " + (settings.enabled ? "On" : "Off")));
         lightningShaderCompatibilityButton.setMessage(new TextComponent("Shader Compatibility: " + lightningShaderCompatibility().label));
         lightningFullbrightButton.setMessage(new TextComponent("Fullbright: " + (settings.fullbright ? "On" : "Off")));
-        lightningSoundButton.setMessage(new TextComponent("Impact Sound: " + lightningSoundMode().label));
-        lightningProjectileSoundButton.setMessage(new TextComponent("Shot Sound: " + lightningProjectileSoundMode().label));
+        lightningSoundButton.setMessage(new TextComponent("Impact: " + lightningSoundMode().label));
+        lightningProjectileSoundButton.setMessage(new TextComponent("Projectile: " + lightningProjectileSoundMode().label));
         lightningStartRadiusSlider.refresh();
         lightningEndRadiusSlider.refresh();
         lightningThicknessSlider.refresh();
