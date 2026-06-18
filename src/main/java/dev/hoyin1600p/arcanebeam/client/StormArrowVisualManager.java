@@ -62,6 +62,26 @@ public final class StormArrowVisualManager {
         return true;
     }
 
+    public static boolean handleStormArrowStrikeSound(double x, double y, double z) {
+        ArcaneBeamConfig.StormArrowSettings settings = ArcaneBeamConfig.INSTANCE.stormArrow;
+        if (settings == null || !settings.enabled || stormArrowSoundMode() == ArcaneBeamConfig.StormArrowSoundMode.DEFAULT) {
+            return false;
+        }
+
+        Vec3 position = new Vec3(x, y, z);
+        boolean insideActiveStorm = activeStorms.values().stream().anyMatch(storm -> {
+            Vec3 center = storm.groundCenter();
+            double horizontalDistanceSqr = (center.x - x) * (center.x - x) + (center.z - z) * (center.z - z);
+            double radius = storm.radius() + 2.0D;
+            return horizontalDistanceSqr <= radius * radius;
+        });
+        if (!insideActiveStorm) {
+            return false;
+        }
+
+        return ArcaneBeamSoundController.playStormArrowStrike(Minecraft.getInstance(), position);
+    }
+
     private static long gameTime() {
         ClientLevel level = Minecraft.getInstance().level;
         return level == null ? 0L : level.getGameTime();
@@ -76,6 +96,11 @@ public final class StormArrowVisualManager {
         } catch (RuntimeException error) {
             return FALLBACK_RADIUS;
         }
+    }
+
+    private static ArcaneBeamConfig.StormArrowSoundMode stormArrowSoundMode() {
+        ArcaneBeamConfig.StormArrowSoundMode mode = ArcaneBeamConfig.StormArrowSoundMode.fromId(ArcaneBeamConfig.INSTANCE.stormArrow.soundMode);
+        return mode == null ? ArcaneBeamConfig.StormArrowSoundMode.DEFAULT : mode;
     }
 
     @SubscribeEvent

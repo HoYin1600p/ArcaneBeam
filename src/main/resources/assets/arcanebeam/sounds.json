@@ -70,5 +70,14 @@
         "stream": true
       }
     ]
+  },
+  "storm_arrow_1": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/storm_arrow_1",
+        "stream": false
+      }
+    ]
   }
 }
