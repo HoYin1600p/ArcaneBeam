@@ -10,9 +10,12 @@
     "ClientLevelMixin",
     "LightningArrowRendererMixin",
     "SoundManagerMixin",
+    "StormSmiteBoltRendererMixin",
     "SophisticatedStorageBarrelBakedModelBaseMixin",
     "SophisticatedStorageDisplayItemRendererMixin",
-    "SophisticatedStorageLimitedBarrelClientInteractionMixin"
+    "SophisticatedStorageLimitedBarrelClientInteractionMixin",
+    "VaultStormEntityAccessor",
+    "VaultStormEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1

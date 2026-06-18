@@ -33,6 +33,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     private final List<EditBox> colorBoxes = new ArrayList<>();
     private final List<EditBox> glowColorBoxes = new ArrayList<>();
     private final List<EditBox> altarColorBoxes = new ArrayList<>();
+    private final List<EditBox> stormArrowColorBoxes = new ArrayList<>();
     private final List<EditBox> originBoxes = new ArrayList<>();
     private final List<Button> originLabelButtons = new ArrayList<>();
     private EditBox profileNameBox;
@@ -72,6 +73,13 @@ public class ArcaneBeamConfigScreen extends Screen {
     private SettingSlider altarGlowTopRadiusSlider;
     private SettingSlider altarGlowOpacitySlider;
     private SettingSlider altarGlowRotationSlider;
+    private SettingSlider stormArrowCircleAlphaSlider;
+    private SettingSlider stormArrowCircleThicknessSlider;
+    private SettingSlider stormArrowBlasterAlphaSlider;
+    private SettingSlider stormArrowBlasterWidthSlider;
+    private SettingSlider stormArrowSegmentLengthSlider;
+    private SettingSlider stormArrowSegmentGapSlider;
+    private SettingSlider stormArrowImpactFlashSizeSlider;
     private Button soundButton;
     private Button handButton;
     private Button shaderCompatibilityButton;
@@ -102,10 +110,20 @@ public class ArcaneBeamConfigScreen extends Screen {
     private EditBox altarOriginHeightBox;
     private EditBox altarOriginRadiusBox;
     private EditBox altarSoundVolumeBox;
+    private Button stormArrowEnabledButton;
+    private Button stormArrowTargetingCircleButton;
+    private Button stormArrowActualRadiusButton;
+    private Button stormArrowShaderCompatibilityButton;
+    private Button stormArrowFullbrightButton;
+    private Button stormArrowImpactFlashButton;
+    private Button stormArrowSoundButton;
+    private EditBox stormArrowLifetimeBox;
+    private EditBox stormArrowOriginHeightBox;
     private boolean profileDropdownOpen;
     private boolean railSelected;
     private boolean lightningSelected;
     private boolean vaultAltarSelected;
+    private boolean stormArrowSelected;
     private boolean draggingPalette;
     private boolean draggingBrightness;
     private int brightnessDragBaseColor;
@@ -126,7 +144,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     public boolean lightningSelected() {
-        return lightningSelected || vaultAltarSelected;
+        return lightningSelected || vaultAltarSelected || stormArrowSelected;
     }
 
     @Override
@@ -135,43 +153,58 @@ public class ArcaneBeamConfigScreen extends Screen {
         colorBoxes.clear();
         glowColorBoxes.clear();
         altarColorBoxes.clear();
+        stormArrowColorBoxes.clear();
         originBoxes.clear();
         originLabelButtons.clear();
         profileDropdownOpen = false;
         paletteX = layoutWidth / 2 - PALETTE_WIDTH / 2;
         paletteY = 72;
 
-        this.addRenderableWidget(new Button(layoutWidth / 2 - 190, 36, 80, 20, new TextComponent("Arcane"), button -> {
+        this.addRenderableWidget(new Button(layoutWidth / 2 - 250, 36, 70, 20, new TextComponent("Arcane"), button -> {
             railSelected = false;
             lightningSelected = false;
             vaultAltarSelected = false;
+            stormArrowSelected = false;
             selectedSlot = 0;
             glowColorsSelected = false;
             profileDropdownOpen = false;
             refreshControls();
         }));
-        this.addRenderableWidget(new Button(layoutWidth / 2 - 104, 36, 80, 20, new TextComponent("Rail"), button -> {
+        this.addRenderableWidget(new Button(layoutWidth / 2 - 174, 36, 60, 20, new TextComponent("Rail"), button -> {
             railSelected = true;
             lightningSelected = false;
             vaultAltarSelected = false;
+            stormArrowSelected = false;
             selectedSlot = 0;
             glowColorsSelected = false;
             profileDropdownOpen = false;
             refreshControls();
         }));
-        this.addRenderableWidget(new Button(layoutWidth / 2 - 18, 36, 112, 20, new TextComponent("Lightning Strike"), button -> {
+        this.addRenderableWidget(new Button(layoutWidth / 2 - 108, 36, 112, 20, new TextComponent("Lightning Strike"), button -> {
             railSelected = false;
             lightningSelected = true;
             vaultAltarSelected = false;
+            stormArrowSelected = false;
             selectedSlot = 0;
             glowColorsSelected = false;
             profileDropdownOpen = false;
             refreshControls();
         }));
-        this.addRenderableWidget(new Button(layoutWidth / 2 + 100, 36, 96, 20, new TextComponent("Vault Altar"), button -> {
+        this.addRenderableWidget(new Button(layoutWidth / 2 + 10, 36, 92, 20, new TextComponent("Vault Altar"), button -> {
             railSelected = false;
             lightningSelected = false;
             vaultAltarSelected = true;
+            stormArrowSelected = false;
+            selectedSlot = 0;
+            glowColorsSelected = false;
+            profileDropdownOpen = false;
+            refreshControls();
+        }));
+        this.addRenderableWidget(new Button(layoutWidth / 2 + 108, 36, 104, 20, new TextComponent("Storm Arrow"), button -> {
+            railSelected = false;
+            lightningSelected = false;
+            vaultAltarSelected = false;
+            stormArrowSelected = true;
             selectedSlot = 0;
             glowColorsSelected = false;
             profileDropdownOpen = false;
@@ -281,6 +314,7 @@ public class ArcaneBeamConfigScreen extends Screen {
 
         addLightningControls(sliderX, sliderY);
         addVaultAltarControls(sliderX, sliderY);
+        addStormArrowControls(sliderX, sliderY);
 
         this.addRenderableWidget(new Button(layoutWidth / 2 - 45, layoutHeight - 32, 90, 20, new TextComponent("Done"), button -> onClose()));
         refreshControls();
@@ -425,6 +459,70 @@ public class ArcaneBeamConfigScreen extends Screen {
         altarSoundVolumeBox = addAltarSoundVolumeBox(x + 208, controlY + 280);
     }
 
+    private void addStormArrowControls(int x, int y) {
+        int colorY = beamRowY();
+        addStormArrowColorBox(slotStartX(0), colorY, "Circle", 0);
+        addStormArrowColorBox(slotStartX(1), colorY, "Blaster", 1);
+        addStormArrowColorBox(slotStartX(2), colorY, "Core", 2);
+        addStormArrowColorBox(slotStartX(3), colorY, "Flash", 3);
+
+        stormArrowEnabledButton = this.addRenderableWidget(new Button(x, y, 150, 20, TextComponent.EMPTY, button -> {
+            stormArrowSettings().enabled = !stormArrowSettings().enabled;
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        stormArrowShaderCompatibilityButton = this.addRenderableWidget(new Button(x + 158, y, 150, 20, TextComponent.EMPTY, button -> {
+            ArcaneBeamConfig.ShaderCompatibility current = stormArrowShaderCompatibility();
+            stormArrowSettings().shaderCompatibility = current == ArcaneBeamConfig.ShaderCompatibility.ON
+                    ? ArcaneBeamConfig.ShaderCompatibility.OFF.id
+                    : ArcaneBeamConfig.ShaderCompatibility.ON.id;
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        stormArrowTargetingCircleButton = this.addRenderableWidget(new Button(x, y + 24, 150, 20, TextComponent.EMPTY, button -> {
+            stormArrowSettings().showTargetingCircle = !stormArrowSettings().showTargetingCircle;
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        stormArrowActualRadiusButton = this.addRenderableWidget(new Button(x + 158, y + 24, 150, 20, TextComponent.EMPTY, button -> {
+            stormArrowSettings().useActualRadius = !stormArrowSettings().useActualRadius;
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        stormArrowCircleAlphaSlider = new SettingSlider(x, y + 48, 150, 20, "Circle Alpha", 0.0D, 1.0D, () -> stormArrowSettings().circleAlpha, value -> stormArrowSettings().circleAlpha = (float) value);
+        stormArrowCircleThicknessSlider = new SettingSlider(x + 158, y + 48, 150, 20, "Circle Width", 0.02D, 1.0D, () -> stormArrowSettings().circleThickness, value -> stormArrowSettings().circleThickness = (float) value);
+        stormArrowBlasterAlphaSlider = new SettingSlider(x, y + 72, 150, 20, "Blaster Alpha", 0.0D, 1.0D, () -> stormArrowSettings().blasterAlpha, value -> stormArrowSettings().blasterAlpha = (float) value);
+        stormArrowBlasterWidthSlider = new SettingSlider(x + 158, y + 72, 150, 20, "Blaster Width", 0.01D, 1.0D, () -> stormArrowSettings().blasterWidth, value -> stormArrowSettings().blasterWidth = (float) value);
+        stormArrowSegmentLengthSlider = new SettingSlider(x, y + 96, 150, 20, "Segment Length", 0.1D, 12.0D, () -> stormArrowSettings().segmentLength, value -> stormArrowSettings().segmentLength = (float) value);
+        stormArrowSegmentGapSlider = new SettingSlider(x + 158, y + 96, 150, 20, "Segment Gap", 0.0D, 12.0D, () -> stormArrowSettings().segmentGap, value -> stormArrowSettings().segmentGap = (float) value);
+        stormArrowImpactFlashSizeSlider = new SettingSlider(x, y + 120, 308, 20, "Impact Flash Size", 0.05D, 4.0D, () -> stormArrowSettings().impactFlashSize, value -> stormArrowSettings().impactFlashSize = (float) value);
+        this.addRenderableWidget(stormArrowCircleAlphaSlider);
+        this.addRenderableWidget(stormArrowCircleThicknessSlider);
+        this.addRenderableWidget(stormArrowBlasterAlphaSlider);
+        this.addRenderableWidget(stormArrowBlasterWidthSlider);
+        this.addRenderableWidget(stormArrowSegmentLengthSlider);
+        this.addRenderableWidget(stormArrowSegmentGapSlider);
+        this.addRenderableWidget(stormArrowImpactFlashSizeSlider);
+
+        stormArrowFullbrightButton = this.addRenderableWidget(new Button(x, y + 148, 150, 20, TextComponent.EMPTY, button -> {
+            stormArrowSettings().fullbright = !stormArrowSettings().fullbright;
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        stormArrowImpactFlashButton = this.addRenderableWidget(new Button(x + 158, y + 148, 150, 20, TextComponent.EMPTY, button -> {
+            stormArrowSettings().impactFlashEnabled = !stormArrowSettings().impactFlashEnabled;
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        stormArrowSoundButton = this.addRenderableWidget(new Button(x, y + 172, 308, 20, TextComponent.EMPTY, button -> {
+            cycleStormArrowSound();
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        stormArrowLifetimeBox = addStormArrowNumberBox(x, y + 200, 54, 2, "Lifetime", "[0-9]{0,2}", this::updateStormArrowLifetimeFromText);
+        stormArrowOriginHeightBox = addStormArrowNumberBox(x + 158, y + 200, 54, 4, "Height", "[0-9]{0,2}(\\.[0-9]?)?", this::updateStormArrowOriginHeightFromText);
+    }
+
     private void updateLayoutScale() {
         float widthScale = this.width / (float) MIN_LAYOUT_WIDTH;
         float heightScale = this.height / (float) MIN_LAYOUT_HEIGHT;
@@ -475,6 +573,15 @@ public class ArcaneBeamConfigScreen extends Screen {
         this.addRenderableWidget(editBox);
     }
 
+    private void addStormArrowColorBox(int x, int y, String label, int slot) {
+        EditBox editBox = new EditBox(this.font, x + SLOT_PREVIEW_WIDTH + SLOT_INNER_GAP, y, SLOT_HEX_WIDTH, 20, new TextComponent(label));
+        editBox.setMaxLength(7);
+        editBox.setFilter(value -> value.isEmpty() || value.matches("#?[0-9a-fA-F]{0,6}"));
+        editBox.setResponder(value -> updateStormArrowColorFromText(slot, value));
+        stormArrowColorBoxes.add(editBox);
+        this.addRenderableWidget(editBox);
+    }
+
     private EditBox addLightningSoundVolumeBox(int x, int y) {
         EditBox editBox = new EditBox(this.font, x + 50, y, 50, 20, new TextComponent("Sound Volume"));
         editBox.setMaxLength(4);
@@ -511,6 +618,15 @@ public class ArcaneBeamConfigScreen extends Screen {
         return editBox;
     }
 
+    private EditBox addStormArrowNumberBox(int x, int y, int width, int maxLength, String label, String pattern, Consumer<String> responder) {
+        EditBox editBox = new EditBox(this.font, x + 58, y, width, 20, new TextComponent(label));
+        editBox.setMaxLength(maxLength);
+        editBox.setFilter(value -> value.isEmpty() || value.matches(pattern));
+        editBox.setResponder(responder);
+        this.addRenderableWidget(editBox);
+        return editBox;
+    }
+
     @Override
     public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(poseStack);
@@ -523,7 +639,11 @@ public class ArcaneBeamConfigScreen extends Screen {
         renderProfilePanel(poseStack);
         renderPalette(poseStack);
         renderBrightnessStrip(poseStack);
-        if (vaultAltarSelected) {
+        if (stormArrowSelected) {
+            drawCenteredString(poseStack, this.font, "Storm Arrow colors", layoutWidth / 2, 60, 0xD8D8D8);
+            renderStormArrowColorPreviews(poseStack);
+            renderStormArrowLabels(poseStack);
+        } else if (vaultAltarSelected) {
             drawCenteredString(poseStack, this.font, "Vault Altar colors", layoutWidth / 2, 60, 0xD8D8D8);
             renderVaultAltarColorPreviews(poseStack);
             renderVaultAltarLabels(poseStack);
@@ -535,13 +655,13 @@ public class ArcaneBeamConfigScreen extends Screen {
             drawCenteredString(poseStack, this.font, railSelected ? "Rail colors" : "Arcane colors", layoutWidth / 2, 60, 0xD8D8D8);
             renderInlinePreviews(poseStack);
         }
-        if (!lightningSelected && !vaultAltarSelected && soundVolumeBox != null) {
+        if (!lightningSelected && !vaultAltarSelected && !stormArrowSelected && soundVolumeBox != null) {
             drawString(poseStack, this.font, "Volume", soundVolumeBox.x - this.font.width("Volume") - 8, soundVolumeBox.y + 6, 0xD8D8D8);
         }
-        if (!lightningSelected && !vaultAltarSelected && fadeInTicksBox != null) {
+        if (!lightningSelected && !vaultAltarSelected && !stormArrowSelected && fadeInTicksBox != null) {
             drawString(poseStack, this.font, "Ticks", fadeInTicksBox.x - this.font.width("Ticks") - 10, fadeInTicksBox.y + 6, 0xD8D8D8);
         }
-        if (!lightningSelected && !vaultAltarSelected && fadeOutTicksBox != null) {
+        if (!lightningSelected && !vaultAltarSelected && !stormArrowSelected && fadeOutTicksBox != null) {
             drawString(poseStack, this.font, "Ticks", fadeOutTicksBox.x - this.font.width("Ticks") - 6, fadeOutTicksBox.y + 6, 0xD8D8D8);
         }
         super.render(poseStack, layoutMouseX, layoutMouseY, partialTick);
@@ -606,7 +726,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         double layoutMouseX = toLayoutX(mouseX);
         double layoutMouseY = toLayoutY(mouseY);
-        if (!lightningSelected && soundVolumeBox != null && soundVolumeBox.isMouseOver(layoutMouseX, layoutMouseY)) {
+        if (!lightningSelected && !vaultAltarSelected && !stormArrowSelected && soundVolumeBox != null && soundVolumeBox.isMouseOver(layoutMouseX, layoutMouseY)) {
             double step = hasShiftDown() ? 0.10D : 0.01D;
             nudgeSoundVolume(delta > 0.0D ? step : -step);
             refreshSoundVolumeBox();
@@ -639,19 +759,19 @@ public class ArcaneBeamConfigScreen extends Screen {
             ArcaneBeamConfig.save();
             return true;
         }
-        if (!lightningSelected && fadeInTicksBox != null && fadeInTicksBox.isMouseOver(layoutMouseX, layoutMouseY)) {
+        if (!lightningSelected && !vaultAltarSelected && !stormArrowSelected && fadeInTicksBox != null && fadeInTicksBox.isMouseOver(layoutMouseX, layoutMouseY)) {
             nudgeFadeInTicks(delta > 0.0D ? 1 : -1);
             refreshFadeTickBoxes();
             ArcaneBeamConfig.save();
             return true;
         }
-        if (!lightningSelected && fadeOutTicksBox != null && fadeOutTicksBox.isMouseOver(layoutMouseX, layoutMouseY)) {
+        if (!lightningSelected && !vaultAltarSelected && !stormArrowSelected && fadeOutTicksBox != null && fadeOutTicksBox.isMouseOver(layoutMouseX, layoutMouseY)) {
             nudgeFadeOutTicks(delta > 0.0D ? 1 : -1);
             refreshFadeTickBoxes();
             ArcaneBeamConfig.save();
             return true;
         }
-        for (int i = 0; !lightningSelected && i < originBoxes.size(); i++) {
+        for (int i = 0; !lightningSelected && !vaultAltarSelected && !stormArrowSelected && i < originBoxes.size(); i++) {
             EditBox originBox = originBoxes.get(i);
             if (originBox.isMouseOver(layoutMouseX, layoutMouseY)) {
                 double step = hasShiftDown() ? 0.10D : 0.01D;
@@ -707,12 +827,17 @@ public class ArcaneBeamConfigScreen extends Screen {
         for (EditBox altarColorBox : altarColorBoxes) {
             altarColorBox.tick();
         }
+        for (EditBox stormArrowColorBox : stormArrowColorBoxes) {
+            stormArrowColorBox.tick();
+        }
         tickBox(altarVerticalTicksBox);
         tickBox(altarConvergeTicksBox);
         tickBox(altarCenterGrowTicksBox);
         tickBox(altarOriginHeightBox);
         tickBox(altarOriginRadiusBox);
         tickBox(altarSoundVolumeBox);
+        tickBox(stormArrowLifetimeBox);
+        tickBox(stormArrowOriginHeightBox);
     }
 
     private static void tickBox(EditBox box) {
@@ -795,6 +920,26 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
     }
 
+    private void renderStormArrowColorPreviews(PoseStack poseStack) {
+        if (stormArrowColorBoxes.size() < 4) {
+            return;
+        }
+        for (int i = 0; i < stormArrowColorBoxes.size(); i++) {
+            EditBox box = stormArrowColorBoxes.get(i);
+            renderPreviewBox(poseStack, box.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP, box.y, stormArrowColor(i), selectedSlot == i);
+            renderLightningColorLabel(poseStack, box, stormArrowColorLabel(i));
+        }
+    }
+
+    private String stormArrowColorLabel(int slot) {
+        return switch (slot) {
+            case 0 -> "Circle";
+            case 1 -> "Blaster";
+            case 2 -> "Core";
+            default -> "Flash";
+        };
+    }
+
     private String vaultAltarColorLabel(int slot) {
         return switch (slot) {
             case 0 -> "Corner 1";
@@ -831,6 +976,14 @@ public class ArcaneBeamConfigScreen extends Screen {
         drawString(poseStack, this.font, "Height", altarOriginHeightBox.x - 46, altarOriginHeightBox.y + 6, 0xD8D8D8);
         drawString(poseStack, this.font, "Radius", altarOriginRadiusBox.x - 48, altarOriginRadiusBox.y + 6, 0xD8D8D8);
         drawString(poseStack, this.font, "Volume", altarSoundVolumeBox.x - 50, altarSoundVolumeBox.y + 6, 0xD8D8D8);
+    }
+
+    private void renderStormArrowLabels(PoseStack poseStack) {
+        if (stormArrowLifetimeBox == null || stormArrowOriginHeightBox == null) {
+            return;
+        }
+        drawString(poseStack, this.font, "Lifetime", stormArrowLifetimeBox.x - 54, stormArrowLifetimeBox.y + 6, 0xD8D8D8);
+        drawString(poseStack, this.font, "Height", stormArrowOriginHeightBox.x - 46, stormArrowOriginHeightBox.y + 6, 0xD8D8D8);
     }
 
     private void renderProfileDropdown(PoseStack poseStack) {
@@ -895,7 +1048,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void addProfile() {
-        if (vaultAltarSelected) {
+        if (stormArrowSelected) {
+            ArcaneBeamConfig.addStormArrowProfile(profileNameBox == null ? "" : profileNameBox.getValue());
+        } else if (vaultAltarSelected) {
             ArcaneBeamConfig.addVaultAltarProfile(profileNameBox == null ? "" : profileNameBox.getValue());
         } else if (lightningSelected) {
             ArcaneBeamConfig.addLightningProfile(profileNameBox == null ? "" : profileNameBox.getValue());
@@ -931,6 +1086,17 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private boolean handlePreviewSelection(double mouseX, double mouseY) {
+        if (stormArrowSelected) {
+            for (int i = 0; i < stormArrowColorBoxes.size(); i++) {
+                EditBox box = stormArrowColorBoxes.get(i);
+                int previewX = box.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP;
+                if (isInside(mouseX, mouseY, previewX, box.y, SLOT_PREVIEW_WIDTH, 20)) {
+                    selectedSlot = i;
+                    return true;
+                }
+            }
+            return false;
+        }
         if (vaultAltarSelected) {
             for (int i = 0; i < altarColorBoxes.size(); i++) {
                 EditBox box = altarColorBoxes.get(i);
@@ -975,6 +1141,16 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void selectLightningColorBox(double mouseX, double mouseY) {
+        if (stormArrowSelected) {
+            for (int i = 0; i < stormArrowColorBoxes.size(); i++) {
+                EditBox box = stormArrowColorBoxes.get(i);
+                if (isInside(mouseX, mouseY, box.x, box.y, SLOT_HEX_WIDTH, 20)) {
+                    selectedSlot = i;
+                    return;
+                }
+            }
+            return;
+        }
         if (vaultAltarSelected) {
             for (int i = 0; i < altarColorBoxes.size(); i++) {
                 EditBox box = altarColorBoxes.get(i);
@@ -1075,6 +1251,12 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void refreshBoxes() {
+        if (stormArrowSelected) {
+            for (int i = 0; i < stormArrowColorBoxes.size(); i++) {
+                stormArrowColorBoxes.get(i).setValue(formatColor(stormArrowColor(i)));
+            }
+            return;
+        }
         if (vaultAltarSelected) {
             for (int i = 0; i < altarColorBoxes.size(); i++) {
                 altarColorBoxes.get(i).setValue(formatColor(vaultAltarColor(i)));
@@ -1125,11 +1307,12 @@ public class ArcaneBeamConfigScreen extends Screen {
             refreshFadeTickBoxes();
             refreshLightningControls();
             refreshVaultAltarControls();
+            refreshStormArrowControls();
         }
     }
 
     private void updateWidgetVisibility() {
-        boolean beamVisible = !lightningSelected && !vaultAltarSelected;
+        boolean beamVisible = !lightningSelected && !vaultAltarSelected && !stormArrowSelected;
         for (EditBox box : colorBoxes) {
             box.visible = beamVisible;
         }
@@ -1215,6 +1398,27 @@ public class ArcaneBeamConfigScreen extends Screen {
         setVisible(altarOriginHeightBox, vaultAltarSelected);
         setVisible(altarOriginRadiusBox, vaultAltarSelected);
         setVisible(altarSoundVolumeBox, vaultAltarSelected);
+
+        for (EditBox box : stormArrowColorBoxes) {
+            box.visible = stormArrowSelected;
+            box.active = stormArrowSelected;
+        }
+        setVisible(stormArrowEnabledButton, stormArrowSelected);
+        setVisible(stormArrowTargetingCircleButton, stormArrowSelected);
+        setVisible(stormArrowActualRadiusButton, stormArrowSelected);
+        setVisible(stormArrowShaderCompatibilityButton, stormArrowSelected);
+        setVisible(stormArrowFullbrightButton, stormArrowSelected);
+        setVisible(stormArrowImpactFlashButton, stormArrowSelected);
+        setVisible(stormArrowSoundButton, stormArrowSelected);
+        setVisible(stormArrowCircleAlphaSlider, stormArrowSelected);
+        setVisible(stormArrowCircleThicknessSlider, stormArrowSelected);
+        setVisible(stormArrowBlasterAlphaSlider, stormArrowSelected);
+        setVisible(stormArrowBlasterWidthSlider, stormArrowSelected);
+        setVisible(stormArrowSegmentLengthSlider, stormArrowSelected);
+        setVisible(stormArrowSegmentGapSlider, stormArrowSelected);
+        setVisible(stormArrowImpactFlashSizeSlider, stormArrowSelected);
+        setVisible(stormArrowLifetimeBox, stormArrowSelected);
+        setVisible(stormArrowOriginHeightBox, stormArrowSelected);
     }
 
     private static void setVisible(net.minecraft.client.gui.components.AbstractWidget widget, boolean visible) {
@@ -1285,6 +1489,29 @@ public class ArcaneBeamConfigScreen extends Screen {
         altarCenterGrowTicksBox.setValue(Integer.toString(settings.centerGrowTicks));
         refreshAltarOriginBoxes();
         refreshAltarSoundVolumeBox();
+    }
+
+    private void refreshStormArrowControls() {
+        if (stormArrowEnabledButton == null) {
+            return;
+        }
+        ArcaneBeamConfig.StormArrowSettings settings = stormArrowSettings();
+        stormArrowEnabledButton.setMessage(new TextComponent("Replacement: " + (settings.enabled ? "On" : "Off")));
+        stormArrowTargetingCircleButton.setMessage(new TextComponent("Target Circle: " + (settings.showTargetingCircle ? "On" : "Off")));
+        stormArrowActualRadiusButton.setMessage(new TextComponent("Actual Radius: " + (settings.useActualRadius ? "On" : "Off")));
+        stormArrowShaderCompatibilityButton.setMessage(new TextComponent("Shader Compatibility: " + stormArrowShaderCompatibility().label));
+        stormArrowFullbrightButton.setMessage(new TextComponent("Fullbright: " + (settings.fullbright ? "On" : "Off")));
+        stormArrowImpactFlashButton.setMessage(new TextComponent("Impact Flash: " + (settings.impactFlashEnabled ? "On" : "Off")));
+        stormArrowSoundButton.setMessage(new TextComponent("Sound: " + stormArrowSoundMode().label));
+        stormArrowCircleAlphaSlider.refresh();
+        stormArrowCircleThicknessSlider.refresh();
+        stormArrowBlasterAlphaSlider.refresh();
+        stormArrowBlasterWidthSlider.refresh();
+        stormArrowSegmentLengthSlider.refresh();
+        stormArrowSegmentGapSlider.refresh();
+        stormArrowImpactFlashSizeSlider.refresh();
+        stormArrowLifetimeBox.setValue(Integer.toString(settings.lifetimeTicks));
+        stormArrowOriginHeightBox.setValue(formatTenths(settings.originHeight));
     }
 
     private void cycleShaderCompatibility() {
@@ -1525,6 +1752,21 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
     }
 
+    private void updateStormArrowColorFromText(int slot, String value) {
+        if (value == null) {
+            return;
+        }
+        String normalized = value.startsWith("#") ? value.substring(1) : value;
+        if (normalized.length() != 6) {
+            return;
+        }
+        try {
+            setStormArrowColor(slot, Integer.parseInt(normalized, 16));
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
     private void updateAltarVerticalTicksFromText(String value) {
         if (value == null || value.isEmpty()) {
             return;
@@ -1591,6 +1833,28 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
     }
 
+    private void updateStormArrowLifetimeFromText(String value) {
+        if (value == null || value.isEmpty()) {
+            return;
+        }
+        try {
+            stormArrowSettings().lifetimeTicks = clamp(Integer.parseInt(value), 1, 80);
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void updateStormArrowOriginHeightFromText(String value) {
+        if (value == null || value.isEmpty() || ".".equals(value)) {
+            return;
+        }
+        try {
+            stormArrowSettings().originHeight = clampTenths((float) roundTenths(Double.parseDouble(value)), 2.0F, 64.0F);
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
     private void nudgeOrigin(int axis, double amount) {
         if (axis == 0) {
             settings().startOffsetX = roundOffset(settings().startOffsetX + amount);
@@ -1641,6 +1905,10 @@ public class ArcaneBeamConfigScreen extends Screen {
         return ArcaneBeamConfig.INSTANCE.vaultAltar;
     }
 
+    private ArcaneBeamConfig.StormArrowSettings stormArrowSettings() {
+        return ArcaneBeamConfig.INSTANCE.stormArrow;
+    }
+
     private void refreshSoundVolumeBox() {
         if (soundVolumeBox != null) {
             soundVolumeBox.setValue(formatOffset(settings().soundVolume));
@@ -1682,6 +1950,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private int selectedColor() {
+        if (stormArrowSelected) {
+            return stormArrowColor(selectedSlot);
+        }
         if (vaultAltarSelected) {
             return vaultAltarColor(selectedSlot);
         }
@@ -1697,6 +1968,10 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void setSelectedColor(int color) {
+        if (stormArrowSelected) {
+            setStormArrowColor(selectedSlot, color);
+            return;
+        }
         if (vaultAltarSelected) {
             setVaultAltarColor(selectedSlot, color);
             return;
@@ -1729,6 +2004,16 @@ public class ArcaneBeamConfigScreen extends Screen {
         };
     }
 
+    private int stormArrowColor(int slot) {
+        return switch (slot) {
+            case 0 -> stormArrowSettings().circleColor;
+            case 1 -> stormArrowSettings().blasterColor;
+            case 2 -> stormArrowSettings().coreColor;
+            case 3 -> stormArrowSettings().impactFlashColor;
+            default -> stormArrowSettings().circleColor;
+        };
+    }
+
     private void setVaultAltarColor(int slot, int color) {
         switch (slot) {
             case 0 -> vaultAltarSettings().cornerColors[0] = color;
@@ -1742,12 +2027,26 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
     }
 
+    private void setStormArrowColor(int slot, int color) {
+        switch (slot) {
+            case 0 -> stormArrowSettings().circleColor = color;
+            case 1 -> stormArrowSettings().blasterColor = color;
+            case 2 -> stormArrowSettings().coreColor = color;
+            case 3 -> stormArrowSettings().impactFlashColor = color;
+            default -> {
+            }
+        }
+    }
+
     private void syncPrimaryColors() {
         settings().color = settings().colors[0];
         settings().glowColor = settings().glowColors[0];
     }
 
     private List<String> profileNames() {
+        if (stormArrowSelected) {
+            return ArcaneBeamConfig.stormArrowProfileNames();
+        }
         if (vaultAltarSelected) {
             return ArcaneBeamConfig.vaultAltarProfileNames();
         }
@@ -1755,6 +2054,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private String selectedProfileName() {
+        if (stormArrowSelected) {
+            return ArcaneBeamConfig.selectedStormArrowProfileName();
+        }
         if (vaultAltarSelected) {
             return ArcaneBeamConfig.selectedVaultAltarProfileName();
         }
@@ -1762,7 +2064,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void selectProfile(String profileName) {
-        if (vaultAltarSelected) {
+        if (stormArrowSelected) {
+            ArcaneBeamConfig.selectStormArrowProfile(profileName);
+        } else if (vaultAltarSelected) {
             ArcaneBeamConfig.selectVaultAltarProfile(profileName);
         } else if (lightningSelected) {
             ArcaneBeamConfig.selectLightningProfile(profileName);
@@ -1772,6 +2076,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private String profileLabel() {
+        if (stormArrowSelected) {
+            return "Storm Arrow Profiles";
+        }
         if (vaultAltarSelected) {
             return "Vault Altar Profiles";
         }
@@ -1806,6 +2113,11 @@ public class ArcaneBeamConfigScreen extends Screen {
         return compatibility == null ? ArcaneBeamConfig.ShaderCompatibility.OFF : compatibility;
     }
 
+    private ArcaneBeamConfig.ShaderCompatibility stormArrowShaderCompatibility() {
+        ArcaneBeamConfig.ShaderCompatibility compatibility = ArcaneBeamConfig.ShaderCompatibility.fromId(stormArrowSettings().shaderCompatibility);
+        return compatibility == null ? ArcaneBeamConfig.ShaderCompatibility.OFF : compatibility;
+    }
+
     private ArcaneBeamConfig.LightningSoundMode lightningSoundMode() {
         ArcaneBeamConfig.LightningSoundMode mode = ArcaneBeamConfig.LightningSoundMode.fromId(lightningSettings().soundMode);
         return mode == null ? ArcaneBeamConfig.LightningSoundMode.DEFAULT : mode;
@@ -1814,6 +2126,11 @@ public class ArcaneBeamConfigScreen extends Screen {
     private ArcaneBeamConfig.VaultAltarSoundMode vaultAltarSoundMode() {
         ArcaneBeamConfig.VaultAltarSoundMode mode = ArcaneBeamConfig.VaultAltarSoundMode.fromId(vaultAltarSettings().soundMode);
         return mode == null ? ArcaneBeamConfig.VaultAltarSoundMode.DEFAULT : mode;
+    }
+
+    private ArcaneBeamConfig.StormArrowSoundMode stormArrowSoundMode() {
+        ArcaneBeamConfig.StormArrowSoundMode mode = ArcaneBeamConfig.StormArrowSoundMode.fromId(stormArrowSettings().soundMode);
+        return mode == null ? ArcaneBeamConfig.StormArrowSoundMode.DEFAULT : mode;
     }
 
     private void cycleLightningSound() {
@@ -1828,6 +2145,13 @@ public class ArcaneBeamConfigScreen extends Screen {
         ArcaneBeamConfig.VaultAltarSoundMode current = vaultAltarSoundMode();
         int next = (current.ordinal() + 1) % modes.length;
         vaultAltarSettings().soundMode = modes[next].id;
+    }
+
+    private void cycleStormArrowSound() {
+        ArcaneBeamConfig.StormArrowSoundMode[] modes = ArcaneBeamConfig.StormArrowSoundMode.values();
+        ArcaneBeamConfig.StormArrowSoundMode current = stormArrowSoundMode();
+        int next = (current.ordinal() + 1) % modes.length;
+        stormArrowSettings().soundMode = modes[next].id;
     }
 
     private ArcaneBeamConfig.FadeInStyle fadeInStyle() {
