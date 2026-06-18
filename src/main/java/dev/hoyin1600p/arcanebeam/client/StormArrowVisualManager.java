@@ -54,32 +54,34 @@ public final class StormArrowVisualManager {
             return false;
         }
 
-        activeStrikes.computeIfAbsent(smiteBolt.getId(), id -> new ActiveBlasterStrike(
-                smiteBolt.position(),
-                gameTime(),
-                StormArrowRenderSettings.from(settings)
-        ));
+        activeStrikes.computeIfAbsent(smiteBolt.getId(), id -> {
+            Vec3 impact = smiteBolt.position();
+            ArcaneBeamSoundController.playStormArrowStrike(Minecraft.getInstance(), impact);
+            return new ActiveBlasterStrike(
+                    impact,
+                    gameTime(),
+                    StormArrowRenderSettings.from(settings)
+            );
+        });
         return true;
     }
 
     public static boolean handleStormArrowStrikeSound(double x, double y, double z) {
         ArcaneBeamConfig.StormArrowSettings settings = ArcaneBeamConfig.INSTANCE.stormArrow;
-        if (settings == null || !settings.enabled || stormArrowSoundMode() == ArcaneBeamConfig.StormArrowSoundMode.DEFAULT) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (settings == null || !settings.enabled || !ArcaneBeamSoundController.canPlayStormArrowStrike(minecraft)) {
             return false;
+        }
+
+        if (!activeStorms.isEmpty()) {
+            return true;
         }
 
         Vec3 position = new Vec3(x, y, z);
-        boolean insideActiveStorm = activeStorms.values().stream().anyMatch(storm -> {
-            Vec3 center = storm.groundCenter();
-            double horizontalDistanceSqr = (center.x - x) * (center.x - x) + (center.z - z) * (center.z - z);
-            double radius = storm.radius() + 2.0D;
-            return horizontalDistanceSqr <= radius * radius;
-        });
-        if (!insideActiveStorm) {
-            return false;
-        }
-
-        return ArcaneBeamSoundController.playStormArrowStrike(Minecraft.getInstance(), position);
+        long now = gameTime();
+        return activeStrikes.values().stream().anyMatch(strike ->
+                strike.impact().distanceToSqr(position) <= 64.0D && strike.age(now, 0.0F) <= 5.0F
+        );
     }
 
     private static long gameTime() {

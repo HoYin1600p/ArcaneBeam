@@ -169,6 +169,11 @@ public final class ArcaneBeamSoundController {
         return true;
     }
 
+    public static boolean canPlayStormArrowStrike(Minecraft minecraft) {
+        StormArrowSoundSlot slot = stormArrowSoundSlot(stormArrowSoundMode());
+        return minecraft != null && slot != null && hasSoundFile(minecraft, slot.soundPath());
+    }
+
     private static void playLightningStrikeSound(Minecraft minecraft, Vec3 position, boolean impact) {
         LightningSoundSlot slot = lightningSoundSlot(lightningSoundMode(), impact);
         if (impact) {
