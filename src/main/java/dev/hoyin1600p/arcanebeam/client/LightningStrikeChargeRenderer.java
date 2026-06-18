@@ -62,7 +62,15 @@ public class LightningStrikeChargeRenderer extends RenderType {
         return compatibility == ArcaneBeamConfig.ShaderCompatibility.ON;
     }
 
+    public static void renderLocal(PoseStack poseStack, MultiBufferSource buffer, ChainLightningAbility.ChainLightningProjectile projectile, float partialTick) {
+        renderProjectileModel(poseStack, buffer, projectile, partialTick, shaderCompatibilityEnabled(), false);
+    }
+
     private static void renderProjectile(PoseStack poseStack, MultiBufferSource buffer, ChainLightningAbility.ChainLightningProjectile projectile, float partialTick, boolean shaderCompatibility) {
+        renderProjectileModel(poseStack, buffer, projectile, partialTick, shaderCompatibility, true);
+    }
+
+    private static void renderProjectileModel(PoseStack poseStack, MultiBufferSource buffer, ChainLightningAbility.ChainLightningProjectile projectile, float partialTick, boolean shaderCompatibility, boolean translateToWorld) {
         double x = Mth.lerp(partialTick, projectile.xOld, projectile.getX());
         double y = Mth.lerp(partialTick, projectile.yOld, projectile.getY());
         double z = Mth.lerp(partialTick, projectile.zOld, projectile.getZ());
@@ -79,7 +87,9 @@ public class LightningStrikeChargeRenderer extends RenderType {
         float pitch = (float) Math.toDegrees(-Math.asin(direction.y));
         float roll = (projectile.tickCount + partialTick) * 18.0F;
         poseStack.pushPose();
-        poseStack.translate(x, y, z);
+        if (translateToWorld) {
+            poseStack.translate(x, y, z);
+        }
         poseStack.mulPose(Vector3f.YP.rotationDegrees(yaw));
         poseStack.mulPose(Vector3f.XP.rotationDegrees(pitch));
         poseStack.mulPose(Vector3f.XP.rotationDegrees(roll));

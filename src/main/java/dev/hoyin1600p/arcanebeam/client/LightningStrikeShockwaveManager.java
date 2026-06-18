@@ -1,10 +1,12 @@
 package dev.hoyin1600p.arcanebeam.client;
 
 import dev.hoyin1600p.arcanebeam.ArcaneBeam;
+import com.mojang.blaze3d.vertex.PoseStack;
 import iskallia.vault.init.ModEntities;
 import iskallia.vault.skill.ability.effect.ChainLightningAbility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
@@ -167,6 +169,18 @@ public final class LightningStrikeShockwaveManager {
         return settings != null && settings.enabled;
     }
 
+    public static boolean handleProjectileRender(ChainLightningAbility.ChainLightningProjectile projectile, PoseStack poseStack, MultiBufferSource buffer, float partialTick) {
+        if (!shouldReplaceProjectileRender()) {
+            return false;
+        }
+        if (!activeProjectiles.contains(projectile)) {
+            activeProjectiles.add(projectile);
+            observeProjectileSpawn(projectile.position());
+        }
+        LightningStrikeChargeRenderer.renderLocal(poseStack, buffer, projectile, partialTick);
+        return true;
+    }
+
     private static boolean handleVaultLightningVisual(Vec3 position) {
         Minecraft minecraft = Minecraft.getInstance();
         ClientLevel level = minecraft.level;
@@ -235,9 +249,6 @@ public final class LightningStrikeShockwaveManager {
             return;
         }
 
-        if (!activeProjectiles.isEmpty() && shouldReplaceProjectileRender()) {
-            LightningStrikeChargeRenderer.render(event.getPoseStack(), event.getCamera().getPosition(), event.getPartialTick(), activeProjectiles);
-        }
         if (!activeShockwaves.isEmpty()) {
             LightningStrikeShockwaveRenderer.render(event.getPoseStack(), event.getCamera().getPosition(), event.getPartialTick(), activeShockwaves);
         }

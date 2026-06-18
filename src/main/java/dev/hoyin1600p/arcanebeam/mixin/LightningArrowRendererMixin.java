@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class LightningArrowRendererMixin {
     @Inject(method = "render(Liskallia/vault/skill/ability/effect/ChainLightningAbility$ChainLightningProjectile;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("HEAD"), cancellable = true, remap = false)
     private void arcanebeam$hideLightningArrow(ChainLightningAbility.ChainLightningProjectile projectile, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight, CallbackInfo ci) {
-        if (LightningStrikeShockwaveManager.shouldReplaceProjectileRender()) {
+        if (LightningStrikeShockwaveManager.handleProjectileRender(projectile, poseStack, buffer, partialTick)) {
             ci.cancel();
         }
     }
