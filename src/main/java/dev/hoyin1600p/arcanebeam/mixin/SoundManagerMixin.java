@@ -2,6 +2,7 @@ package dev.hoyin1600p.arcanebeam.mixin;
 
 import dev.hoyin1600p.arcanebeam.client.ArcaneBeamManager;
 import dev.hoyin1600p.arcanebeam.client.LightningStrikeShockwaveManager;
+import dev.hoyin1600p.arcanebeam.client.StormArrowVisualManager;
 import dev.hoyin1600p.arcanebeam.client.VaultAltarBeamManager;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundManager;
@@ -21,6 +22,7 @@ public abstract class SoundManagerMixin {
     private static final ResourceLocation LIGHTNING_CAST = new ResourceLocation("minecraft", "item.trident.throw");
     private static final ResourceLocation LIGHTNING_CAST_ARROW_FALLBACK = new ResourceLocation("minecraft", "entity.arrow.shoot");
     private static final ResourceLocation LIGHTNING_IMPACT = new ResourceLocation("the_vault", "lightning_bolt");
+    private static final ResourceLocation STORM_ARROW_STRIKE = new ResourceLocation("the_vault", "smite_bolt");
 
     @Inject(method = "play", at = @At("HEAD"), cancellable = true)
     private void arcanebeam$suppressAbilitySounds(SoundInstance sound, CallbackInfo ci) {
@@ -53,6 +55,11 @@ public abstract class SoundManagerMixin {
         }
         if (LIGHTNING_IMPACT.equals(sound.getLocation())
                 && LightningStrikeShockwaveManager.handleLightningImpactSound(sound.getX(), sound.getY(), sound.getZ())) {
+            ci.cancel();
+            return;
+        }
+        if (STORM_ARROW_STRIKE.equals(sound.getLocation())
+                && StormArrowVisualManager.handleStormArrowStrikeSound(sound.getX(), sound.getY(), sound.getZ())) {
             ci.cancel();
         }
     }
