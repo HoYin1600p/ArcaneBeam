@@ -91,6 +91,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     private Button lightningShaderCompatibilityButton;
     private Button lightningFullbrightButton;
     private Button lightningSoundButton;
+    private Button lightningProjectileSoundButton;
     private EditBox lightningLifetimeBox;
     private EditBox lightningSideCountBox;
     private EditBox lightningRingColorBox;
@@ -384,12 +385,17 @@ public class ArcaneBeamConfigScreen extends Screen {
             refreshControls();
             ArcaneBeamConfig.save();
         }));
+        lightningProjectileSoundButton = this.addRenderableWidget(new Button(x, y + 268, 308, 20, TextComponent.EMPTY, button -> {
+            cycleLightningProjectileSound();
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
 
-        lightningLifetimeBox = addLightningNumberBox(x, y + 268, 54, 3, "Lifetime", "[0-9]{0,3}", this::updateLightningLifetimeFromText);
-        lightningSideCountBox = addLightningNumberBox(x + 104, y + 268, 54, 2, "Sides", "[0-9]{0,2}", this::updateLightningSideCountFromText);
-        lightningSecondaryCountBox = addLightningNumberBox(x + 208, y + 268, 54, 1, "Ripples", "[0-9]{0,1}", this::updateLightningSecondaryCountFromText);
-        lightningSecondaryDelayBox = addLightningNumberBox(x, y + 296, 54, 2, "Delay", "[0-9]{0,2}", this::updateLightningSecondaryDelayFromText);
-        lightningSoundVolumeBox = addLightningSoundVolumeBox(x + 208, y + 296);
+        lightningLifetimeBox = addLightningNumberBox(x, y + 296, 54, 3, "Lifetime", "[0-9]{0,3}", this::updateLightningLifetimeFromText);
+        lightningSideCountBox = addLightningNumberBox(x + 104, y + 296, 54, 2, "Sides", "[0-9]{0,2}", this::updateLightningSideCountFromText);
+        lightningSecondaryCountBox = addLightningNumberBox(x + 208, y + 296, 54, 1, "Ripples", "[0-9]{0,1}", this::updateLightningSecondaryCountFromText);
+        lightningSecondaryDelayBox = addLightningNumberBox(x, y + 324, 54, 2, "Delay", "[0-9]{0,2}", this::updateLightningSecondaryDelayFromText);
+        lightningSoundVolumeBox = addLightningSoundVolumeBox(x + 208, y + 324);
     }
 
     private void addVaultAltarControls(int x, int y) {
@@ -1381,6 +1387,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         setVisible(lightningShaderCompatibilityButton, lightningSelected);
         setVisible(lightningFullbrightButton, lightningSelected);
         setVisible(lightningSoundButton, lightningSelected);
+        setVisible(lightningProjectileSoundButton, lightningSelected);
         setVisible(lightningStartRadiusSlider, lightningSelected);
         setVisible(lightningEndRadiusSlider, lightningSelected);
         setVisible(lightningThicknessSlider, lightningSelected);
@@ -1471,7 +1478,8 @@ public class ArcaneBeamConfigScreen extends Screen {
         lightningEnabledButton.setMessage(new TextComponent("Replacement: " + (settings.enabled ? "On" : "Off")));
         lightningShaderCompatibilityButton.setMessage(new TextComponent("Shader Compatibility: " + lightningShaderCompatibility().label));
         lightningFullbrightButton.setMessage(new TextComponent("Fullbright: " + (settings.fullbright ? "On" : "Off")));
-        lightningSoundButton.setMessage(new TextComponent("Sound: " + lightningSoundMode().label));
+        lightningSoundButton.setMessage(new TextComponent("Impact Sound: " + lightningSoundMode().label));
+        lightningProjectileSoundButton.setMessage(new TextComponent("Shot Sound: " + lightningProjectileSoundMode().label));
         lightningStartRadiusSlider.refresh();
         lightningEndRadiusSlider.refresh();
         lightningThicknessSlider.refresh();
@@ -2188,6 +2196,11 @@ public class ArcaneBeamConfigScreen extends Screen {
         return mode == null ? ArcaneBeamConfig.LightningSoundMode.DEFAULT : mode;
     }
 
+    private ArcaneBeamConfig.LightningProjectileSoundMode lightningProjectileSoundMode() {
+        ArcaneBeamConfig.LightningProjectileSoundMode mode = ArcaneBeamConfig.LightningProjectileSoundMode.fromId(lightningSettings().projectileSoundMode);
+        return mode == null ? ArcaneBeamConfig.LightningProjectileSoundMode.DEFAULT : mode;
+    }
+
     private ArcaneBeamConfig.VaultAltarSoundMode vaultAltarSoundMode() {
         ArcaneBeamConfig.VaultAltarSoundMode mode = ArcaneBeamConfig.VaultAltarSoundMode.fromId(vaultAltarSettings().soundMode);
         return mode == null ? ArcaneBeamConfig.VaultAltarSoundMode.DEFAULT : mode;
@@ -2203,6 +2216,13 @@ public class ArcaneBeamConfigScreen extends Screen {
         ArcaneBeamConfig.LightningSoundMode current = lightningSoundMode();
         int next = (current.ordinal() + 1) % modes.length;
         lightningSettings().soundMode = modes[next].id;
+    }
+
+    private void cycleLightningProjectileSound() {
+        ArcaneBeamConfig.LightningProjectileSoundMode[] modes = ArcaneBeamConfig.LightningProjectileSoundMode.values();
+        ArcaneBeamConfig.LightningProjectileSoundMode current = lightningProjectileSoundMode();
+        int next = (current.ordinal() + 1) % modes.length;
+        lightningSettings().projectileSoundMode = modes[next].id;
     }
 
     private void cycleVaultAltarSound() {

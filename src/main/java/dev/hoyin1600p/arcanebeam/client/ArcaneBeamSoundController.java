@@ -34,6 +34,9 @@ public final class ArcaneBeamSoundController {
     private static final String LIGHTNING_RESOURCEPACK_1_IMPACT_PATH = "abilities/lightning_resourcepack_1_impact";
     private static final String LIGHTNING_RESOURCEPACK_2_CAST_PATH = "abilities/lightning_resourcepack_2_cast";
     private static final String LIGHTNING_RESOURCEPACK_2_IMPACT_PATH = "abilities/lightning_resourcepack_2_impact";
+    private static final String LIGHTNING_STRIKE_ARROW_PATH = "abilities/lightning_strike_arrow";
+    private static final String LIGHTNING_STRIKE_ARROW_RESOURCEPACK_1_PATH = "abilities/lightning_strike_arrow_resourcepack_1";
+    private static final String LIGHTNING_STRIKE_ARROW_RESOURCEPACK_2_PATH = "abilities/lightning_strike_arrow_resourcepack_2";
     private static final String VAULT_ALTAR_BEAM_PATH = "abilities/vault_altar_beam";
     private static final String VAULT_ALTAR_RESOURCEPACK_1_PATH = "abilities/vault_altar_resourcepack_1";
     private static final String VAULT_ALTAR_RESOURCEPACK_2_PATH = "abilities/vault_altar_resourcepack_2";
@@ -52,6 +55,9 @@ public final class ArcaneBeamSoundController {
     private static final String LIGHTNING_RESOURCEPACK_1_IMPACT_EVENT = "lightning_resourcepack_1_impact";
     private static final String LIGHTNING_RESOURCEPACK_2_CAST_EVENT = "lightning_resourcepack_2_cast";
     private static final String LIGHTNING_RESOURCEPACK_2_IMPACT_EVENT = "lightning_resourcepack_2_impact";
+    private static final String LIGHTNING_STRIKE_ARROW_EVENT = "lightning_strike_arrow";
+    private static final String LIGHTNING_STRIKE_ARROW_RESOURCEPACK_1_EVENT = "lightning_strike_arrow_resourcepack_1";
+    private static final String LIGHTNING_STRIKE_ARROW_RESOURCEPACK_2_EVENT = "lightning_strike_arrow_resourcepack_2";
 
     private static FileSoundInstance arcaneStartupSound;
     private static ArcaneLoopSound arcaneLoopSound;
@@ -144,8 +150,15 @@ public final class ArcaneBeamSoundController {
         }
     }
 
-    public static void playLightningStrikeCast(Minecraft minecraft, Vec3 position) {
-        playLightningStrikeSound(minecraft, position, false);
+    public static boolean playLightningStrikeCast(Minecraft minecraft, Vec3 position) {
+        LightningProjectileSoundSlot slot = lightningProjectileSoundSlot(lightningProjectileSoundMode());
+        stopLightningCastSound(minecraft);
+        if (minecraft == null || position == null || slot == null || !hasSoundFile(minecraft, slot.soundPath())) {
+            return false;
+        }
+        lightningCastSound = new PositionedFileSoundInstance(slot.eventName(), slot.soundPath(), position, ArcaneBeamConfig.INSTANCE.lightningStrike.soundVolume);
+        minecraft.getSoundManager().play(lightningCastSound);
+        return true;
     }
 
     public static void playLightningStrikeImpact(Minecraft minecraft, Vec3 position) {
@@ -220,6 +233,11 @@ public final class ArcaneBeamSoundController {
         return mode == null ? ArcaneBeamConfig.LightningSoundMode.DEFAULT : mode;
     }
 
+    private static ArcaneBeamConfig.LightningProjectileSoundMode lightningProjectileSoundMode() {
+        ArcaneBeamConfig.LightningProjectileSoundMode mode = ArcaneBeamConfig.LightningProjectileSoundMode.fromId(ArcaneBeamConfig.INSTANCE.lightningStrike.projectileSoundMode);
+        return mode == null ? ArcaneBeamConfig.LightningProjectileSoundMode.DEFAULT : mode;
+    }
+
     private static ArcaneBeamConfig.VaultAltarSoundMode vaultAltarSoundMode() {
         ArcaneBeamConfig.VaultAltarSoundMode mode = ArcaneBeamConfig.VaultAltarSoundMode.fromId(ArcaneBeamConfig.INSTANCE.vaultAltar.soundMode);
         return mode == null ? ArcaneBeamConfig.VaultAltarSoundMode.DEFAULT : mode;
@@ -246,6 +264,18 @@ public final class ArcaneBeamSoundController {
     }
 
     private record LightningSoundSlot(String eventName, String soundPath) {
+    }
+
+    private static LightningProjectileSoundSlot lightningProjectileSoundSlot(ArcaneBeamConfig.LightningProjectileSoundMode mode) {
+        return switch (mode) {
+            case OPTION_1 -> new LightningProjectileSoundSlot(LIGHTNING_STRIKE_ARROW_EVENT, LIGHTNING_STRIKE_ARROW_PATH);
+            case RESOURCEPACK_1 -> new LightningProjectileSoundSlot(LIGHTNING_STRIKE_ARROW_RESOURCEPACK_1_EVENT, LIGHTNING_STRIKE_ARROW_RESOURCEPACK_1_PATH);
+            case RESOURCEPACK_2 -> new LightningProjectileSoundSlot(LIGHTNING_STRIKE_ARROW_RESOURCEPACK_2_EVENT, LIGHTNING_STRIKE_ARROW_RESOURCEPACK_2_PATH);
+            default -> null;
+        };
+    }
+
+    private record LightningProjectileSoundSlot(String eventName, String soundPath) {
     }
 
     private static VaultAltarSoundSlot vaultAltarSoundSlot(ArcaneBeamConfig.VaultAltarSoundMode mode) {

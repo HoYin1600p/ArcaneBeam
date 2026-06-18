@@ -62,6 +62,33 @@
       }
     ]
   },
+  "lightning_strike_arrow": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/lightning_strike_arrow",
+        "stream": false
+      }
+    ]
+  },
+  "lightning_strike_arrow_resourcepack_1": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/lightning_strike_arrow_resourcepack_1",
+        "stream": false
+      }
+    ]
+  },
+  "lightning_strike_arrow_resourcepack_2": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/lightning_strike_arrow_resourcepack_2",
+        "stream": false
+      }
+    ]
+  },
   "vault_altar_beam": {
     "category": "master",
     "sounds": [

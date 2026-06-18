@@ -27,6 +27,10 @@ public class LightningStrikeChargeRenderer extends RenderType {
     private static final RenderType SHADER_GLOW = RenderType.entityTranslucent(WHITE_TEXTURE);
     private static final int FULLBRIGHT = 15728880;
     private static final int SIDES = 16;
+    private static final int SPHERE_LATITUDES = 8;
+    private static final int SPHERE_LONGITUDES = 16;
+    private static final float DESIGNATOR_RADIUS = 0.075F;
+    private static final float LIGHT_RADIUS = 0.015F;
 
     private LightningStrikeChargeRenderer(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize, boolean affectsCrumbling, boolean sortOnUpload, Runnable setupState, Runnable clearState) {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
@@ -78,7 +82,7 @@ public class LightningStrikeChargeRenderer extends RenderType {
         poseStack.translate(x, y, z);
         poseStack.mulPose(Vector3f.YP.rotationDegrees(yaw));
         poseStack.mulPose(Vector3f.XP.rotationDegrees(pitch));
-        poseStack.mulPose(Vector3f.ZP.rotationDegrees(roll));
+        poseStack.mulPose(Vector3f.XP.rotationDegrees(roll));
         renderChargeBody(poseStack, buffer, shaderCompatibility);
         poseStack.popPose();
     }
@@ -87,23 +91,99 @@ public class LightningStrikeChargeRenderer extends RenderType {
         VertexConsumer body = buffer.getBuffer(shaderCompatibility ? SHADER_BODY : BODY);
         VertexConsumer glow = buffer.getBuffer(shaderCompatibility ? SHADER_GLOW : GLOW);
 
-        // Dimensions are cosmetic only: roughly 0.2 blocks wide by 0.35 blocks long.
-        // The body axis is intentionally perpendicular to flight direction, matching the seismic charge broadside orientation.
-        renderFrustumX(poseStack, body, -0.175F, -0.095F, 0.045F, 0.100F, 0x2A2D31, 1.0F, shaderCompatibility);
-        renderFrustumX(poseStack, body, -0.095F, 0.095F, 0.100F, 0.100F, 0x3A3E43, 1.0F, shaderCompatibility);
-        renderFrustumX(poseStack, body, 0.095F, 0.175F, 0.100F, 0.052F, 0x25282D, 1.0F, shaderCompatibility);
+        // Cosmetic-only target designator: about 15 cm across with six small emissive face lights.
+        renderSphere(poseStack, body, DESIGNATOR_RADIUS, 0x5B6268, shaderCompatibility);
+        renderEquatorBands(poseStack, body, shaderCompatibility);
+        renderLightCap(poseStack, glow, 1.0F, 0.0F, 0.0F, 0xFFD447, shaderCompatibility);
+        renderLightCap(poseStack, glow, -1.0F, 0.0F, 0.0F, 0xF13B2F, shaderCompatibility);
+        renderLightCap(poseStack, glow, 0.0F, 1.0F, 0.0F, 0xFFD447, shaderCompatibility);
+        renderLightCap(poseStack, glow, 0.0F, -1.0F, 0.0F, 0xF13B2F, shaderCompatibility);
+        renderLightCap(poseStack, glow, 0.0F, 0.0F, 1.0F, 0xFFD447, shaderCompatibility);
+        renderLightCap(poseStack, glow, 0.0F, 0.0F, -1.0F, 0xF13B2F, shaderCompatibility);
+    }
 
-        renderFrustumX(poseStack, body, -0.115F, -0.095F, 0.112F, 0.112F, 0xA7A9A7, 1.0F, shaderCompatibility);
-        renderFrustumX(poseStack, body, 0.095F, 0.115F, 0.112F, 0.112F, 0xB8B7B0, 1.0F, shaderCompatibility);
-        renderFrustumX(poseStack, body, -0.020F, 0.020F, 0.106F, 0.106F, 0x8A7B65, 1.0F, shaderCompatibility);
+    private static void renderSphere(PoseStack poseStack, VertexConsumer builder, float radius, int color, boolean shaderCompatibility) {
+        PoseStack.Pose pose = poseStack.last();
+        float red = red(color);
+        float green = green(color);
+        float blue = blue(color);
+        for (int lat = 0; lat < SPHERE_LATITUDES; lat++) {
+            float v1 = lat / (float) SPHERE_LATITUDES;
+            float v2 = (lat + 1) / (float) SPHERE_LATITUDES;
+            float pitch1 = (float) (-Math.PI / 2.0D + Math.PI * v1);
+            float pitch2 = (float) (-Math.PI / 2.0D + Math.PI * v2);
+            for (int lon = 0; lon < SPHERE_LONGITUDES; lon++) {
+                float u1 = lon / (float) SPHERE_LONGITUDES;
+                float u2 = (lon + 1) / (float) SPHERE_LONGITUDES;
+                Vec3 p1 = spherePoint(radius, pitch1, (float) (Math.PI * 2.0D * u1));
+                Vec3 p2 = spherePoint(radius, pitch2, (float) (Math.PI * 2.0D * u1));
+                Vec3 p3 = spherePoint(radius, pitch2, (float) (Math.PI * 2.0D * u2));
+                Vec3 p4 = spherePoint(radius, pitch1, (float) (Math.PI * 2.0D * u2));
+                float shade = 0.55F + 0.45F * Math.max(0.0F, (float) p1.normalize().dot(new Vec3(0.35D, 0.75D, 0.55D).normalize()));
+                addVertex(pose, builder, red * shade, green * shade, blue * shade, 1.0F, (float) p1.x, (float) p1.y, (float) p1.z, u1, v1, shaderCompatibility);
+                addVertex(pose, builder, red * shade, green * shade, blue * shade, 1.0F, (float) p2.x, (float) p2.y, (float) p2.z, u1, v2, shaderCompatibility);
+                addVertex(pose, builder, red * shade, green * shade, blue * shade, 1.0F, (float) p3.x, (float) p3.y, (float) p3.z, u2, v2, shaderCompatibility);
+                addVertex(pose, builder, red * shade, green * shade, blue * shade, 1.0F, (float) p4.x, (float) p4.y, (float) p4.z, u2, v1, shaderCompatibility);
+            }
+        }
+    }
 
-        renderFrustum(poseStack, body, -0.120F, -0.080F, 0.055F, 0.040F, 0x111216, 1.0F, shaderCompatibility);
-        renderFrustum(poseStack, glow, -0.140F, -0.115F, 0.032F, 0.018F, 0x79E9FF, 0.85F, shaderCompatibility);
-        renderEnginePlume(poseStack, glow, shaderCompatibility);
+    private static Vec3 spherePoint(float radius, float pitch, float yaw) {
+        double cosPitch = Math.cos(pitch);
+        return new Vec3(
+                Math.cos(yaw) * cosPitch * radius,
+                Math.sin(pitch) * radius,
+                Math.sin(yaw) * cosPitch * radius
+        );
+    }
 
-        renderEmitterPanelsX(poseStack, glow, -0.155F, -0.105F, 0xFFE36A, 0.95F, shaderCompatibility);
-        renderEmitterPanelsX(poseStack, glow, 0.105F, 0.155F, 0xFFE36A, 0.95F, shaderCompatibility);
-        renderPanelLinesX(poseStack, body, shaderCompatibility);
+    private static void renderEquatorBands(PoseStack poseStack, VertexConsumer builder, boolean shaderCompatibility) {
+        renderBand(poseStack, builder, Vector3f.YP, 0x2A2E33, shaderCompatibility);
+        renderBand(poseStack, builder, Vector3f.XP, 0x343A40, shaderCompatibility);
+    }
+
+    private static void renderBand(PoseStack poseStack, VertexConsumer builder, Vector3f axis, int color, boolean shaderCompatibility) {
+        poseStack.pushPose();
+        if (axis == Vector3f.XP) {
+            poseStack.mulPose(Vector3f.ZP.rotationDegrees(90.0F));
+        }
+        PoseStack.Pose pose = poseStack.last();
+        float red = red(color);
+        float green = green(color);
+        float blue = blue(color);
+        for (int i = 0; i < SIDES; i++) {
+            float a1 = (float) (Math.PI * 2.0D * i / SIDES);
+            float a2 = (float) (Math.PI * 2.0D * (i + 1) / SIDES);
+            float y1 = -0.006F;
+            float y2 = 0.006F;
+            float r = DESIGNATOR_RADIUS + 0.002F;
+            addVertex(pose, builder, red, green, blue, 1.0F, (float) Math.cos(a1) * r, y1, (float) Math.sin(a1) * r, 0.0F, 0.0F, shaderCompatibility);
+            addVertex(pose, builder, red, green, blue, 1.0F, (float) Math.cos(a1) * r, y2, (float) Math.sin(a1) * r, 0.0F, 1.0F, shaderCompatibility);
+            addVertex(pose, builder, red, green, blue, 1.0F, (float) Math.cos(a2) * r, y2, (float) Math.sin(a2) * r, 1.0F, 1.0F, shaderCompatibility);
+            addVertex(pose, builder, red, green, blue, 1.0F, (float) Math.cos(a2) * r, y1, (float) Math.sin(a2) * r, 1.0F, 0.0F, shaderCompatibility);
+        }
+        poseStack.popPose();
+    }
+
+    private static void renderLightCap(PoseStack poseStack, VertexConsumer builder, float normalX, float normalY, float normalZ, int color, boolean shaderCompatibility) {
+        PoseStack.Pose pose = poseStack.last();
+        Vec3 normal = new Vec3(normalX, normalY, normalZ).normalize();
+        Vec3 tangent = Math.abs(normal.y) > 0.8D ? new Vec3(1.0D, 0.0D, 0.0D) : new Vec3(0.0D, 1.0D, 0.0D).cross(normal).normalize();
+        Vec3 bitangent = normal.cross(tangent).normalize();
+        Vec3 center = normal.scale(DESIGNATOR_RADIUS + 0.004F);
+        float red = red(color);
+        float green = green(color);
+        float blue = blue(color);
+        for (int i = 0; i < SIDES; i++) {
+            float a1 = (float) (Math.PI * 2.0D * i / SIDES);
+            float a2 = (float) (Math.PI * 2.0D * (i + 1) / SIDES);
+            Vec3 p1 = center.add(tangent.scale(Math.cos(a1) * LIGHT_RADIUS)).add(bitangent.scale(Math.sin(a1) * LIGHT_RADIUS));
+            Vec3 p2 = center.add(tangent.scale(Math.cos(a2) * LIGHT_RADIUS)).add(bitangent.scale(Math.sin(a2) * LIGHT_RADIUS));
+            addVertex(pose, builder, red, green, blue, 0.98F, (float) center.x, (float) center.y, (float) center.z, 0.5F, 0.5F, shaderCompatibility);
+            addVertex(pose, builder, red, green, blue, 0.98F, (float) p1.x, (float) p1.y, (float) p1.z, 0.0F, 0.0F, shaderCompatibility);
+            addVertex(pose, builder, red, green, blue, 0.98F, (float) p2.x, (float) p2.y, (float) p2.z, 1.0F, 0.0F, shaderCompatibility);
+            addVertex(pose, builder, red, green, blue, 0.98F, (float) center.x, (float) center.y, (float) center.z, 0.5F, 0.5F, shaderCompatibility);
+        }
     }
 
     private static void renderEmitterPanelsX(PoseStack poseStack, VertexConsumer builder, float x1, float x2, int color, float alpha, boolean shaderCompatibility) {

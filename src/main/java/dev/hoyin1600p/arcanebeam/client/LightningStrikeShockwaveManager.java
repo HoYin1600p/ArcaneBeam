@@ -75,15 +75,16 @@ public final class LightningStrikeShockwaveManager {
     private static void observeProjectileSpawn(Vec3 position) {
         Minecraft minecraft = Minecraft.getInstance();
         ClientLevel level = minecraft.level;
-        if (level == null || position == null || lightningSoundMode() == ArcaneBeamConfig.LightningSoundMode.DEFAULT) {
+        if (level == null || position == null || lightningProjectileSoundMode() == ArcaneBeamConfig.LightningProjectileSoundMode.DEFAULT) {
             observePendingLightningStrike(position);
             return;
         }
 
         observePendingLightningStrike(position);
-        suppressCastSoundUntilGameTime = level.getGameTime() + CAST_SOUND_SUPPRESSION_TICKS;
-        suppressCastSoundPosition = position;
-        ArcaneBeamSoundController.playLightningStrikeCast(minecraft, position);
+        if (ArcaneBeamSoundController.playLightningStrikeCast(minecraft, position)) {
+            suppressCastSoundUntilGameTime = level.getGameTime() + CAST_SOUND_SUPPRESSION_TICKS;
+            suppressCastSoundPosition = position;
+        }
     }
 
     private static void observePendingLightningStrike(Vec3 position) {
@@ -123,7 +124,7 @@ public final class LightningStrikeShockwaveManager {
     public static boolean shouldSuppressLightningCastSound(double x, double y, double z) {
         Minecraft minecraft = Minecraft.getInstance();
         ClientLevel level = minecraft.level;
-        if (level == null || suppressCastSoundPosition == null || lightningSoundMode() == ArcaneBeamConfig.LightningSoundMode.DEFAULT) {
+        if (level == null || suppressCastSoundPosition == null || lightningProjectileSoundMode() == ArcaneBeamConfig.LightningProjectileSoundMode.DEFAULT) {
             return false;
         }
         if (level.getGameTime() > suppressCastSoundUntilGameTime) {
@@ -311,5 +312,10 @@ public final class LightningStrikeShockwaveManager {
     private static ArcaneBeamConfig.LightningSoundMode lightningSoundMode() {
         ArcaneBeamConfig.LightningSoundMode mode = ArcaneBeamConfig.LightningSoundMode.fromId(ArcaneBeamConfig.INSTANCE.lightningStrike.soundMode);
         return mode == null ? ArcaneBeamConfig.LightningSoundMode.DEFAULT : mode;
+    }
+
+    private static ArcaneBeamConfig.LightningProjectileSoundMode lightningProjectileSoundMode() {
+        ArcaneBeamConfig.LightningProjectileSoundMode mode = ArcaneBeamConfig.LightningProjectileSoundMode.fromId(ArcaneBeamConfig.INSTANCE.lightningStrike.projectileSoundMode);
+        return mode == null ? ArcaneBeamConfig.LightningProjectileSoundMode.DEFAULT : mode;
     }
 }
