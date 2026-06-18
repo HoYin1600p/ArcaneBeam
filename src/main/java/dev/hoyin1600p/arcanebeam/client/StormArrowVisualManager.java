@@ -2,9 +2,12 @@ package dev.hoyin1600p.arcanebeam.client;
 
 import dev.hoyin1600p.arcanebeam.ArcaneBeam;
 import dev.hoyin1600p.arcanebeam.mixin.VaultStormEntityAccessor;
+import com.mojang.blaze3d.vertex.PoseStack;
 import iskallia.vault.entity.entity.VaultStormEntity;
+import iskallia.vault.entity.entity.VaultStormArrow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -24,8 +27,13 @@ import java.util.Map;
 public final class StormArrowVisualManager {
     private static final double STORM_ENTITY_VERTICAL_OFFSET = 8.0D;
     private static final float FALLBACK_RADIUS = 5.0F;
+    private static final long PROJECTILE_SOUND_SUPPRESSION_TICKS = 4L;
+    private static final double PROJECTILE_SOUND_SUPPRESSION_DISTANCE_SQR = 16.0D;
     private static final Map<Integer, ActiveStorm> activeStorms = new LinkedHashMap<>();
     private static final Map<Integer, ActiveBlasterStrike> activeStrikes = new LinkedHashMap<>();
+    private static final Map<Integer, VaultStormArrow> activeProjectiles = new LinkedHashMap<>();
+    private static long suppressProjectileSoundUntilGameTime = Long.MIN_VALUE;
+    private static Vec3 suppressProjectileSoundPosition;
 
     private StormArrowVisualManager() {
     }
@@ -64,6 +72,38 @@ public final class StormArrowVisualManager {
             );
         });
         return true;
+    }
+
+    public static boolean handleProjectileRender(VaultStormArrow arrow, PoseStack poseStack, MultiBufferSource buffer, float partialTick) {
+        ArcaneBeamConfig.StormArrowSettings settings = ArcaneBeamConfig.INSTANCE.stormArrow;
+        if (settings == null || !settings.enabled || arrow == null || !arrow.level.isClientSide) {
+            return false;
+        }
+
+        activeProjectiles.computeIfAbsent(arrow.getId(), id -> {
+            Vec3 position = arrow.position();
+            if (ArcaneBeamSoundController.playStormArrowProjectile(Minecraft.getInstance(), position)) {
+                suppressProjectileSoundUntilGameTime = gameTime() + PROJECTILE_SOUND_SUPPRESSION_TICKS;
+                suppressProjectileSoundPosition = position;
+            }
+            return arrow;
+        });
+        StormArrowProjectileRenderer.renderLocal(poseStack, buffer, arrow, partialTick, settings.shaderCompatibility);
+        return true;
+    }
+
+    public static boolean handleStormArrowProjectileSound(double x, double y, double z) {
+        ArcaneBeamConfig.StormArrowSettings settings = ArcaneBeamConfig.INSTANCE.stormArrow;
+        Minecraft minecraft = Minecraft.getInstance();
+        ClientLevel level = minecraft.level;
+        if (settings == null || !settings.enabled || level == null || suppressProjectileSoundPosition == null
+                || !ArcaneBeamSoundController.canPlayStormArrowProjectile(minecraft)) {
+            return false;
+        }
+        if (level.getGameTime() > suppressProjectileSoundUntilGameTime) {
+            return false;
+        }
+        return suppressProjectileSoundPosition.distanceToSqr(x, y, z) <= PROJECTILE_SOUND_SUPPRESSION_DISTANCE_SQR;
     }
 
     public static boolean handleStormArrowStrikeSound(double x, double y, double z) {
@@ -115,6 +155,9 @@ public final class StormArrowVisualManager {
         if (level == null) {
             activeStorms.clear();
             activeStrikes.clear();
+            activeProjectiles.clear();
+            suppressProjectileSoundUntilGameTime = Long.MIN_VALUE;
+            suppressProjectileSoundPosition = null;
             return;
         }
 
@@ -132,6 +175,14 @@ public final class StormArrowVisualManager {
             ActiveBlasterStrike strike = strikeIterator.next().getValue();
             if (strike.age(now, 0.0F) >= Math.max(1, strike.settings().lifetimeTicks())) {
                 strikeIterator.remove();
+            }
+        }
+
+        Iterator<Map.Entry<Integer, VaultStormArrow>> projectileIterator = activeProjectiles.entrySet().iterator();
+        while (projectileIterator.hasNext()) {
+            VaultStormArrow projectile = projectileIterator.next().getValue();
+            if (projectile == null || projectile.isRemoved() || !projectile.isAlive()) {
+                projectileIterator.remove();
             }
         }
     }

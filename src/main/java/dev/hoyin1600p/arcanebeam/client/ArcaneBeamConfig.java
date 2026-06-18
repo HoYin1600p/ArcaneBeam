@@ -379,9 +379,6 @@ public final class ArcaneBeamConfig {
         if (settings.soundMode == null || LightningSoundMode.fromId(settings.soundMode) == null) {
             settings.soundMode = LightningSoundMode.SEISMIC_CHARGE.id;
         }
-        if (settings.projectileSoundMode == null || LightningProjectileSoundMode.fromId(settings.projectileSoundMode) == null) {
-            settings.projectileSoundMode = LightningProjectileSoundMode.OPTION_1.id;
-        }
         settings.soundVolume = clampFloat(settings.soundVolume, 0.0F, 2.0F);
         settings.secondaryRippleCount = clampInt(settings.secondaryRippleCount, 0, 4);
         settings.secondaryRippleSize = clampFloat(settings.secondaryRippleSize <= 0.0F ? 1.4346666F : settings.secondaryRippleSize, 0.1F, 1.5F);
@@ -457,6 +454,9 @@ public final class ArcaneBeamConfig {
         }
         if (settings.soundMode == null || StormArrowSoundMode.fromId(settings.soundMode) == null) {
             settings.soundMode = StormArrowSoundMode.DEFAULT.id;
+        }
+        if (settings.projectileSoundMode == null || StormArrowProjectileSoundMode.fromId(settings.projectileSoundMode) == null) {
+            settings.projectileSoundMode = StormArrowProjectileSoundMode.OPTION_1.id;
         }
         settings.soundVolume = clampFloat(settings.soundVolume, 0.0F, 2.0F);
     }
@@ -730,7 +730,6 @@ public final class ArcaneBeamConfig {
         copy.secondaryRippleSize = source.secondaryRippleSize;
         copy.secondaryRippleDelayTicks = source.secondaryRippleDelayTicks;
         copy.soundMode = source.soundMode;
-        copy.projectileSoundMode = source.projectileSoundMode;
         copy.soundVolume = source.soundVolume;
         return copy;
     }
@@ -789,6 +788,7 @@ public final class ArcaneBeamConfig {
         copy.fullbright = source.fullbright;
         copy.shaderCompatibility = source.shaderCompatibility;
         copy.soundMode = source.soundMode;
+        copy.projectileSoundMode = source.projectileSoundMode;
         copy.soundVolume = source.soundVolume;
         return copy;
     }
@@ -936,7 +936,6 @@ public final class ArcaneBeamConfig {
         public float secondaryRippleSize = 1.4346666F;
         public int secondaryRippleDelayTicks = 4;
         public String soundMode = LightningSoundMode.SEISMIC_CHARGE.id;
-        public String projectileSoundMode = LightningProjectileSoundMode.OPTION_1.id;
         public float soundVolume = 0.36F;
     }
 
@@ -999,6 +998,7 @@ public final class ArcaneBeamConfig {
         public boolean fullbright = true;
         public String shaderCompatibility = ShaderCompatibility.ON.id;
         public String soundMode = StormArrowSoundMode.DEFAULT.id;
+        public String projectileSoundMode = StormArrowProjectileSoundMode.OPTION_1.id;
         public float soundVolume = 1.0F;
     }
 
@@ -1030,7 +1030,7 @@ public final class ArcaneBeamConfig {
         }
     }
 
-    public enum LightningProjectileSoundMode {
+    public enum StormArrowProjectileSoundMode {
         DEFAULT("default", "Default"),
         OPTION_1("option_1", "Option 1"),
         RESOURCEPACK_1("resourcepack_1", "Resourcepack1"),
@@ -1039,13 +1039,13 @@ public final class ArcaneBeamConfig {
         public final String id;
         public final String label;
 
-        LightningProjectileSoundMode(String id, String label) {
+        StormArrowProjectileSoundMode(String id, String label) {
             this.id = id;
             this.label = label;
         }
 
-        public static LightningProjectileSoundMode fromId(String id) {
-            for (LightningProjectileSoundMode mode : values()) {
+        public static StormArrowProjectileSoundMode fromId(String id) {
+            for (StormArrowProjectileSoundMode mode : values()) {
                 if (mode.id.equals(id)) {
                     return mode;
                 }

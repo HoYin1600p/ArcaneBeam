@@ -21,8 +21,9 @@ public abstract class SoundManagerMixin {
     private static final ResourceLocation VAULT_ALTAR_COMPLETION = new ResourceLocation("minecraft", "entity.player.levelup");
     private static final ResourceLocation LIGHTNING_CAST = new ResourceLocation("minecraft", "item.trident.throw");
     private static final ResourceLocation LIGHTNING_CAST_ARROW_FALLBACK = new ResourceLocation("minecraft", "entity.arrow.shoot");
-    private static final ResourceLocation LIGHTNING_CAST_CROSSBOW_FALLBACK = new ResourceLocation("minecraft", "item.crossbow.shoot");
     private static final ResourceLocation LIGHTNING_IMPACT = new ResourceLocation("the_vault", "lightning_bolt");
+    private static final ResourceLocation STORM_ARROW_PROJECTILE = new ResourceLocation("minecraft", "item.crossbow.shoot");
+    private static final ResourceLocation STORM_ARROW_PROJECTILE_ARROW_FALLBACK = new ResourceLocation("minecraft", "entity.arrow.shoot");
     private static final ResourceLocation STORM_ARROW_STRIKE = new ResourceLocation("the_vault", "smite_bolt");
 
     @Inject(method = "play", at = @At("HEAD"), cancellable = true)
@@ -49,8 +50,13 @@ public abstract class SoundManagerMixin {
             ci.cancel();
             return;
         }
-        if ((LIGHTNING_CAST.equals(sound.getLocation()) || LIGHTNING_CAST_ARROW_FALLBACK.equals(sound.getLocation()) || LIGHTNING_CAST_CROSSBOW_FALLBACK.equals(sound.getLocation()))
+        if ((LIGHTNING_CAST.equals(sound.getLocation()) || LIGHTNING_CAST_ARROW_FALLBACK.equals(sound.getLocation()))
                 && LightningStrikeShockwaveManager.shouldSuppressLightningCastSound(sound.getX(), sound.getY(), sound.getZ())) {
+            ci.cancel();
+            return;
+        }
+        if ((STORM_ARROW_PROJECTILE.equals(sound.getLocation()) || STORM_ARROW_PROJECTILE_ARROW_FALLBACK.equals(sound.getLocation()))
+                && StormArrowVisualManager.handleStormArrowProjectileSound(sound.getX(), sound.getY(), sound.getZ())) {
             ci.cancel();
             return;
         }
