@@ -86,6 +86,16 @@ public final class StormArrowVisualManager {
         return true;
     }
 
+    public static boolean shouldSuppressProjectileTrail(VaultStormArrow arrow) {
+        ArcaneBeamConfig.StormArrowSettings settings = ArcaneBeamConfig.INSTANCE.stormArrow;
+        if (settings == null || !settings.enabled || arrow == null || !arrow.level.isClientSide) {
+            return false;
+        }
+
+        observeProjectileSpawn(arrow);
+        return true;
+    }
+
     private static void observeProjectileSpawn(VaultStormArrow arrow) {
         if (arrow == null || !arrow.level.isClientSide || activeProjectiles.containsKey(arrow.getId())) {
             return;

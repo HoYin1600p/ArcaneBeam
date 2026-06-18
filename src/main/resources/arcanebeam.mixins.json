@@ -15,6 +15,7 @@
     "SophisticatedStorageBarrelBakedModelBaseMixin",
     "SophisticatedStorageDisplayItemRendererMixin",
     "SophisticatedStorageLimitedBarrelClientInteractionMixin",
+    "VaultStormArrowMixin",
     "VaultStormEntityAccessor",
     "VaultStormEntityMixin"
   ],
