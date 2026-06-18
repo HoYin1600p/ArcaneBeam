@@ -12,7 +12,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 
@@ -35,9 +34,6 @@ public class StormArrowProjectileRenderer extends RenderType {
 
     public static void renderLocal(PoseStack poseStack, MultiBufferSource buffer, Entity projectile, float partialTick, String shaderCompatibility) {
         boolean shaderSafe = ArcaneBeamConfig.ShaderCompatibility.fromId(shaderCompatibility) == ArcaneBeamConfig.ShaderCompatibility.ON;
-        double x = Mth.lerp(partialTick, projectile.xOld, projectile.getX());
-        double y = Mth.lerp(partialTick, projectile.yOld, projectile.getY());
-        double z = Mth.lerp(partialTick, projectile.zOld, projectile.getZ());
         Vec3 motion = projectile.getDeltaMovement();
         if (motion.lengthSqr() < 1.0E-5D) {
             motion = new Vec3(projectile.getX() - projectile.xOld, projectile.getY() - projectile.yOld, projectile.getZ() - projectile.zOld);
@@ -51,7 +47,6 @@ public class StormArrowProjectileRenderer extends RenderType {
         float pitch = (float) Math.toDegrees(-Math.asin(direction.y));
         float roll = (projectile.tickCount + partialTick) * 18.0F;
         poseStack.pushPose();
-        poseStack.translate(x, y, z);
         poseStack.mulPose(Vector3f.YP.rotationDegrees(yaw));
         poseStack.mulPose(Vector3f.XP.rotationDegrees(pitch));
         poseStack.mulPose(Vector3f.XP.rotationDegrees(roll));

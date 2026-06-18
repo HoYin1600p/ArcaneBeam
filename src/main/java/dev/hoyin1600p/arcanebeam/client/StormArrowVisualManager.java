@@ -15,6 +15,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -80,16 +81,22 @@ public final class StormArrowVisualManager {
             return false;
         }
 
-        activeProjectiles.computeIfAbsent(arrow.getId(), id -> {
-            Vec3 position = arrow.position();
-            if (ArcaneBeamSoundController.playStormArrowProjectile(Minecraft.getInstance(), position)) {
-                suppressProjectileSoundUntilGameTime = gameTime() + PROJECTILE_SOUND_SUPPRESSION_TICKS;
-                suppressProjectileSoundPosition = position;
-            }
-            return arrow;
-        });
+        observeProjectileSpawn(arrow);
         StormArrowProjectileRenderer.renderLocal(poseStack, buffer, arrow, partialTick, settings.shaderCompatibility);
         return true;
+    }
+
+    private static void observeProjectileSpawn(VaultStormArrow arrow) {
+        if (arrow == null || !arrow.level.isClientSide || activeProjectiles.containsKey(arrow.getId())) {
+            return;
+        }
+
+        activeProjectiles.put(arrow.getId(), arrow);
+        Vec3 position = arrow.position();
+        if (ArcaneBeamSoundController.playStormArrowProjectile(Minecraft.getInstance(), position)) {
+            suppressProjectileSoundUntilGameTime = gameTime() + PROJECTILE_SOUND_SUPPRESSION_TICKS;
+            suppressProjectileSoundPosition = position;
+        }
     }
 
     public static boolean handleStormArrowProjectileSound(double x, double y, double z) {
@@ -143,6 +150,19 @@ public final class StormArrowVisualManager {
     private static ArcaneBeamConfig.StormArrowSoundMode stormArrowSoundMode() {
         ArcaneBeamConfig.StormArrowSoundMode mode = ArcaneBeamConfig.StormArrowSoundMode.fromId(ArcaneBeamConfig.INSTANCE.stormArrow.soundMode);
         return mode == null ? ArcaneBeamConfig.StormArrowSoundMode.DEFAULT : mode;
+    }
+
+    @SubscribeEvent
+    public static void onEntityJoinWorld(EntityJoinWorldEvent event) {
+        if (!event.getWorld().isClientSide() || !(event.getEntity() instanceof VaultStormArrow arrow)) {
+            return;
+        }
+
+        ArcaneBeamConfig.StormArrowSettings settings = ArcaneBeamConfig.INSTANCE.stormArrow;
+        if (settings == null || !settings.enabled) {
+            return;
+        }
+        observeProjectileSpawn(arrow);
     }
 
     @SubscribeEvent
