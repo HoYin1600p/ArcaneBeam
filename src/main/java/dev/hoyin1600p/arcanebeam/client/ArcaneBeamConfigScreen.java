@@ -91,7 +91,6 @@ public class ArcaneBeamConfigScreen extends Screen {
     private Button lightningShaderCompatibilityButton;
     private Button lightningFullbrightButton;
     private Button lightningSoundButton;
-    private Button lightningProjectileSoundButton;
     private EditBox lightningLifetimeBox;
     private EditBox lightningSideCountBox;
     private EditBox lightningRingColorBox;
@@ -118,6 +117,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     private Button stormArrowFullbrightButton;
     private Button stormArrowImpactFlashButton;
     private Button stormArrowSoundButton;
+    private Button stormArrowProjectileSoundButton;
     private EditBox stormArrowLifetimeBox;
     private EditBox stormArrowOriginHeightBox;
     private EditBox stormArrowSoundVolumeBox;
@@ -385,11 +385,6 @@ public class ArcaneBeamConfigScreen extends Screen {
             refreshControls();
             ArcaneBeamConfig.save();
         }));
-        lightningProjectileSoundButton = this.addRenderableWidget(new Button(x + 158, y + 268, 150, 20, TextComponent.EMPTY, button -> {
-            cycleLightningProjectileSound();
-            refreshControls();
-            ArcaneBeamConfig.save();
-        }));
 
         lightningLifetimeBox = addLightningNumberBox(x, y + 296, 54, 3, "Lifetime", "[0-9]{0,3}", this::updateLightningLifetimeFromText);
         lightningSideCountBox = addLightningNumberBox(x + 104, y + 296, 54, 2, "Sides", "[0-9]{0,2}", this::updateLightningSideCountFromText);
@@ -523,6 +518,11 @@ public class ArcaneBeamConfigScreen extends Screen {
         }));
         stormArrowSoundButton = this.addRenderableWidget(new Button(x, y + 172, 150, 20, TextComponent.EMPTY, button -> {
             cycleStormArrowSound();
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        stormArrowProjectileSoundButton = this.addRenderableWidget(new Button(x + 158, y + 172, 150, 20, TextComponent.EMPTY, button -> {
+            cycleStormArrowProjectileSound();
             refreshControls();
             ArcaneBeamConfig.save();
         }));
@@ -1392,7 +1392,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         setVisible(lightningShaderCompatibilityButton, lightningSelected);
         setVisible(lightningFullbrightButton, lightningSelected);
         setVisible(lightningSoundButton, lightningSelected);
-        setVisible(lightningProjectileSoundButton, lightningSelected);
         setVisible(lightningStartRadiusSlider, lightningSelected);
         setVisible(lightningEndRadiusSlider, lightningSelected);
         setVisible(lightningThicknessSlider, lightningSelected);
@@ -1456,6 +1455,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         setVisible(stormArrowFullbrightButton, stormArrowSelected);
         setVisible(stormArrowImpactFlashButton, stormArrowSelected);
         setVisible(stormArrowSoundButton, stormArrowSelected);
+        setVisible(stormArrowProjectileSoundButton, stormArrowSelected);
         setVisible(stormArrowCircleAlphaSlider, stormArrowSelected);
         setVisible(stormArrowCircleThicknessSlider, stormArrowSelected);
         setVisible(stormArrowBlasterAlphaSlider, stormArrowSelected);
@@ -1489,13 +1489,11 @@ public class ArcaneBeamConfigScreen extends Screen {
         lightningEnabledButton.setMessage(new TextComponent("Replacement: " + (settings.enabled ? "On" : "Off")));
         lightningShaderCompatibilityButton.setMessage(new TextComponent("Shader Compatibility: " + lightningShaderCompatibility().label));
         lightningFullbrightButton.setMessage(new TextComponent("Fullbright: " + (settings.fullbright ? "On" : "Off")));
-        lightningSoundButton.setMessage(new TextComponent("Impact: " + lightningSoundMode().label));
-        lightningProjectileSoundButton.setMessage(new TextComponent("Projectile: " + lightningProjectileSoundMode().label));
+        lightningSoundButton.setMessage(new TextComponent("Sound: " + lightningSoundMode().label));
         fitButton(lightningEnabledButton, 150);
         fitButton(lightningShaderCompatibilityButton, 150);
         fitButton(lightningFullbrightButton, 150);
         fitButton(lightningSoundButton, 150);
-        fitButton(lightningProjectileSoundButton, 150);
         lightningStartRadiusSlider.refresh();
         lightningEndRadiusSlider.refresh();
         lightningThicknessSlider.refresh();
@@ -1565,7 +1563,8 @@ public class ArcaneBeamConfigScreen extends Screen {
         stormArrowShaderCompatibilityButton.setMessage(new TextComponent("Shader Compatibility: " + stormArrowShaderCompatibility().label));
         stormArrowFullbrightButton.setMessage(new TextComponent("Fullbright: " + (settings.fullbright ? "On" : "Off")));
         stormArrowImpactFlashButton.setMessage(new TextComponent("Impact Flash: " + (settings.impactFlashEnabled ? "On" : "Off")));
-        stormArrowSoundButton.setMessage(new TextComponent("Sound: " + stormArrowSoundMode().label));
+        stormArrowSoundButton.setMessage(new TextComponent("Strike: " + stormArrowSoundMode().label));
+        stormArrowProjectileSoundButton.setMessage(new TextComponent("Projectile: " + stormArrowProjectileSoundMode().label));
         fitButton(stormArrowEnabledButton, 150);
         fitButton(stormArrowTargetingCircleButton, 150);
         fitButton(stormArrowActualRadiusButton, 150);
@@ -1573,6 +1572,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         fitButton(stormArrowFullbrightButton, 150);
         fitButton(stormArrowImpactFlashButton, 150);
         fitButton(stormArrowSoundButton, 150);
+        fitButton(stormArrowProjectileSoundButton, 150);
         stormArrowCircleAlphaSlider.refresh();
         stormArrowCircleThicknessSlider.refresh();
         stormArrowBlasterAlphaSlider.refresh();
@@ -2223,11 +2223,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         return mode == null ? ArcaneBeamConfig.LightningSoundMode.DEFAULT : mode;
     }
 
-    private ArcaneBeamConfig.LightningProjectileSoundMode lightningProjectileSoundMode() {
-        ArcaneBeamConfig.LightningProjectileSoundMode mode = ArcaneBeamConfig.LightningProjectileSoundMode.fromId(lightningSettings().projectileSoundMode);
-        return mode == null ? ArcaneBeamConfig.LightningProjectileSoundMode.DEFAULT : mode;
-    }
-
     private ArcaneBeamConfig.VaultAltarSoundMode vaultAltarSoundMode() {
         ArcaneBeamConfig.VaultAltarSoundMode mode = ArcaneBeamConfig.VaultAltarSoundMode.fromId(vaultAltarSettings().soundMode);
         return mode == null ? ArcaneBeamConfig.VaultAltarSoundMode.DEFAULT : mode;
@@ -2238,18 +2233,16 @@ public class ArcaneBeamConfigScreen extends Screen {
         return mode == null ? ArcaneBeamConfig.StormArrowSoundMode.DEFAULT : mode;
     }
 
+    private ArcaneBeamConfig.StormArrowProjectileSoundMode stormArrowProjectileSoundMode() {
+        ArcaneBeamConfig.StormArrowProjectileSoundMode mode = ArcaneBeamConfig.StormArrowProjectileSoundMode.fromId(stormArrowSettings().projectileSoundMode);
+        return mode == null ? ArcaneBeamConfig.StormArrowProjectileSoundMode.DEFAULT : mode;
+    }
+
     private void cycleLightningSound() {
         ArcaneBeamConfig.LightningSoundMode[] modes = ArcaneBeamConfig.LightningSoundMode.values();
         ArcaneBeamConfig.LightningSoundMode current = lightningSoundMode();
         int next = (current.ordinal() + 1) % modes.length;
         lightningSettings().soundMode = modes[next].id;
-    }
-
-    private void cycleLightningProjectileSound() {
-        ArcaneBeamConfig.LightningProjectileSoundMode[] modes = ArcaneBeamConfig.LightningProjectileSoundMode.values();
-        ArcaneBeamConfig.LightningProjectileSoundMode current = lightningProjectileSoundMode();
-        int next = (current.ordinal() + 1) % modes.length;
-        lightningSettings().projectileSoundMode = modes[next].id;
     }
 
     private void cycleVaultAltarSound() {
@@ -2264,6 +2257,13 @@ public class ArcaneBeamConfigScreen extends Screen {
         ArcaneBeamConfig.StormArrowSoundMode current = stormArrowSoundMode();
         int next = (current.ordinal() + 1) % modes.length;
         stormArrowSettings().soundMode = modes[next].id;
+    }
+
+    private void cycleStormArrowProjectileSound() {
+        ArcaneBeamConfig.StormArrowProjectileSoundMode[] modes = ArcaneBeamConfig.StormArrowProjectileSoundMode.values();
+        ArcaneBeamConfig.StormArrowProjectileSoundMode current = stormArrowProjectileSoundMode();
+        int next = (current.ordinal() + 1) % modes.length;
+        stormArrowSettings().projectileSoundMode = modes[next].id;
     }
 
     private ArcaneBeamConfig.FadeInStyle fadeInStyle() {

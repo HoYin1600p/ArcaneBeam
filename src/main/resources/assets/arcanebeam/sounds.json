@@ -62,33 +62,6 @@
       }
     ]
   },
-  "lightning_strike_arrow": {
-    "category": "master",
-    "sounds": [
-      {
-        "name": "abilities/lightning_strike_arrow",
-        "stream": false
-      }
-    ]
-  },
-  "lightning_strike_arrow_resourcepack_1": {
-    "category": "master",
-    "sounds": [
-      {
-        "name": "abilities/lightning_strike_arrow_resourcepack_1",
-        "stream": false
-      }
-    ]
-  },
-  "lightning_strike_arrow_resourcepack_2": {
-    "category": "master",
-    "sounds": [
-      {
-        "name": "abilities/lightning_strike_arrow_resourcepack_2",
-        "stream": false
-      }
-    ]
-  },
   "vault_altar_beam": {
     "category": "master",
     "sounds": [
@@ -103,6 +76,51 @@
     "sounds": [
       {
         "name": "abilities/storm_arrow_1",
+        "stream": false
+      }
+    ]
+  },
+  "storm_arrow_projectile": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/storm_arrow_projectile",
+        "stream": false
+      }
+    ]
+  },
+  "storm_arrow_resourcepack_1": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/storm_arrow_resourcepack_1",
+        "stream": false
+      }
+    ]
+  },
+  "storm_arrow_resourcepack_2": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/storm_arrow_resourcepack_2",
+        "stream": false
+      }
+    ]
+  },
+  "storm_arrow_projectile_resourcepack_1": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/storm_arrow_projectile_resourcepack_1",
+        "stream": false
+      }
+    ]
+  },
+  "storm_arrow_projectile_resourcepack_2": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/storm_arrow_projectile_resourcepack_2",
         "stream": false
       }
     ]

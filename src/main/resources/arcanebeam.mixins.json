@@ -10,6 +10,7 @@
     "ClientLevelMixin",
     "LightningArrowRendererMixin",
     "SoundManagerMixin",
+    "StormArrowRendererMixin",
     "StormSmiteBoltRendererMixin",
     "SophisticatedStorageBarrelBakedModelBaseMixin",
     "SophisticatedStorageDisplayItemRendererMixin",

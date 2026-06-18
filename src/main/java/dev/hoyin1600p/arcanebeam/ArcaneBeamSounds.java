@@ -20,15 +20,15 @@ public final class ArcaneBeamSounds {
     public static final RegistryObject<SoundEvent> LIGHTNING_RESOURCEPACK_1_IMPACT = register("lightning_resourcepack_1_impact");
     public static final RegistryObject<SoundEvent> LIGHTNING_RESOURCEPACK_2_CAST = register("lightning_resourcepack_2_cast");
     public static final RegistryObject<SoundEvent> LIGHTNING_RESOURCEPACK_2_IMPACT = register("lightning_resourcepack_2_impact");
-    public static final RegistryObject<SoundEvent> LIGHTNING_STRIKE_ARROW = register("lightning_strike_arrow");
-    public static final RegistryObject<SoundEvent> LIGHTNING_STRIKE_ARROW_RESOURCEPACK_1 = register("lightning_strike_arrow_resourcepack_1");
-    public static final RegistryObject<SoundEvent> LIGHTNING_STRIKE_ARROW_RESOURCEPACK_2 = register("lightning_strike_arrow_resourcepack_2");
     public static final RegistryObject<SoundEvent> VAULT_ALTAR_BEAM = register("vault_altar_beam");
     public static final RegistryObject<SoundEvent> VAULT_ALTAR_RESOURCEPACK_1 = register("vault_altar_resourcepack_1");
     public static final RegistryObject<SoundEvent> VAULT_ALTAR_RESOURCEPACK_2 = register("vault_altar_resourcepack_2");
     public static final RegistryObject<SoundEvent> STORM_ARROW_1 = register("storm_arrow_1");
+    public static final RegistryObject<SoundEvent> STORM_ARROW_PROJECTILE = register("storm_arrow_projectile");
     public static final RegistryObject<SoundEvent> STORM_ARROW_RESOURCEPACK_1 = register("storm_arrow_resourcepack_1");
     public static final RegistryObject<SoundEvent> STORM_ARROW_RESOURCEPACK_2 = register("storm_arrow_resourcepack_2");
+    public static final RegistryObject<SoundEvent> STORM_ARROW_PROJECTILE_RESOURCEPACK_1 = register("storm_arrow_projectile_resourcepack_1");
+    public static final RegistryObject<SoundEvent> STORM_ARROW_PROJECTILE_RESOURCEPACK_2 = register("storm_arrow_projectile_resourcepack_2");
 
     private ArcaneBeamSounds() {
     }
