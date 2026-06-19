@@ -24,6 +24,7 @@ import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = ArcaneBeam.MOD_ID, value = Dist.CLIENT)
 public final class SmiteVisualManager {
+    private static final int VAULT_DEFAULT_SMITE_BOLT_COLOR = -1864448;
     private static final float FALLBACK_RADIUS = 5.0F;
     private static final long ACTIVATION_CIRCLE_GRACE_TICKS = 120L;
     private static final long SOUND_DUPLICATE_SUPPRESSION_TICKS = 3L;
@@ -49,7 +50,8 @@ public final class SmiteVisualManager {
 
         Vec3 impact = smiteBolt.position();
         int boltColor = smiteBoltColor(smiteBolt);
-        if (boltColor == 0) {
+        // Lightning Strike's AOE reuses Vault's smite bolt entity without applying a Smite ability color.
+        if (boltColor == VAULT_DEFAULT_SMITE_BOLT_COLOR) {
             return LightningStrikeShockwaveManager.shouldSuppressVaultLightningVisual(impact);
         }
         long now = gameTime();
