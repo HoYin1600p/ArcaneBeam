@@ -194,20 +194,10 @@ public final class LightningStrikeShockwaveManager {
             return false;
         }
 
-        if (shouldSuppressVaultLightningVisual(position)) {
-            return true;
-        }
+        // Vault's Lightning Strike AOE uses the default smite-bolt color. Once the replacement is enabled,
+        // do not let those default bolts fall through to the yellow vanilla renderer on timing misses.
+        return true;
 
-        long gameTime = level.getGameTime();
-        for (ActiveShockwave shockwave : activeShockwaves) {
-            int lifetime = shockwave.settings().lifetimeTicks();
-            int extraDelay = shockwave.settings().secondaryRippleCount() * shockwave.settings().secondaryRippleDelayTicks();
-            if (gameTime - shockwave.startGameTime <= lifetime + extraDelay
-                    && shockwave.position().distanceToSqr(position) <= VAULT_LIGHTNING_VISUAL_SUPPRESSION_DISTANCE_SQR) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static void clearPendingLightningStrike() {
