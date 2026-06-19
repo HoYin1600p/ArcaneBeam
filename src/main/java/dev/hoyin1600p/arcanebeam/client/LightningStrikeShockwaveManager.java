@@ -21,16 +21,18 @@ import java.util.List;
 public final class LightningStrikeShockwaveManager {
     private static final long CAST_SOUND_SUPPRESSION_TICKS = 4L;
     private static final long IMPACT_SOUND_SUPPRESSION_TICKS = 4L;
-    private static final long VAULT_LIGHTNING_VISUAL_SUPPRESSION_TICKS = 40L;
+    private static final long VAULT_LIGHTNING_VISUAL_SUPPRESSION_TICKS = 6L;
     private static final long PENDING_LIGHTNING_STRIKE_TICKS = 100L;
     private static final double CAST_SOUND_SUPPRESSION_DISTANCE_SQR = 16.0D;
     private static final double IMPACT_SOUND_SUPPRESSION_DISTANCE_SQR = 16.0D;
-    private static final double VAULT_LIGHTNING_VISUAL_SUPPRESSION_DISTANCE_SQR = 4096.0D;
+    private static final double VAULT_LIGHTNING_VISUAL_SUPPRESSION_DISTANCE_SQR = 16.0D;
+    private static final double PENDING_LIGHTNING_STRIKE_DISTANCE_SQR = 16.0D;
     private static final List<ActiveShockwave> activeShockwaves = new ArrayList<>();
     private static final List<ChainLightningAbility.ChainLightningProjectile> activeProjectiles = new ArrayList<>();
     private static long suppressCastSoundUntilGameTime = Long.MIN_VALUE;
     private static long suppressImpactSoundUntilGameTime = Long.MIN_VALUE;
     private static long suppressVaultLightningVisualUntilGameTime = Long.MIN_VALUE;
+    private static long pendingLightningStrikeStartGameTime = Long.MIN_VALUE;
     private static long pendingLightningStrikeUntilGameTime = Long.MIN_VALUE;
     private static Vec3 suppressCastSoundPosition;
     private static Vec3 suppressImpactSoundPosition;
@@ -69,6 +71,7 @@ public final class LightningStrikeShockwaveManager {
         activeShockwaves.add(new ActiveShockwave(position.add(0.0D, settings.renderYOffset, 0.0D), level.getGameTime(), ShockwaveRenderSettings.from(settings)));
         observeImpact(position);
         observeVaultLightningVisual(position);
+        clearPendingLightningStrike();
         ArcaneBeamSoundController.playLightningStrikeImpact(minecraft, position);
     }
 
@@ -94,7 +97,8 @@ public final class LightningStrikeShockwaveManager {
             return;
         }
 
-        pendingLightningStrikeUntilGameTime = level.getGameTime() + PENDING_LIGHTNING_STRIKE_TICKS;
+        pendingLightningStrikeStartGameTime = level.getGameTime();
+        pendingLightningStrikeUntilGameTime = pendingLightningStrikeStartGameTime + PENDING_LIGHTNING_STRIKE_TICKS;
         pendingLightningStrikePosition = position;
     }
 
@@ -153,7 +157,7 @@ public final class LightningStrikeShockwaveManager {
         if (level.getGameTime() > pendingLightningStrikeUntilGameTime) {
             return false;
         }
-        if (pendingLightningStrikePosition.distanceToSqr(x, y, z) > VAULT_LIGHTNING_VISUAL_SUPPRESSION_DISTANCE_SQR) {
+        if (pendingLightningStrikePosition.distanceToSqr(x, y, z) > PENDING_LIGHTNING_STRIKE_DISTANCE_SQR) {
             return false;
         }
 
@@ -182,6 +186,12 @@ public final class LightningStrikeShockwaveManager {
         return false;
     }
 
+    private static void clearPendingLightningStrike() {
+        pendingLightningStrikeStartGameTime = Long.MIN_VALUE;
+        pendingLightningStrikeUntilGameTime = Long.MIN_VALUE;
+        pendingLightningStrikePosition = null;
+    }
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) {
@@ -195,15 +205,17 @@ public final class LightningStrikeShockwaveManager {
             suppressCastSoundUntilGameTime = Long.MIN_VALUE;
             suppressImpactSoundUntilGameTime = Long.MIN_VALUE;
             suppressVaultLightningVisualUntilGameTime = Long.MIN_VALUE;
-            pendingLightningStrikeUntilGameTime = Long.MIN_VALUE;
+            clearPendingLightningStrike();
             suppressCastSoundPosition = null;
             suppressImpactSoundPosition = null;
             suppressVaultLightningVisualPosition = null;
-            pendingLightningStrikePosition = null;
             return;
         }
 
         long gameTime = minecraft.level.getGameTime();
+        if (!activeProjectiles.isEmpty() && pendingLightningStrikePosition != null && gameTime <= pendingLightningStrikeUntilGameTime) {
+            pendingLightningStrikePosition = activeProjectiles.get(activeProjectiles.size() - 1).position();
+        }
         Iterator<ActiveShockwave> iterator = activeShockwaves.iterator();
         while (iterator.hasNext()) {
             ActiveShockwave shockwave = iterator.next();
@@ -219,6 +231,9 @@ public final class LightningStrikeShockwaveManager {
             if (projectile == null || projectile.isRemoved() || !projectile.isAlive()) {
                 projectileIterator.remove();
             }
+        }
+        if (activeProjectiles.isEmpty() && pendingLightningStrikePosition != null && gameTime > pendingLightningStrikeStartGameTime + 2L) {
+            clearPendingLightningStrike();
         }
     }
 
