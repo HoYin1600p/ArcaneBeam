@@ -37,6 +37,7 @@ public final class StormArrowVisualManager {
     private static final Map<Integer, VaultStormArrow> activeProjectiles = new LinkedHashMap<>();
     private static long suppressProjectileSoundUntilGameTime = Long.MIN_VALUE;
     private static Vec3 suppressProjectileSoundPosition;
+    private static long lastStrikeVisualGameTime = Long.MIN_VALUE;
 
     private StormArrowVisualManager() {
     }
@@ -67,11 +68,15 @@ public final class StormArrowVisualManager {
 
         Vec3 impact = smiteBolt.position();
         long now = gameTime();
+        if (now == lastStrikeVisualGameTime) {
+            return true;
+        }
         if (hasRecentStrikeAt(impact, now)) {
             return true;
         }
         activeStrikes.computeIfAbsent(smiteBolt.getId(), id -> {
             ArcaneBeamSoundController.playStormArrowStrike(Minecraft.getInstance(), impact);
+            lastStrikeVisualGameTime = now;
             return new ActiveBlasterStrike(
                     impact,
                     now,
@@ -201,6 +206,7 @@ public final class StormArrowVisualManager {
             activeProjectiles.clear();
             suppressProjectileSoundUntilGameTime = Long.MIN_VALUE;
             suppressProjectileSoundPosition = null;
+            lastStrikeVisualGameTime = Long.MIN_VALUE;
             return;
         }
 
