@@ -30,6 +30,8 @@ public final class StormArrowVisualManager {
     private static final float FALLBACK_RADIUS = 5.0F;
     private static final long PROJECTILE_SOUND_SUPPRESSION_TICKS = 4L;
     private static final double PROJECTILE_SOUND_SUPPRESSION_DISTANCE_SQR = 16.0D;
+    private static final long STRIKE_VISUAL_DUPLICATE_TICKS = 2L;
+    private static final double STRIKE_VISUAL_DUPLICATE_DISTANCE_SQR = 2.25D;
     private static final Map<Integer, ActiveStorm> activeStorms = new LinkedHashMap<>();
     private static final Map<Integer, ActiveBlasterStrike> activeStrikes = new LinkedHashMap<>();
     private static final Map<Integer, VaultStormArrow> activeProjectiles = new LinkedHashMap<>();
@@ -63,12 +65,16 @@ public final class StormArrowVisualManager {
             return false;
         }
 
+        Vec3 impact = smiteBolt.position();
+        long now = gameTime();
+        if (hasRecentStrikeAt(impact, now)) {
+            return true;
+        }
         activeStrikes.computeIfAbsent(smiteBolt.getId(), id -> {
-            Vec3 impact = smiteBolt.position();
             ArcaneBeamSoundController.playStormArrowStrike(Minecraft.getInstance(), impact);
             return new ActiveBlasterStrike(
                     impact,
-                    gameTime(),
+                    now,
                     StormArrowRenderSettings.from(settings)
             );
         });
@@ -144,6 +150,13 @@ public final class StormArrowVisualManager {
     private static long gameTime() {
         ClientLevel level = Minecraft.getInstance().level;
         return level == null ? 0L : level.getGameTime();
+    }
+
+    private static boolean hasRecentStrikeAt(Vec3 impact, long gameTime) {
+        return activeStrikes.values().stream().anyMatch(strike ->
+                strike.impact().distanceToSqr(impact) <= STRIKE_VISUAL_DUPLICATE_DISTANCE_SQR
+                        && strike.age(gameTime, 0.0F) <= STRIKE_VISUAL_DUPLICATE_TICKS
+        );
     }
 
     private static float effectiveRadius(VaultStormEntity stormEntity) {

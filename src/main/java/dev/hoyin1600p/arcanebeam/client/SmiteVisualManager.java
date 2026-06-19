@@ -27,6 +27,8 @@ public final class SmiteVisualManager {
     private static final long ACTIVATION_CIRCLE_GRACE_TICKS = 120L;
     private static final long SOUND_DUPLICATE_SUPPRESSION_TICKS = 3L;
     private static final double SOUND_DUPLICATE_DISTANCE_SQR = 16.0D;
+    private static final long STRIKE_VISUAL_DUPLICATE_TICKS = 2L;
+    private static final double STRIKE_VISUAL_DUPLICATE_DISTANCE_SQR = 2.25D;
     private static final Map<Integer, ActiveSmiteStrike> activeStrikes = new LinkedHashMap<>();
     private static long activeCircleUntilGameTime = Long.MIN_VALUE;
     private static long lastActivationSoundGameTime = Long.MIN_VALUE;
@@ -43,12 +45,16 @@ public final class SmiteVisualManager {
             return false;
         }
 
+        Vec3 impact = smiteBolt.position();
+        long now = gameTime();
+        if (hasRecentStrikeAt(impact, now)) {
+            return true;
+        }
         activeStrikes.computeIfAbsent(smiteBolt.getId(), id -> {
-            Vec3 impact = smiteBolt.position();
             playSmiteStrikeOnce(Minecraft.getInstance(), impact);
             return new ActiveSmiteStrike(
                     impact,
-                    gameTime(),
+                    now,
                     StormArrowVisualManager.StormArrowRenderSettings.from(settings)
             );
         });
@@ -103,8 +109,12 @@ public final class SmiteVisualManager {
     }
 
     private static void playSmiteStrikeOnce(Minecraft minecraft, Vec3 position) {
+        long now = gameTime();
+        if (isDuplicate(now, position, lastStrikeSoundGameTime, lastStrikeSoundPosition)) {
+            return;
+        }
         if (ArcaneBeamSoundController.playSmiteStrike(minecraft, position)) {
-            lastStrikeSoundGameTime = gameTime();
+            lastStrikeSoundGameTime = now;
             lastStrikeSoundPosition = position;
         }
     }
@@ -118,6 +128,13 @@ public final class SmiteVisualManager {
     private static long gameTime() {
         ClientLevel level = Minecraft.getInstance().level;
         return level == null ? 0L : level.getGameTime();
+    }
+
+    private static boolean hasRecentStrikeAt(Vec3 impact, long gameTime) {
+        return activeStrikes.values().stream().anyMatch(strike ->
+                strike.impact().distanceToSqr(impact) <= STRIKE_VISUAL_DUPLICATE_DISTANCE_SQR
+                        && strike.age(gameTime, 0.0F) <= STRIKE_VISUAL_DUPLICATE_TICKS
+        );
     }
 
     private static boolean hasActiveSmiteCircle(LocalPlayer player, long gameTime) {
