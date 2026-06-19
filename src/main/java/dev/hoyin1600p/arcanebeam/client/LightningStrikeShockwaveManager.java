@@ -55,7 +55,7 @@ public final class LightningStrikeShockwaveManager {
             observeProjectileSpawn(projectile.position());
             return;
         }
-        if (event.getEntity().getType() == ModEntities.SMITE_ABILITY_BOLT && shouldSuppressVaultLightningVisual(event.getEntity().position())) {
+        if (event.getEntity().getType() == ModEntities.SMITE_ABILITY_BOLT && shouldSuppressDefaultVaultLightningVisual(event.getEntity().position())) {
             event.setCanceled(true);
         }
     }
@@ -182,6 +182,30 @@ public final class LightningStrikeShockwaveManager {
         if (suppressVaultLightningVisualPosition != null && gameTime <= suppressVaultLightningVisualUntilGameTime
                 && suppressVaultLightningVisualPosition.distanceToSqr(position) <= VAULT_LIGHTNING_VISUAL_SUPPRESSION_DISTANCE_SQR) {
             return true;
+        }
+        return false;
+    }
+
+    public static boolean shouldSuppressDefaultVaultLightningVisual(Vec3 position) {
+        Minecraft minecraft = Minecraft.getInstance();
+        ClientLevel level = minecraft.level;
+        ArcaneBeamConfig.LightningStrikeSettings settings = ArcaneBeamConfig.INSTANCE.lightningStrike;
+        if (level == null || position == null || !settings.enabled) {
+            return false;
+        }
+
+        if (shouldSuppressVaultLightningVisual(position)) {
+            return true;
+        }
+
+        long gameTime = level.getGameTime();
+        for (ActiveShockwave shockwave : activeShockwaves) {
+            int lifetime = shockwave.settings().lifetimeTicks();
+            int extraDelay = shockwave.settings().secondaryRippleCount() * shockwave.settings().secondaryRippleDelayTicks();
+            if (gameTime - shockwave.startGameTime <= lifetime + extraDelay
+                    && shockwave.position().distanceToSqr(position) <= VAULT_LIGHTNING_VISUAL_SUPPRESSION_DISTANCE_SQR) {
+                return true;
+            }
         }
         return false;
     }

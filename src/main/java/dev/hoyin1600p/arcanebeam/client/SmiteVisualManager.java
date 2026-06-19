@@ -43,8 +43,7 @@ public final class SmiteVisualManager {
     }
 
     public static boolean handleSmiteBoltRender(Entity smiteBolt) {
-        ArcaneBeamConfig.SmiteSettings settings = ArcaneBeamConfig.INSTANCE.smite;
-        if (settings == null || !settings.enabled || smiteBolt == null || !smiteBolt.level.isClientSide) {
+        if (smiteBolt == null || !smiteBolt.level.isClientSide) {
             return false;
         }
 
@@ -52,7 +51,12 @@ public final class SmiteVisualManager {
         int boltColor = smiteBoltColor(smiteBolt);
         // Lightning Strike's AOE reuses Vault's smite bolt entity without applying a Smite ability color.
         if (boltColor == VAULT_DEFAULT_SMITE_BOLT_COLOR) {
-            return LightningStrikeShockwaveManager.shouldSuppressVaultLightningVisual(impact);
+            return LightningStrikeShockwaveManager.shouldSuppressDefaultVaultLightningVisual(impact);
+        }
+
+        ArcaneBeamConfig.SmiteSettings settings = ArcaneBeamConfig.INSTANCE.smite;
+        if (settings == null || !settings.enabled) {
+            return false;
         }
         long now = gameTime();
         if (now == lastStrikeVisualGameTime) {
