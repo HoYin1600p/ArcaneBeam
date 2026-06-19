@@ -58,22 +58,28 @@ public final class ArcaneBeamConfig {
         if (INSTANCE.stormArrow == null) {
             INSTANCE.stormArrow = defaultStormArrowSettings();
         }
+        if (INSTANCE.smite == null) {
+            INSTANCE.smite = defaultSmiteSettings();
+        }
         validateShaderCompatibility();
         validateBeamSettings(INSTANCE.arcane, false);
         validateBeamSettings(INSTANCE.rail, true);
         validateLightningStrikeSettings(INSTANCE.lightningStrike);
         validateVaultAltarSettings(INSTANCE.vaultAltar);
         validateStormArrowSettings(INSTANCE.stormArrow);
+        validateStormArrowSettings(INSTANCE.smite);
         INSTANCE.arcaneProfiles = validateProfiles(INSTANCE.arcaneProfiles, INSTANCE.arcane, false);
         INSTANCE.railProfiles = validateProfiles(INSTANCE.railProfiles, INSTANCE.rail, true);
         INSTANCE.lightningStrikeProfiles = validateLightningProfiles(INSTANCE.lightningStrikeProfiles, INSTANCE.lightningStrike);
         INSTANCE.vaultAltarProfiles = validateVaultAltarProfiles(INSTANCE.vaultAltarProfiles, INSTANCE.vaultAltar);
         INSTANCE.stormArrowProfiles = validateStormArrowProfiles(INSTANCE.stormArrowProfiles, INSTANCE.stormArrow);
+        INSTANCE.smiteProfiles = validateSmiteProfiles(INSTANCE.smiteProfiles, INSTANCE.smite);
         INSTANCE.selectedArcaneProfile = validateSelectedProfile(INSTANCE.selectedArcaneProfile, INSTANCE.arcaneProfiles);
         INSTANCE.selectedRailProfile = validateSelectedProfile(INSTANCE.selectedRailProfile, INSTANCE.railProfiles);
         INSTANCE.selectedLightningStrikeProfile = validateSelectedLightningProfile(INSTANCE.selectedLightningStrikeProfile, INSTANCE.lightningStrikeProfiles);
         INSTANCE.selectedVaultAltarProfile = validateSelectedVaultAltarProfile(INSTANCE.selectedVaultAltarProfile, INSTANCE.vaultAltarProfiles);
         INSTANCE.selectedStormArrowProfile = validateSelectedStormArrowProfile(INSTANCE.selectedStormArrowProfile, INSTANCE.stormArrowProfiles);
+        INSTANCE.selectedSmiteProfile = validateSelectedSmiteProfile(INSTANCE.selectedSmiteProfile, INSTANCE.smiteProfiles);
         activateSelectedProfiles();
     }
 
@@ -186,6 +192,27 @@ public final class ArcaneBeamConfig {
         return validated;
     }
 
+    private static LinkedHashMap<String, SmiteSettings> validateSmiteProfiles(Map<String, SmiteSettings> profiles, SmiteSettings migrationSettings) {
+        LinkedHashMap<String, SmiteSettings> validated = new LinkedHashMap<>();
+        if (profiles != null) {
+            for (Map.Entry<String, SmiteSettings> entry : profiles.entrySet()) {
+                String name = normalizeProfileName(entry.getKey());
+                if (name.isEmpty()) {
+                    continue;
+                }
+                SmiteSettings settings = entry.getValue() == null ? defaultSmiteSettings() : entry.getValue();
+                validateStormArrowSettings(settings);
+                validated.put(uniqueProfileName(validated, name), settings);
+            }
+        }
+        if (validated.isEmpty()) {
+            SmiteSettings settings = copyOf(migrationSettings == null ? defaultSmiteSettings() : migrationSettings);
+            validateStormArrowSettings(settings);
+            validated.put(DEFAULT_PROFILE, settings);
+        }
+        return validated;
+    }
+
     private static String validateSelectedProfile(String selectedProfile, LinkedHashMap<String, BeamSettings> profiles) {
         String normalized = normalizeProfileName(selectedProfile);
         if (!normalized.isEmpty() && profiles.containsKey(normalized)) {
@@ -218,12 +245,21 @@ public final class ArcaneBeamConfig {
         return profiles.keySet().iterator().next();
     }
 
+    private static String validateSelectedSmiteProfile(String selectedProfile, LinkedHashMap<String, SmiteSettings> profiles) {
+        String normalized = normalizeProfileName(selectedProfile);
+        if (!normalized.isEmpty() && profiles.containsKey(normalized)) {
+            return normalized;
+        }
+        return profiles.keySet().iterator().next();
+    }
+
     private static void activateSelectedProfiles() {
         INSTANCE.arcane = INSTANCE.arcaneProfiles.get(INSTANCE.selectedArcaneProfile);
         INSTANCE.rail = INSTANCE.railProfiles.get(INSTANCE.selectedRailProfile);
         INSTANCE.lightningStrike = INSTANCE.lightningStrikeProfiles.get(INSTANCE.selectedLightningStrikeProfile);
         INSTANCE.vaultAltar = INSTANCE.vaultAltarProfiles.get(INSTANCE.selectedVaultAltarProfile);
         INSTANCE.stormArrow = INSTANCE.stormArrowProfiles.get(INSTANCE.selectedStormArrowProfile);
+        INSTANCE.smite = INSTANCE.smiteProfiles.get(INSTANCE.selectedSmiteProfile);
         INSTANCE.shaderCompatibility = INSTANCE.arcane.shaderCompatibility;
     }
 
@@ -242,6 +278,9 @@ public final class ArcaneBeamConfig {
         }
         if (INSTANCE.stormArrowProfiles != null && INSTANCE.selectedStormArrowProfile != null && INSTANCE.stormArrow != null) {
             INSTANCE.stormArrowProfiles.put(INSTANCE.selectedStormArrowProfile, INSTANCE.stormArrow);
+        }
+        if (INSTANCE.smiteProfiles != null && INSTANCE.selectedSmiteProfile != null && INSTANCE.smite != null) {
+            INSTANCE.smiteProfiles.put(INSTANCE.selectedSmiteProfile, INSTANCE.smite);
         }
     }
 
@@ -513,6 +552,14 @@ public final class ArcaneBeamConfig {
         return INSTANCE.selectedStormArrowProfile;
     }
 
+    public static List<String> smiteProfileNames() {
+        return new ArrayList<>(INSTANCE.smiteProfiles.keySet());
+    }
+
+    public static String selectedSmiteProfileName() {
+        return INSTANCE.selectedSmiteProfile;
+    }
+
     public static void selectProfile(boolean rail, String profileName) {
         LinkedHashMap<String, BeamSettings> profiles = profileMap(rail);
         String normalized = normalizeProfileName(profileName);
@@ -631,6 +678,33 @@ public final class ArcaneBeamConfig {
         INSTANCE.stormArrowProfiles.put(profileName, settings);
         INSTANCE.selectedStormArrowProfile = profileName;
         INSTANCE.stormArrow = settings;
+        save();
+        return profileName;
+    }
+
+    public static void selectSmiteProfile(String profileName) {
+        String normalized = normalizeProfileName(profileName);
+        if (normalized.isEmpty() || !INSTANCE.smiteProfiles.containsKey(normalized)) {
+            return;
+        }
+        syncActiveProfiles();
+        INSTANCE.selectedSmiteProfile = normalized;
+        INSTANCE.smite = INSTANCE.smiteProfiles.get(normalized);
+        save();
+    }
+
+    public static String addSmiteProfile(String requestedName) {
+        String baseName = normalizeProfileName(requestedName);
+        if (baseName.isEmpty()) {
+            baseName = "Profile";
+        }
+        syncActiveProfiles();
+        String profileName = uniqueProfileName(INSTANCE.smiteProfiles, baseName);
+        SmiteSettings settings = copyOf(INSTANCE.smite);
+        validateStormArrowSettings(settings);
+        INSTANCE.smiteProfiles.put(profileName, settings);
+        INSTANCE.selectedSmiteProfile = profileName;
+        INSTANCE.smite = settings;
         save();
         return profileName;
     }
@@ -796,6 +870,34 @@ public final class ArcaneBeamConfig {
         return copy;
     }
 
+    private static SmiteSettings copyOf(SmiteSettings source) {
+        SmiteSettings copy = new SmiteSettings();
+        copy.enabled = source.enabled;
+        copy.showTargetingCircle = source.showTargetingCircle;
+        copy.useActualRadius = source.useActualRadius;
+        copy.circleColor = source.circleColor;
+        copy.circleAlpha = source.circleAlpha;
+        copy.circleThickness = source.circleThickness;
+        copy.blasterColor = source.blasterColor;
+        copy.coreColor = source.coreColor;
+        copy.blasterAlpha = source.blasterAlpha;
+        copy.blasterWidth = source.blasterWidth;
+        copy.segmentLength = source.segmentLength;
+        copy.segmentGap = source.segmentGap;
+        copy.lifetimeTicks = source.lifetimeTicks;
+        copy.originHeight = source.originHeight;
+        copy.impactFlashEnabled = source.impactFlashEnabled;
+        copy.impactFlashColor = source.impactFlashColor;
+        copy.impactFlashSize = source.impactFlashSize;
+        copy.fullbright = source.fullbright;
+        copy.shaderCompatibility = source.shaderCompatibility;
+        copy.soundMode = source.soundMode;
+        copy.projectileSoundMode = source.projectileSoundMode;
+        copy.soundVolume = source.soundVolume;
+        copy.audioRange = source.audioRange;
+        return copy;
+    }
+
     public static final class Config {
         public String shaderCompatibility;
         public String selectedArcaneProfile = DEFAULT_PROFILE;
@@ -803,16 +905,19 @@ public final class ArcaneBeamConfig {
         public String selectedLightningStrikeProfile = DEFAULT_PROFILE;
         public String selectedVaultAltarProfile = DEFAULT_PROFILE;
         public String selectedStormArrowProfile = DEFAULT_PROFILE;
+        public String selectedSmiteProfile = DEFAULT_PROFILE;
         public BeamSettings arcane = defaultArcaneSettings();
         public BeamSettings rail = defaultRailSettings();
         public LightningStrikeSettings lightningStrike = defaultLightningStrikeSettings();
         public VaultAltarSettings vaultAltar = defaultVaultAltarSettings();
         public StormArrowSettings stormArrow = defaultStormArrowSettings();
+        public SmiteSettings smite = defaultSmiteSettings();
         public LinkedHashMap<String, BeamSettings> arcaneProfiles;
         public LinkedHashMap<String, BeamSettings> railProfiles;
         public LinkedHashMap<String, LightningStrikeSettings> lightningStrikeProfiles;
         public LinkedHashMap<String, VaultAltarSettings> vaultAltarProfiles;
         public LinkedHashMap<String, StormArrowSettings> stormArrowProfiles;
+        public LinkedHashMap<String, SmiteSettings> smiteProfiles;
     }
 
     public static final class BeamSettings {
@@ -981,34 +1086,41 @@ public final class ArcaneBeamConfig {
         return new VaultAltarSettings();
     }
 
-    public static final class StormArrowSettings {
+    public static class StormArrowSettings {
         public boolean enabled = true;
         public boolean showTargetingCircle = true;
         public boolean useActualRadius = true;
-        public int circleColor = 0xFF2020;
-        public float circleAlpha = 0.72F;
-        public float circleThickness = 0.20F;
-        public int blasterColor = 0xFF5A16;
-        public int coreColor = 0xFFE6B0;
-        public float blasterAlpha = 0.92F;
-        public float blasterWidth = 0.11F;
-        public float segmentLength = 2.4F;
-        public float segmentGap = 0.0F;
+        public int circleColor = 16719904;
+        public float circleAlpha = 0.7605634F;
+        public float circleThickness = 0.29605633F;
+        public int blasterColor = 16715021;
+        public int coreColor = 16250892;
+        public float blasterAlpha = 0.8802817F;
+        public float blasterWidth = 0.17035212F;
+        public float segmentLength = 8.480282F;
+        public float segmentGap = 0.8F;
         public int lifetimeTicks = 5;
-        public float originHeight = 24.0F;
+        public float originHeight = 18.0F;
         public boolean impactFlashEnabled = true;
         public int impactFlashColor = 0xFFFFFF;
-        public float impactFlashSize = 0.75F;
+        public float impactFlashSize = 0.49766666F;
         public boolean fullbright = true;
         public String shaderCompatibility = ShaderCompatibility.ON.id;
-        public String soundMode = StormArrowSoundMode.DEFAULT.id;
+        public String soundMode = StormArrowSoundMode.BLASTER.id;
         public String projectileSoundMode = StormArrowProjectileSoundMode.OPTION_1.id;
         public float soundVolume = 1.0F;
-        public int audioRange = 16;
+        public int audioRange = 32;
     }
 
     private static StormArrowSettings defaultStormArrowSettings() {
         return new StormArrowSettings();
+    }
+
+    public static final class SmiteSettings extends StormArrowSettings {
+    }
+
+    private static SmiteSettings defaultSmiteSettings() {
+        return new SmiteSettings();
     }
 
     public enum LightningSoundMode {

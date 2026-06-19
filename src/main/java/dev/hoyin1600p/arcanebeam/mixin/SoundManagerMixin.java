@@ -2,6 +2,7 @@ package dev.hoyin1600p.arcanebeam.mixin;
 
 import dev.hoyin1600p.arcanebeam.client.ArcaneBeamManager;
 import dev.hoyin1600p.arcanebeam.client.LightningStrikeShockwaveManager;
+import dev.hoyin1600p.arcanebeam.client.SmiteVisualManager;
 import dev.hoyin1600p.arcanebeam.client.StormArrowVisualManager;
 import dev.hoyin1600p.arcanebeam.client.VaultAltarBeamManager;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -25,6 +26,8 @@ public abstract class SoundManagerMixin {
     private static final ResourceLocation STORM_ARROW_PROJECTILE = new ResourceLocation("minecraft", "item.crossbow.shoot");
     private static final ResourceLocation STORM_ARROW_PROJECTILE_ARROW_FALLBACK = new ResourceLocation("minecraft", "entity.arrow.shoot");
     private static final ResourceLocation STORM_ARROW_STRIKE = new ResourceLocation("the_vault", "smite_bolt");
+    private static final ResourceLocation SMITE_ACTIVATION = new ResourceLocation("the_vault", "smite");
+    private static final ResourceLocation SMITE_STRIKE = new ResourceLocation("the_vault", "smite_bolt");
 
     @Inject(method = "play", at = @At("HEAD"), cancellable = true)
     private void arcanebeam$suppressAbilitySounds(SoundInstance sound, CallbackInfo ci) {
@@ -60,8 +63,18 @@ public abstract class SoundManagerMixin {
             ci.cancel();
             return;
         }
+        if (SMITE_ACTIVATION.equals(sound.getLocation())
+                && SmiteVisualManager.handleSmiteActivationSound(sound.getX(), sound.getY(), sound.getZ())) {
+            ci.cancel();
+            return;
+        }
         if (LIGHTNING_IMPACT.equals(sound.getLocation())
                 && LightningStrikeShockwaveManager.handleLightningImpactSound(sound.getX(), sound.getY(), sound.getZ())) {
+            ci.cancel();
+            return;
+        }
+        if (SMITE_STRIKE.equals(sound.getLocation())
+                && SmiteVisualManager.handleSmiteStrikeSound(sound.getX(), sound.getY(), sound.getZ())) {
             ci.cancel();
             return;
         }

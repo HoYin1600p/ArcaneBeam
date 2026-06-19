@@ -124,5 +124,59 @@
         "stream": false
       }
     ]
+  },
+  "smite_1": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/smite_1",
+        "stream": false
+      }
+    ]
+  },
+  "smite_activation": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/smite_activation",
+        "stream": false
+      }
+    ]
+  },
+  "smite_resourcepack_1": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/smite_resourcepack_1",
+        "stream": false
+      }
+    ]
+  },
+  "smite_resourcepack_2": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/smite_resourcepack_2",
+        "stream": false
+      }
+    ]
+  },
+  "smite_activation_resourcepack_1": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/smite_activation_resourcepack_1",
+        "stream": false
+      }
+    ]
+  },
+  "smite_activation_resourcepack_2": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/smite_activation_resourcepack_2",
+        "stream": false
+      }
+    ]
   }
 }

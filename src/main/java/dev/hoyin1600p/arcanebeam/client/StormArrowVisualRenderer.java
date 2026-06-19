@@ -30,16 +30,16 @@ public class StormArrowVisualRenderer extends RenderType {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
     }
 
-    public static void render(PoseStack poseStack, Vec3 cameraPosition, float partialTick, Collection<StormArrowVisualManager.ActiveStorm> activeStorms, Collection<StormArrowVisualManager.ActiveBlasterStrike> activeStrikes) {
+    public static void render(PoseStack poseStack, Vec3 cameraPosition, float partialTick, Collection<? extends CircleVisual> activeStorms, Collection<? extends StrikeVisual> activeStrikes) {
         MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
         poseStack.pushPose();
         poseStack.translate(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z);
 
-        for (StormArrowVisualManager.ActiveStorm storm : activeStorms) {
+        for (CircleVisual storm : activeStorms) {
             renderStormCircle(poseStack, buffer, storm);
         }
         long gameTime = Minecraft.getInstance().level == null ? 0L : Minecraft.getInstance().level.getGameTime();
-        for (StormArrowVisualManager.ActiveBlasterStrike strike : activeStrikes) {
+        for (StrikeVisual strike : activeStrikes) {
             renderBlasterStrike(poseStack, buffer, strike, gameTime, partialTick);
         }
 
@@ -48,7 +48,7 @@ public class StormArrowVisualRenderer extends RenderType {
         buffer.endBatch(SHADER_SAFE);
     }
 
-    private static void renderStormCircle(PoseStack poseStack, MultiBufferSource buffer, StormArrowVisualManager.ActiveStorm storm) {
+    private static void renderStormCircle(PoseStack poseStack, MultiBufferSource buffer, CircleVisual storm) {
         StormArrowVisualManager.StormArrowRenderSettings settings = storm.settings();
         if (!settings.showTargetingCircle() || settings.circleAlpha() <= 0.001F) {
             return;
@@ -101,7 +101,7 @@ public class StormArrowVisualRenderer extends RenderType {
         addRawVertex(pose, normal, builder, rgb, alpha, x2 + ox, 0.006F, z2 + oz, 1.0F, 0.0F, shaderCompatibility, fullbright, Vector3f.YP);
     }
 
-    private static void renderBlasterStrike(PoseStack poseStack, MultiBufferSource buffer, StormArrowVisualManager.ActiveBlasterStrike strike, long gameTime, float partialTick) {
+    private static void renderBlasterStrike(PoseStack poseStack, MultiBufferSource buffer, StrikeVisual strike, long gameTime, float partialTick) {
         StormArrowVisualManager.StormArrowRenderSettings settings = strike.settings();
         float progress = strike.progress(gameTime, partialTick);
         if (progress >= 1.0F || settings.blasterAlpha() <= 0.001F) {
@@ -269,5 +269,21 @@ public class StormArrowVisualRenderer extends RenderType {
                 .setWriteMaskState(COLOR_DEPTH_WRITE)
                 .createCompositeState(false);
         return RenderType.create("arcane_beam_" + type, DefaultVertexFormat.BLOCK, VertexFormat.Mode.QUADS, 512, false, true, state);
+    }
+
+    public interface CircleVisual {
+        StormArrowVisualManager.StormArrowRenderSettings settings();
+
+        Vec3 groundCenter();
+
+        float radius();
+    }
+
+    public interface StrikeVisual {
+        StormArrowVisualManager.StormArrowRenderSettings settings();
+
+        Vec3 impact();
+
+        float progress(long gameTime, float partialTick);
     }
 }

@@ -226,7 +226,7 @@ public final class StormArrowVisualManager {
         StormArrowVisualRenderer.render(event.getPoseStack(), event.getCamera().getPosition(), event.getPartialTick(), activeStorms.values(), activeStrikes.values());
     }
 
-    public record ActiveStorm(VaultStormEntity entity, StormArrowRenderSettings settings) {
+    public record ActiveStorm(VaultStormEntity entity, StormArrowRenderSettings settings) implements StormArrowVisualRenderer.CircleVisual {
         public Vec3 groundCenter() {
             return new Vec3(entity.getX(), entity.getY() - STORM_ENTITY_VERTICAL_OFFSET + 0.08D, entity.getZ());
         }
@@ -236,7 +236,7 @@ public final class StormArrowVisualManager {
         }
     }
 
-    public record ActiveBlasterStrike(Vec3 impact, long startGameTime, StormArrowRenderSettings settings) {
+    public record ActiveBlasterStrike(Vec3 impact, long startGameTime, StormArrowRenderSettings settings) implements StormArrowVisualRenderer.StrikeVisual {
         public float age(long gameTime, float partialTick) {
             return Math.max(0.0F, gameTime - startGameTime + partialTick);
         }
@@ -266,7 +266,7 @@ public final class StormArrowVisualManager {
             boolean fullbright,
             String shaderCompatibility
     ) {
-        private static StormArrowRenderSettings from(ArcaneBeamConfig.StormArrowSettings settings) {
+        public static StormArrowRenderSettings from(ArcaneBeamConfig.StormArrowSettings settings) {
             return new StormArrowRenderSettings(
                     settings.showTargetingCircle,
                     settings.useActualRadius,

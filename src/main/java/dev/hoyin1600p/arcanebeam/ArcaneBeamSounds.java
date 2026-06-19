@@ -29,6 +29,12 @@ public final class ArcaneBeamSounds {
     public static final RegistryObject<SoundEvent> STORM_ARROW_RESOURCEPACK_2 = register("storm_arrow_resourcepack_2");
     public static final RegistryObject<SoundEvent> STORM_ARROW_PROJECTILE_RESOURCEPACK_1 = register("storm_arrow_projectile_resourcepack_1");
     public static final RegistryObject<SoundEvent> STORM_ARROW_PROJECTILE_RESOURCEPACK_2 = register("storm_arrow_projectile_resourcepack_2");
+    public static final RegistryObject<SoundEvent> SMITE_1 = register("smite_1");
+    public static final RegistryObject<SoundEvent> SMITE_ACTIVATION = register("smite_activation");
+    public static final RegistryObject<SoundEvent> SMITE_RESOURCEPACK_1 = register("smite_resourcepack_1");
+    public static final RegistryObject<SoundEvent> SMITE_RESOURCEPACK_2 = register("smite_resourcepack_2");
+    public static final RegistryObject<SoundEvent> SMITE_ACTIVATION_RESOURCEPACK_1 = register("smite_activation_resourcepack_1");
+    public static final RegistryObject<SoundEvent> SMITE_ACTIVATION_RESOURCEPACK_2 = register("smite_activation_resourcepack_2");
 
     private ArcaneBeamSounds() {
     }
