@@ -47,6 +47,9 @@ public final class SmiteVisualManager {
         }
 
         Vec3 impact = smiteBolt.position();
+        if (LightningStrikeShockwaveManager.shouldSuppressVaultLightningVisual(impact)) {
+            return true;
+        }
         long now = gameTime();
         if (now == lastStrikeVisualGameTime) {
             return true;

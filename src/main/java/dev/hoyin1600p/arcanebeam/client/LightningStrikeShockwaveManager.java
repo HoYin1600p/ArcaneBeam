@@ -25,7 +25,7 @@ public final class LightningStrikeShockwaveManager {
     private static final long PENDING_LIGHTNING_STRIKE_TICKS = 100L;
     private static final double CAST_SOUND_SUPPRESSION_DISTANCE_SQR = 16.0D;
     private static final double IMPACT_SOUND_SUPPRESSION_DISTANCE_SQR = 16.0D;
-    private static final double VAULT_LIGHTNING_VISUAL_SUPPRESSION_DISTANCE_SQR = 16.0D;
+    private static final double VAULT_LIGHTNING_VISUAL_SUPPRESSION_DISTANCE_SQR = 4096.0D;
     private static final double PENDING_LIGHTNING_STRIKE_DISTANCE_SQR = 16.0D;
     private static final List<ActiveShockwave> activeShockwaves = new ArrayList<>();
     private static final List<ChainLightningAbility.ChainLightningProjectile> activeProjectiles = new ArrayList<>();
@@ -170,7 +170,7 @@ public final class LightningStrikeShockwaveManager {
         return settings != null && settings.enabled;
     }
 
-    private static boolean shouldSuppressVaultLightningVisual(Vec3 position) {
+    public static boolean shouldSuppressVaultLightningVisual(Vec3 position) {
         Minecraft minecraft = Minecraft.getInstance();
         ClientLevel level = minecraft.level;
         ArcaneBeamConfig.LightningStrikeSettings settings = ArcaneBeamConfig.INSTANCE.lightningStrike;
