@@ -9,6 +9,7 @@
     "ChainLightningProjectileMixin",
     "ClientLevelMixin",
     "LightningArrowRendererMixin",
+    "SmiteBoltAccessor",
     "SmiteBoltRendererMixin",
     "SoundManagerMixin",
     "StormArrowRendererMixin",

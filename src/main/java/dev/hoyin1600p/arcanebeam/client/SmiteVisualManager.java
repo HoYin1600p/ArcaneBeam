@@ -1,6 +1,7 @@
 package dev.hoyin1600p.arcanebeam.client;
 
 import dev.hoyin1600p.arcanebeam.ArcaneBeam;
+import dev.hoyin1600p.arcanebeam.mixin.SmiteBoltAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
@@ -47,8 +48,9 @@ public final class SmiteVisualManager {
         }
 
         Vec3 impact = smiteBolt.position();
-        if (LightningStrikeShockwaveManager.shouldSuppressVaultLightningVisual(impact)) {
-            return true;
+        int boltColor = smiteBoltColor(smiteBolt);
+        if (boltColor == 0) {
+            return LightningStrikeShockwaveManager.shouldSuppressVaultLightningVisual(impact);
         }
         long now = gameTime();
         if (now == lastStrikeVisualGameTime) {
@@ -67,6 +69,15 @@ public final class SmiteVisualManager {
             );
         });
         return true;
+    }
+
+    private static int smiteBoltColor(Entity smiteBolt) {
+        try {
+            Integer color = smiteBolt.getEntityData().get(SmiteBoltAccessor.arcanebeam$getColorAccessor());
+            return color == null ? 0 : color;
+        } catch (RuntimeException error) {
+            return 0;
+        }
     }
 
     public static boolean handleSmiteActivationSound(double x, double y, double z) {
