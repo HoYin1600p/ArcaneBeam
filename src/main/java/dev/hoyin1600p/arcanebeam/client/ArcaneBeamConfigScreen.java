@@ -103,6 +103,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     private Button altarEnabledButton;
     private Button altarShaderCompatibilityButton;
     private Button altarFullbrightButton;
+    private Button altarOriginMarkersButton;
     private Button altarSoundButton;
     private EditBox altarVerticalTicksBox;
     private EditBox altarConvergeTicksBox;
@@ -454,6 +455,11 @@ public class ArcaneBeamConfigScreen extends Screen {
             refreshControls();
             ArcaneBeamConfig.save();
         }));
+        altarOriginMarkersButton = this.addRenderableWidget(new Button(x, controlY + 280, 150, 20, TextComponent.EMPTY, button -> {
+            vaultAltarSettings().originMarkersEnabled = !vaultAltarSettings().originMarkersEnabled;
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
         altarVerticalTicksBox = addAltarNumberBox(x, controlY + 224, 42, 2, "Vertical", "[0-9]{0,2}", this::updateAltarVerticalTicksFromText);
         altarConvergeTicksBox = addAltarNumberBox(x + 108, controlY + 224, 42, 3, "Converge", "[0-9]{0,3}", this::updateAltarConvergeTicksFromText);
         altarCenterGrowTicksBox = addAltarNumberBox(x + 222, controlY + 224, 42, 3, "Grow", "[0-9]{0,3}", this::updateAltarCenterGrowTicksFromText);
@@ -621,8 +627,8 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     private EditBox addAltarDecimalBox(int x, int y, Consumer<String> responder) {
         EditBox editBox = new EditBox(this.font, x + 58, y, 50, 20, new TextComponent("Altar Decimal"));
-        editBox.setMaxLength(4);
-        editBox.setFilter(value -> value.isEmpty() || value.matches("[0-9]{0,2}(\\.[0-9]?)?"));
+        editBox.setMaxLength(5);
+        editBox.setFilter(value -> value.isEmpty() || value.matches("[0-9]{0,2}(\\.[0-9]{0,2})?"));
         editBox.setResponder(responder);
         this.addRenderableWidget(editBox);
         return editBox;
@@ -803,13 +809,15 @@ public class ArcaneBeamConfigScreen extends Screen {
             return true;
         }
         if (vaultAltarSelected && altarOriginHeightBox != null && altarOriginHeightBox.isMouseOver(layoutMouseX, layoutMouseY)) {
-            nudgeAltarOriginHeight(delta > 0.0D ? 0.1D : -0.1D);
+            double step = hasShiftDown() ? 0.10D : 0.01D;
+            nudgeAltarOriginHeight(delta > 0.0D ? step : -step);
             refreshAltarOriginBoxes();
             ArcaneBeamConfig.save();
             return true;
         }
         if (vaultAltarSelected && altarOriginRadiusBox != null && altarOriginRadiusBox.isMouseOver(layoutMouseX, layoutMouseY)) {
-            nudgeAltarOriginRadius(delta > 0.0D ? 0.1D : -0.1D);
+            double step = hasShiftDown() ? 0.10D : 0.01D;
+            nudgeAltarOriginRadius(delta > 0.0D ? step : -step);
             refreshAltarOriginBoxes();
             ArcaneBeamConfig.save();
             return true;
@@ -1442,6 +1450,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         setVisible(altarEnabledButton, vaultAltarSelected);
         setVisible(altarShaderCompatibilityButton, vaultAltarSelected);
         setVisible(altarFullbrightButton, vaultAltarSelected);
+        setVisible(altarOriginMarkersButton, vaultAltarSelected);
         setVisible(altarSoundButton, vaultAltarSelected);
         setVisible(altarCornerRadiusSlider, vaultAltarSelected);
         setVisible(altarCornerOpacitySlider, vaultAltarSelected);
@@ -1547,10 +1556,12 @@ public class ArcaneBeamConfigScreen extends Screen {
         altarEnabledButton.setMessage(new TextComponent("Replacement: " + (settings.enabled ? "On" : "Off")));
         altarShaderCompatibilityButton.setMessage(new TextComponent("Shader Compatibility: " + vaultAltarShaderCompatibility().label));
         altarFullbrightButton.setMessage(new TextComponent("Fullbright: " + (settings.fullbright ? "On" : "Off")));
+        altarOriginMarkersButton.setMessage(new TextComponent("Origin Markers: " + (settings.originMarkersEnabled ? "On" : "Off")));
         altarSoundButton.setMessage(new TextComponent("Sound: " + vaultAltarSoundMode().label));
         fitButton(altarEnabledButton, 150);
         fitButton(altarShaderCompatibilityButton, 150);
         fitButton(altarFullbrightButton, 150);
+        fitButton(altarOriginMarkersButton, 150);
         fitButton(altarSoundButton, 150);
         altarCornerRadiusSlider.refresh();
         altarCornerOpacitySlider.refresh();
@@ -1897,7 +1908,7 @@ public class ArcaneBeamConfigScreen extends Screen {
             return;
         }
         try {
-            vaultAltarSettings().cornerOriginHeight = clampTenths((float) roundTenths(Double.parseDouble(value)), 0.0F, 15.0F);
+            vaultAltarSettings().cornerOriginHeight = clampHundredths((float) roundHundredths(Double.parseDouble(value)), 0.0F, 15.0F);
             ArcaneBeamConfig.save();
         } catch (NumberFormatException ignored) {
         }
@@ -1908,7 +1919,7 @@ public class ArcaneBeamConfigScreen extends Screen {
             return;
         }
         try {
-            vaultAltarSettings().cornerOriginRadius = clampTenths((float) roundTenths(Double.parseDouble(value)), 0.0F, 15.0F);
+            vaultAltarSettings().cornerOriginRadius = clampHundredths((float) roundHundredths(Double.parseDouble(value)), 0.0F, 15.0F);
             ArcaneBeamConfig.save();
         } catch (NumberFormatException ignored) {
         }
@@ -2008,11 +2019,11 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void nudgeAltarOriginHeight(double amount) {
-        vaultAltarSettings().cornerOriginHeight = clampTenths((float) roundTenths(vaultAltarSettings().cornerOriginHeight + amount), 0.0F, 15.0F);
+        vaultAltarSettings().cornerOriginHeight = clampHundredths((float) roundHundredths(vaultAltarSettings().cornerOriginHeight + amount), 0.0F, 15.0F);
     }
 
     private void nudgeAltarOriginRadius(double amount) {
-        vaultAltarSettings().cornerOriginRadius = clampTenths((float) roundTenths(vaultAltarSettings().cornerOriginRadius + amount), 0.0F, 15.0F);
+        vaultAltarSettings().cornerOriginRadius = clampHundredths((float) roundHundredths(vaultAltarSettings().cornerOriginRadius + amount), 0.0F, 15.0F);
     }
 
     private void nudgeFadeInTicks(int amount) {
@@ -2071,10 +2082,10 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     private void refreshAltarOriginBoxes() {
         if (altarOriginHeightBox != null) {
-            altarOriginHeightBox.setValue(formatTenths(vaultAltarSettings().cornerOriginHeight));
+            altarOriginHeightBox.setValue(formatHundredths(vaultAltarSettings().cornerOriginHeight));
         }
         if (altarOriginRadiusBox != null) {
-            altarOriginRadiusBox.setValue(formatTenths(vaultAltarSettings().cornerOriginRadius));
+            altarOriginRadiusBox.setValue(formatHundredths(vaultAltarSettings().cornerOriginRadius));
         }
     }
 
@@ -2338,7 +2349,19 @@ public class ArcaneBeamConfigScreen extends Screen {
         return Math.round(value * 10.0D) / 10.0D;
     }
 
+    private static String formatHundredths(double value) {
+        return String.format(Locale.ROOT, "%.2f", value);
+    }
+
+    private static double roundHundredths(double value) {
+        return Math.round(value * 100.0D) / 100.0D;
+    }
+
     private static float clampTenths(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private static float clampHundredths(float value, float min, float max) {
         return Math.max(min, Math.min(max, value));
     }
 

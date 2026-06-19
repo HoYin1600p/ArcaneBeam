@@ -17,9 +17,11 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = ArcaneBeam.MOD_ID, value = Dist.CLIENT)
@@ -30,7 +32,12 @@ public final class VaultAltarBeamManager {
     private static final double ALTAR_COMPLETION_DUST_TOLERANCE_SQR = 4.0D;
     private static final double ALTAR_SOUND_TOLERANCE_SQR = 9.0D;
     private static final double ALTAR_TOP_OFFSET = 17.25D / 16.0D;
+    private static final int ORIGIN_MARKER_SCAN_INTERVAL_TICKS = 10;
+    private static final int ORIGIN_MARKER_HORIZONTAL_RADIUS = 32;
+    private static final int ORIGIN_MARKER_VERTICAL_RADIUS = 16;
     private static final Map<BlockPos, ActiveAltarBeam> activeBeams = new LinkedHashMap<>();
+    private static final List<BlockPos> originMarkerAltars = new ArrayList<>();
+    private static long nextOriginMarkerScanGameTime = Long.MIN_VALUE;
 
     private VaultAltarBeamManager() {
     }
@@ -189,10 +196,13 @@ public final class VaultAltarBeamManager {
         ClientLevel level = minecraft.level;
         if (level == null) {
             activeBeams.clear();
+            originMarkerAltars.clear();
+            nextOriginMarkerScanGameTime = Long.MIN_VALUE;
             return;
         }
 
         long gameTime = level.getGameTime();
+        updateOriginMarkerAltars(minecraft, level, gameTime);
         Iterator<Map.Entry<BlockPos, ActiveAltarBeam>> iterator = activeBeams.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<BlockPos, ActiveAltarBeam> entry = iterator.next();
@@ -209,13 +219,60 @@ public final class VaultAltarBeamManager {
         }
     }
 
-    @SubscribeEvent
-    public static void onRenderLevelStage(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || activeBeams.isEmpty()) {
+    private static void updateOriginMarkerAltars(Minecraft minecraft, ClientLevel level, long gameTime) {
+        ArcaneBeamConfig.VaultAltarSettings settings = ArcaneBeamConfig.INSTANCE.vaultAltar;
+        if (settings == null || !settings.originMarkersEnabled) {
+            originMarkerAltars.clear();
+            nextOriginMarkerScanGameTime = Long.MIN_VALUE;
+            return;
+        }
+        if (minecraft.player == null) {
+            return;
+        }
+        if (gameTime < nextOriginMarkerScanGameTime) {
             return;
         }
 
-        VaultAltarBeamRenderer.render(event.getPoseStack(), event.getCamera().getPosition(), event.getPartialTick(), activeBeams.values());
+        nextOriginMarkerScanGameTime = gameTime + ORIGIN_MARKER_SCAN_INTERVAL_TICKS;
+        originMarkerAltars.clear();
+        BlockPos center = minecraft.player.blockPosition();
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+        int radiusSqr = ORIGIN_MARKER_HORIZONTAL_RADIUS * ORIGIN_MARKER_HORIZONTAL_RADIUS;
+        for (int dx = -ORIGIN_MARKER_HORIZONTAL_RADIUS; dx <= ORIGIN_MARKER_HORIZONTAL_RADIUS; dx++) {
+            for (int dz = -ORIGIN_MARKER_HORIZONTAL_RADIUS; dz <= ORIGIN_MARKER_HORIZONTAL_RADIUS; dz++) {
+                if (dx * dx + dz * dz > radiusSqr) {
+                    continue;
+                }
+                for (int dy = -ORIGIN_MARKER_VERTICAL_RADIUS; dy <= ORIGIN_MARKER_VERTICAL_RADIUS; dy++) {
+                    mutable.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
+                    if (level.getBlockEntity(mutable) instanceof VaultAltarTileEntity) {
+                        originMarkerAltars.add(mutable.immutable());
+                    }
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onRenderLevelStage(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+            return;
+        }
+
+        ArcaneBeamConfig.VaultAltarSettings settings = ArcaneBeamConfig.INSTANCE.vaultAltar;
+        boolean renderOriginMarkers = settings != null && settings.originMarkersEnabled && !originMarkerAltars.isEmpty();
+        if (activeBeams.isEmpty() && !renderOriginMarkers) {
+            return;
+        }
+
+        VaultAltarBeamRenderer.render(
+                event.getPoseStack(),
+                event.getCamera().getPosition(),
+                event.getPartialTick(),
+                activeBeams.values(),
+                renderOriginMarkers ? originMarkerAltars : List.of(),
+                renderOriginMarkers ? VaultAltarRenderSettings.from(settings) : null
+        );
     }
 
     public record ActiveAltarBeam(BlockPos pos, long startGameTime, long lastParticleGameTime, VaultAltarRenderSettings settings) {
