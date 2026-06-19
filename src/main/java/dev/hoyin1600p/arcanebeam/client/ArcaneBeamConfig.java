@@ -762,6 +762,7 @@ public final class ArcaneBeamConfig {
         copy.centerGlowRotationRpm = source.centerGlowRotationRpm;
         copy.fullbright = source.fullbright;
         copy.shaderCompatibility = source.shaderCompatibility;
+        copy.originMarkersEnabled = source.originMarkersEnabled;
         copy.soundMode = source.soundMode;
         copy.soundVolume = source.soundVolume;
         return copy;
@@ -971,6 +972,7 @@ public final class ArcaneBeamConfig {
         public float centerGlowRotationRpm = 35.6F;
         public boolean fullbright = true;
         public String shaderCompatibility = ShaderCompatibility.ON.id;
+        public boolean originMarkersEnabled = false;
         public String soundMode = VaultAltarSoundMode.ALTAR_1.id;
         public float soundVolume = 1.24F;
     }

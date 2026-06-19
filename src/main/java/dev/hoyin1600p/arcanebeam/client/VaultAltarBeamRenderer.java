@@ -22,6 +22,8 @@ import java.util.Collection;
 public class VaultAltarBeamRenderer extends RenderType {
     private static final int CYLINDER_SIDES = 8;
     private static final int SPARK_COUNT = 12;
+    private static final float ORIGIN_MARKER_SIZE = 0.28F;
+    private static final float ORIGIN_MARKER_THICKNESS = 0.035F;
     private static final double ALTAR_TOP_OFFSET = 17.25D / 16.0D;
     private static final double ALTAR_LOW_TOP_OFFSET = 16.0D / 16.0D;
     private static final double ALTAR_CORNER_TOP_OFFSET = 20.0D / 16.0D;
@@ -36,13 +38,16 @@ public class VaultAltarBeamRenderer extends RenderType {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
     }
 
-    public static void render(PoseStack poseStack, Vec3 cameraPosition, float partialTick, Collection<VaultAltarBeamManager.ActiveAltarBeam> activeBeams) {
+    public static void render(PoseStack poseStack, Vec3 cameraPosition, float partialTick, Collection<VaultAltarBeamManager.ActiveAltarBeam> activeBeams, Collection<BlockPos> originMarkerAltars, VaultAltarBeamManager.VaultAltarRenderSettings markerSettings) {
         MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
 
         poseStack.pushPose();
         poseStack.translate(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z);
         for (VaultAltarBeamManager.ActiveAltarBeam activeBeam : activeBeams) {
             renderAltar(poseStack, buffer, activeBeam, partialTick);
+        }
+        if (markerSettings != null && originMarkerAltars != null && !originMarkerAltars.isEmpty()) {
+            renderOriginMarkers(poseStack, buffer, cameraPosition, partialTick, originMarkerAltars, markerSettings);
         }
         poseStack.popPose();
 
@@ -68,8 +73,7 @@ public class VaultAltarBeamRenderer extends RenderType {
         double z = pos.getZ();
         double topY = y + ALTAR_TOP_OFFSET;
         double cornerTopY = y + ALTAR_CORNER_TOP_OFFSET;
-        double sourceY = topY + settings.cornerOriginHeight();
-        double sourceDiagonalOffset = settings.cornerOriginRadius() / Math.sqrt(2.0D);
+        Vec3[] origins = cornerOrigins(pos, settings);
 
         int cornerColor = animatedColor(settings.cornerColors(), age);
         float[] cornerRgb = rgb(cornerColor);
@@ -78,10 +82,10 @@ public class VaultAltarBeamRenderer extends RenderType {
         float convergeProgress = convergenceProgress(age, settings);
 
         Vec3 center = new Vec3(x + 0.5D, topY, z + 0.5D);
-        renderCornerBeamWithSparks(poseStack, main, solid, cornerOrigin(center, sourceY, -sourceDiagonalOffset, -sourceDiagonalOffset), new Vec3(x, cornerTopY, z), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 0, shaderCompatibility);
-        renderCornerBeamWithSparks(poseStack, main, solid, cornerOrigin(center, sourceY, sourceDiagonalOffset, -sourceDiagonalOffset), new Vec3(x + 1.0D, cornerTopY, z), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 1, shaderCompatibility);
-        renderCornerBeamWithSparks(poseStack, main, solid, cornerOrigin(center, sourceY, -sourceDiagonalOffset, sourceDiagonalOffset), new Vec3(x, cornerTopY, z + 1.0D), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 2, shaderCompatibility);
-        renderCornerBeamWithSparks(poseStack, main, solid, cornerOrigin(center, sourceY, sourceDiagonalOffset, sourceDiagonalOffset), new Vec3(x + 1.0D, cornerTopY, z + 1.0D), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 3, shaderCompatibility);
+        renderCornerBeamWithSparks(poseStack, main, solid, origins[0], new Vec3(x, cornerTopY, z), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 0, shaderCompatibility);
+        renderCornerBeamWithSparks(poseStack, main, solid, origins[1], new Vec3(x + 1.0D, cornerTopY, z), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 1, shaderCompatibility);
+        renderCornerBeamWithSparks(poseStack, main, solid, origins[2], new Vec3(x, cornerTopY, z + 1.0D), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 2, shaderCompatibility);
+        renderCornerBeamWithSparks(poseStack, main, solid, origins[3], new Vec3(x + 1.0D, cornerTopY, z + 1.0D), center, convergeProgress, cornerRgb, cornerAlpha, cornerRadius, age, 3, shaderCompatibility);
 
         float centerGrowth = centerGrowthProgress(age, settings);
         if (centerGrowth > 0.0F) {
@@ -89,8 +93,78 @@ public class VaultAltarBeamRenderer extends RenderType {
         }
     }
 
-    private static Vec3 cornerOrigin(Vec3 center, double sourceY, double offsetX, double offsetZ) {
-        return new Vec3(center.x + offsetX, sourceY, center.z + offsetZ);
+    private static Vec3[] cornerOrigins(BlockPos pos, VaultAltarBeamManager.VaultAltarRenderSettings settings) {
+        double topY = pos.getY() + ALTAR_TOP_OFFSET;
+        double sourceY = topY + settings.cornerOriginHeight();
+        double sourceDiagonalOffset = settings.cornerOriginRadius() / Math.sqrt(2.0D);
+        Vec3 center = new Vec3(pos.getX() + 0.5D, topY, pos.getZ() + 0.5D);
+        return new Vec3[]{
+                new Vec3(center.x - sourceDiagonalOffset, sourceY, center.z - sourceDiagonalOffset),
+                new Vec3(center.x + sourceDiagonalOffset, sourceY, center.z - sourceDiagonalOffset),
+                new Vec3(center.x - sourceDiagonalOffset, sourceY, center.z + sourceDiagonalOffset),
+                new Vec3(center.x + sourceDiagonalOffset, sourceY, center.z + sourceDiagonalOffset)
+        };
+    }
+
+    private static void renderOriginMarkers(PoseStack poseStack, MultiBufferSource buffer, Vec3 cameraPosition, float partialTick, Collection<BlockPos> altarPositions, VaultAltarBeamManager.VaultAltarRenderSettings settings) {
+        boolean shaderCompatibility = ArcaneBeamConfig.ShaderCompatibility.fromId(settings.shaderCompatibility()) == ArcaneBeamConfig.ShaderCompatibility.ON;
+        VertexConsumer solid = buffer.getBuffer(shaderCompatibility ? SHADER_SOLID_BEAM : SOLID_BEAM);
+        long gameTime = Minecraft.getInstance().level == null ? 0L : Minecraft.getInstance().level.getGameTime();
+        float age = gameTime + partialTick;
+        float[] rgb = rgb(animatedColor(settings.cornerColors(), age));
+        for (BlockPos pos : altarPositions) {
+            for (Vec3 origin : cornerOrigins(pos, settings)) {
+                renderOriginMarker(poseStack, solid, origin, cameraPosition, rgb, 0.95F, shaderCompatibility);
+            }
+        }
+    }
+
+    private static void renderOriginMarker(PoseStack poseStack, VertexConsumer builder, Vec3 origin, Vec3 cameraPosition, float[] rgb, float alpha, boolean shaderCompatibility) {
+        Vec3 view = cameraPosition.subtract(origin);
+        if (view.lengthSqr() <= 0.0001D) {
+            view = new Vec3(0.0D, 0.0D, 1.0D);
+        } else {
+            view = view.normalize();
+        }
+
+        Vec3 right = new Vec3(0.0D, 1.0D, 0.0D).cross(view);
+        if (right.lengthSqr() <= 0.0001D) {
+            right = new Vec3(1.0D, 0.0D, 0.0D);
+        } else {
+            right = right.normalize();
+        }
+        Vec3 up = view.cross(right).normalize();
+
+        renderMarkerBar(poseStack, builder, origin, right.add(up).normalize(), view, rgb, alpha, shaderCompatibility);
+        renderMarkerBar(poseStack, builder, origin, right.subtract(up).normalize(), view, rgb, alpha, shaderCompatibility);
+    }
+
+    private static void renderMarkerBar(PoseStack poseStack, VertexConsumer builder, Vec3 center, Vec3 axis, Vec3 view, float[] rgb, float alpha, boolean shaderCompatibility) {
+        Vec3 half = axis.scale(ORIGIN_MARKER_SIZE * 0.5D);
+        Vec3 side = axis.cross(view);
+        if (side.lengthSqr() <= 0.0001D) {
+            return;
+        }
+        side = side.normalize().scale(ORIGIN_MARKER_THICKNESS * 0.5D);
+
+        Vec3 p1 = center.subtract(half).subtract(side);
+        Vec3 p2 = center.subtract(half).add(side);
+        Vec3 p3 = center.add(half).add(side);
+        Vec3 p4 = center.add(half).subtract(side);
+        Matrix4f matrixPose = poseStack.last().pose();
+        if (shaderCompatibility) {
+            Vector3f normal = new Vector3f((float) view.x, (float) view.y, (float) view.z);
+            addLitPositionVertex(matrixPose, poseStack.last().normal(), builder, rgb[0], rgb[1], rgb[2], alpha, (float) p1.x, (float) p1.y, (float) p1.z, 0.0F, 1.0F, normal);
+            addLitPositionVertex(matrixPose, poseStack.last().normal(), builder, rgb[0], rgb[1], rgb[2], alpha, (float) p2.x, (float) p2.y, (float) p2.z, 1.0F, 1.0F, normal);
+            addLitPositionVertex(matrixPose, poseStack.last().normal(), builder, rgb[0], rgb[1], rgb[2], alpha, (float) p3.x, (float) p3.y, (float) p3.z, 1.0F, 0.0F, normal);
+            addLitPositionVertex(matrixPose, poseStack.last().normal(), builder, rgb[0], rgb[1], rgb[2], alpha, (float) p4.x, (float) p4.y, (float) p4.z, 0.0F, 0.0F, normal);
+            return;
+        }
+
+        addPositionVertex(matrixPose, builder, rgb[0], rgb[1], rgb[2], alpha, (float) p1.x, (float) p1.y, (float) p1.z, 0.0F, 1.0F);
+        addPositionVertex(matrixPose, builder, rgb[0], rgb[1], rgb[2], alpha, (float) p2.x, (float) p2.y, (float) p2.z, 1.0F, 1.0F);
+        addPositionVertex(matrixPose, builder, rgb[0], rgb[1], rgb[2], alpha, (float) p3.x, (float) p3.y, (float) p3.z, 1.0F, 0.0F);
+        addPositionVertex(matrixPose, builder, rgb[0], rgb[1], rgb[2], alpha, (float) p4.x, (float) p4.y, (float) p4.z, 0.0F, 0.0F);
     }
 
     private static void renderCornerBeamWithSparks(PoseStack poseStack, VertexConsumer main, VertexConsumer solid, Vec3 start, Vec3 verticalEnd, Vec3 centerEnd, float convergeProgress, float[] rgb, float alpha, float radius, float age, int cornerIndex, boolean shaderCompatibility) {
