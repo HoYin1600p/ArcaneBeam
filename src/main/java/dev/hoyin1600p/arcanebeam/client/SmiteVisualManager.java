@@ -35,6 +35,7 @@ public final class SmiteVisualManager {
     private static Vec3 lastActivationSoundPosition;
     private static long lastStrikeSoundGameTime = Long.MIN_VALUE;
     private static Vec3 lastStrikeSoundPosition;
+    private static long lastStrikeVisualGameTime = Long.MIN_VALUE;
 
     private SmiteVisualManager() {
     }
@@ -47,11 +48,15 @@ public final class SmiteVisualManager {
 
         Vec3 impact = smiteBolt.position();
         long now = gameTime();
+        if (now == lastStrikeVisualGameTime) {
+            return true;
+        }
         if (hasRecentStrikeAt(impact, now)) {
             return true;
         }
         activeStrikes.computeIfAbsent(smiteBolt.getId(), id -> {
             playSmiteStrikeOnce(Minecraft.getInstance(), impact);
+            lastStrikeVisualGameTime = now;
             return new ActiveSmiteStrike(
                     impact,
                     now,
@@ -92,6 +97,9 @@ public final class SmiteVisualManager {
 
         Vec3 position = new Vec3(x, y, z);
         long now = level.getGameTime();
+        if (now == lastStrikeSoundGameTime) {
+            return true;
+        }
         if (isDuplicate(now, position, lastStrikeSoundGameTime, lastStrikeSoundPosition)) {
             return true;
         }
@@ -167,6 +175,7 @@ public final class SmiteVisualManager {
             lastActivationSoundPosition = null;
             lastStrikeSoundGameTime = Long.MIN_VALUE;
             lastStrikeSoundPosition = null;
+            lastStrikeVisualGameTime = Long.MIN_VALUE;
             return;
         }
 
