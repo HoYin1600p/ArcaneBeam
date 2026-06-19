@@ -38,6 +38,7 @@ public final class SmiteVisualManager {
     private static long lastStrikeSoundGameTime = Long.MIN_VALUE;
     private static Vec3 lastStrikeSoundPosition;
     private static long lastStrikeVisualGameTime = Long.MIN_VALUE;
+    private static int nextSoundStrikeId = -1;
 
     private SmiteVisualManager() {
     }
@@ -133,7 +134,24 @@ public final class SmiteVisualManager {
         }
 
         playSmiteStrikeOnce(minecraft, position);
+        spawnSmiteStrikeVisual(position, now, settings);
         return true;
+    }
+
+    private static void spawnSmiteStrikeVisual(Vec3 impact, long now, ArcaneBeamConfig.SmiteSettings settings) {
+        if (now == lastStrikeVisualGameTime || hasRecentStrikeAt(impact, now)) {
+            return;
+        }
+
+        activeStrikes.put(nextSoundStrikeId--, new ActiveSmiteStrike(
+                impact,
+                now,
+                StormArrowVisualManager.StormArrowRenderSettings.from(settings)
+        ));
+        lastStrikeVisualGameTime = now;
+        if (nextSoundStrikeId == Integer.MIN_VALUE) {
+            nextSoundStrikeId = -1;
+        }
     }
 
     private static void playSmiteStrikeOnce(Minecraft minecraft, Vec3 position) {
@@ -196,6 +214,7 @@ public final class SmiteVisualManager {
             lastStrikeSoundGameTime = Long.MIN_VALUE;
             lastStrikeSoundPosition = null;
             lastStrikeVisualGameTime = Long.MIN_VALUE;
+            nextSoundStrikeId = -1;
             return;
         }
 
