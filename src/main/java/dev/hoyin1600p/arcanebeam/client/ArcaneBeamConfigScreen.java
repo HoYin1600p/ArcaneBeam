@@ -121,6 +121,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     private Button stormArrowProjectileSoundButton;
     private EditBox stormArrowLifetimeBox;
     private EditBox stormArrowOriginHeightBox;
+    private EditBox archonMissileRadiusBox;
     private EditBox stormArrowSoundVolumeBox;
     private EditBox stormArrowAudioRangeBox;
     private boolean profileDropdownOpen;
@@ -575,8 +576,9 @@ public class ArcaneBeamConfigScreen extends Screen {
         }));
         stormArrowLifetimeBox = addStormArrowNumberBox(x, y + 200, 54, 2, "Lifetime", "[0-9]{0,2}", this::updateStormArrowLifetimeFromText);
         stormArrowOriginHeightBox = addStormArrowNumberBox(x + 158, y + 200, 54, 4, "Height", "[0-9]{0,2}(\\.[0-9]?)?", this::updateStormArrowOriginHeightFromText);
+        archonMissileRadiusBox = addStormArrowNumberBox(x + 158, y + 228, 54, 4, "Radius", "[0-9]{0,2}(\\.[0-9]?)?", this::updateArchonMissileRadiusFromText);
         stormArrowAudioRangeBox = addStormArrowAudioRangeBox(x, y + 228);
-        stormArrowSoundVolumeBox = addStormArrowSoundVolumeBox(x + 208, y + 228);
+        stormArrowSoundVolumeBox = addStormArrowSoundVolumeBox(x + 208, y + 256);
     }
 
     private void updateLayoutScale() {
@@ -848,6 +850,13 @@ public class ArcaneBeamConfigScreen extends Screen {
             ArcaneBeamConfig.save();
             return true;
         }
+        if (archonSelected && archonMissileRadiusBox != null && archonMissileRadiusBox.isMouseOver(layoutMouseX, layoutMouseY)) {
+            double step = hasShiftDown() ? 1.0D : 0.1D;
+            nudgeArchonMissileRadius(delta > 0.0D ? step : -step);
+            refreshStormArrowControls();
+            ArcaneBeamConfig.save();
+            return true;
+        }
         if (vaultAltarSelected && altarOriginHeightBox != null && altarOriginHeightBox.isMouseOver(layoutMouseX, layoutMouseY)) {
             double step = hasShiftDown() ? 0.10D : 0.01D;
             nudgeAltarOriginHeight(delta > 0.0D ? step : -step);
@@ -1105,6 +1114,9 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
         drawString(poseStack, this.font, "Lifetime", stormArrowLifetimeBox.x - 54, stormArrowLifetimeBox.y + 6, 0xD8D8D8);
         drawString(poseStack, this.font, "Height", stormArrowOriginHeightBox.x - 46, stormArrowOriginHeightBox.y + 6, 0xD8D8D8);
+        if (archonSelected && archonMissileRadiusBox != null) {
+            drawString(poseStack, this.font, "Radius", archonMissileRadiusBox.x - 46, archonMissileRadiusBox.y + 6, 0xD8D8D8);
+        }
         drawString(poseStack, this.font, "Audio Range", stormArrowAudioRangeBox.x - this.font.width("Audio Range") - 8, stormArrowAudioRangeBox.y + 6, 0xD8D8D8);
         drawString(poseStack, this.font, "Volume", stormArrowSoundVolumeBox.x - 50, stormArrowSoundVolumeBox.y + 6, 0xD8D8D8);
     }
@@ -1553,6 +1565,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         setVisible(stormArrowImpactFlashSizeSlider, stormLikeSelected());
         setVisible(stormArrowLifetimeBox, stormLikeSelected());
         setVisible(stormArrowOriginHeightBox, stormLikeSelected());
+        setVisible(archonMissileRadiusBox, archonSelected);
         setVisible(stormArrowSoundVolumeBox, stormLikeSelected());
         setVisible(stormArrowAudioRangeBox, stormLikeSelected());
     }
@@ -1654,7 +1667,10 @@ public class ArcaneBeamConfigScreen extends Screen {
         stormArrowShaderCompatibilityButton.setMessage(new TextComponent("Shader Compatibility: " + stormArrowShaderCompatibility().label));
         stormArrowFullbrightButton.setMessage(new TextComponent("Fullbright: " + (settings.fullbright ? "On" : "Off")));
         stormArrowImpactFlashButton.setMessage(new TextComponent("Impact Flash: " + (settings.impactFlashEnabled ? "On" : "Off")));
-        stormArrowSoundButton.setMessage(new TextComponent("Strike: " + stormArrowSoundMode().label));
+        stormArrowBlasterAlphaSlider.setLabel(archonSelected ? "Missile Alpha" : "Blaster Alpha");
+        stormArrowBlasterWidthSlider.setLabel(archonSelected ? "Missile Width" : "Blaster Width");
+        stormArrowSegmentLengthSlider.setLabel(archonSelected ? "Plume Length" : "Bolt Length");
+        stormArrowSoundButton.setMessage(new TextComponent("Strike: " + stormArrowSoundLabel()));
         stormArrowProjectileSoundButton.setMessage(new TextComponent((smiteSelected || archonSelected ? "Activation: " : "Projectile: ") + stormArrowProjectileSoundMode().label));
         fitButton(stormArrowEnabledButton, 150);
         fitButton(stormArrowTargetingCircleButton, 150);
@@ -1673,6 +1689,9 @@ public class ArcaneBeamConfigScreen extends Screen {
         stormArrowImpactFlashSizeSlider.refresh();
         stormArrowLifetimeBox.setValue(Integer.toString(settings.lifetimeTicks));
         stormArrowOriginHeightBox.setValue(formatTenths(settings.originHeight));
+        if (archonMissileRadiusBox != null) {
+            archonMissileRadiusBox.setValue(formatTenths(archonSettings().missileOriginRadius));
+        }
         refreshStormArrowSoundVolumeBox();
         refreshStormArrowAudioRangeBox();
     }
@@ -2018,6 +2037,17 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
     }
 
+    private void updateArchonMissileRadiusFromText(String value) {
+        if (value == null || value.isEmpty() || ".".equals(value)) {
+            return;
+        }
+        try {
+            archonSettings().missileOriginRadius = clampTenths((float) roundTenths(Double.parseDouble(value)), 0.0F, 16.0F);
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
     private void updateStormArrowSoundVolumeFromText(String value) {
         if (value == null || value.isEmpty() || ".".equals(value)) {
             return;
@@ -2078,6 +2108,10 @@ public class ArcaneBeamConfigScreen extends Screen {
         stormArrowSettings().originHeight = clampTenths((float) roundTenths(stormArrowSettings().originHeight + amount), 2.0F, 64.0F);
     }
 
+    private void nudgeArchonMissileRadius(double amount) {
+        archonSettings().missileOriginRadius = clampTenths((float) roundTenths(archonSettings().missileOriginRadius + amount), 0.0F, 16.0F);
+    }
+
     private void nudgeAltarOriginHeight(double amount) {
         vaultAltarSettings().cornerOriginHeight = clampHundredths((float) roundHundredths(vaultAltarSettings().cornerOriginHeight + amount), 0.0F, 15.0F);
     }
@@ -2111,6 +2145,10 @@ public class ArcaneBeamConfigScreen extends Screen {
             return ArcaneBeamConfig.INSTANCE.archon;
         }
         return smiteSelected ? ArcaneBeamConfig.INSTANCE.smite : ArcaneBeamConfig.INSTANCE.stormArrow;
+    }
+
+    private ArcaneBeamConfig.ArchonSettings archonSettings() {
+        return ArcaneBeamConfig.INSTANCE.archon;
     }
 
     private void refreshSoundVolumeBox() {
@@ -2371,6 +2409,14 @@ public class ArcaneBeamConfigScreen extends Screen {
         return mode == null ? ArcaneBeamConfig.StormArrowSoundMode.DEFAULT : mode;
     }
 
+    private String stormArrowSoundLabel() {
+        ArcaneBeamConfig.StormArrowSoundMode mode = stormArrowSoundMode();
+        if (archonSelected && mode == ArcaneBeamConfig.StormArrowSoundMode.BLASTER) {
+            return "Whistling Bird";
+        }
+        return mode.label;
+    }
+
     private ArcaneBeamConfig.StormArrowProjectileSoundMode stormArrowProjectileSoundMode() {
         ArcaneBeamConfig.StormArrowProjectileSoundMode mode = ArcaneBeamConfig.StormArrowProjectileSoundMode.fromId(stormArrowSettings().projectileSoundMode);
         return mode == null ? ArcaneBeamConfig.StormArrowProjectileSoundMode.DEFAULT : mode;
@@ -2471,7 +2517,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private static class SettingSlider extends AbstractSliderButton {
-        private final String label;
+        private String label;
         private final double min;
         private final double max;
         private final DoubleGetter getter;
@@ -2489,6 +2535,11 @@ public class ArcaneBeamConfigScreen extends Screen {
 
         void refresh() {
             this.value = normalize(getter.get(), min, max);
+            updateMessage();
+        }
+
+        void setLabel(String label) {
+            this.label = label;
             updateMessage();
         }
 
