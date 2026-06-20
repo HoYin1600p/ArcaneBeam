@@ -129,6 +129,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     private boolean vaultAltarSelected;
     private boolean stormArrowSelected;
     private boolean smiteSelected;
+    private boolean archonSelected;
     private boolean draggingPalette;
     private boolean draggingBrightness;
     private int brightnessDragBaseColor;
@@ -149,7 +150,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private boolean stormLikeSelected() {
-        return stormArrowSelected || smiteSelected;
+        return stormArrowSelected || smiteSelected || archonSelected;
     }
 
     public boolean lightningSelected() {
@@ -169,67 +170,85 @@ public class ArcaneBeamConfigScreen extends Screen {
         paletteX = layoutWidth / 2 - PALETTE_WIDTH / 2;
         paletteY = 72;
 
-        this.addRenderableWidget(new Button(layoutWidth / 2 - 250, 36, 70, 20, new TextComponent("Arcane"), button -> {
+        this.addRenderableWidget(new Button(layoutWidth / 2 - 272, 36, 58, 20, new TextComponent("Arcane"), button -> {
             railSelected = false;
             lightningSelected = false;
             vaultAltarSelected = false;
             stormArrowSelected = false;
             smiteSelected = false;
+            archonSelected = false;
             selectedSlot = 0;
             glowColorsSelected = false;
             profileDropdownOpen = false;
             refreshControls();
         }));
-        this.addRenderableWidget(new Button(layoutWidth / 2 - 174, 36, 60, 20, new TextComponent("Rail"), button -> {
+        this.addRenderableWidget(new Button(layoutWidth / 2 - 208, 36, 50, 20, new TextComponent("Rail"), button -> {
             railSelected = true;
             lightningSelected = false;
             vaultAltarSelected = false;
             stormArrowSelected = false;
             smiteSelected = false;
+            archonSelected = false;
             selectedSlot = 0;
             glowColorsSelected = false;
             profileDropdownOpen = false;
             refreshControls();
         }));
-        this.addRenderableWidget(new Button(layoutWidth / 2 - 108, 36, 112, 20, new TextComponent("Lightning Strike"), button -> {
+        this.addRenderableWidget(new Button(layoutWidth / 2 - 152, 36, 104, 20, new TextComponent("Lightning Strike"), button -> {
             railSelected = false;
             lightningSelected = true;
             vaultAltarSelected = false;
             stormArrowSelected = false;
             smiteSelected = false;
+            archonSelected = false;
             selectedSlot = 0;
             glowColorsSelected = false;
             profileDropdownOpen = false;
             refreshControls();
         }));
-        this.addRenderableWidget(new Button(layoutWidth / 2 + 10, 36, 92, 20, new TextComponent("Vault Altar"), button -> {
+        this.addRenderableWidget(new Button(layoutWidth / 2 - 42, 36, 84, 20, new TextComponent("Vault Altar"), button -> {
             railSelected = false;
             lightningSelected = false;
             vaultAltarSelected = true;
             stormArrowSelected = false;
             smiteSelected = false;
+            archonSelected = false;
             selectedSlot = 0;
             glowColorsSelected = false;
             profileDropdownOpen = false;
             refreshControls();
         }));
-        this.addRenderableWidget(new Button(layoutWidth / 2 + 108, 36, 104, 20, new TextComponent("Storm Arrow"), button -> {
+        this.addRenderableWidget(new Button(layoutWidth / 2 + 48, 36, 94, 20, new TextComponent("Storm Arrow"), button -> {
             railSelected = false;
             lightningSelected = false;
             vaultAltarSelected = false;
             stormArrowSelected = true;
             smiteSelected = false;
+            archonSelected = false;
             selectedSlot = 0;
             glowColorsSelected = false;
             profileDropdownOpen = false;
             refreshControls();
         }));
-        this.addRenderableWidget(new Button(layoutWidth / 2 + 218, 36, 64, 20, new TextComponent("Smite"), button -> {
+        this.addRenderableWidget(new Button(layoutWidth / 2 + 148, 36, 56, 20, new TextComponent("Smite"), button -> {
             railSelected = false;
             lightningSelected = false;
             vaultAltarSelected = false;
             stormArrowSelected = false;
             smiteSelected = true;
+            archonSelected = false;
+            selectedSlot = 0;
+            glowColorsSelected = false;
+            profileDropdownOpen = false;
+            refreshControls();
+        }));
+        this.addRenderableWidget(new Button(layoutWidth / 2 + 210, 36, 70, 20, new TextComponent("Archon"), button -> {
+            railSelected = false;
+            lightningSelected = false;
+            vaultAltarSelected = false;
+            stormArrowSelected = false;
+            smiteSelected = false;
+            archonSelected = true;
             selectedSlot = 0;
             glowColorsSelected = false;
             profileDropdownOpen = false;
@@ -695,7 +714,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         renderPalette(poseStack);
         renderBrightnessStrip(poseStack);
         if (stormLikeSelected()) {
-            drawCenteredString(poseStack, this.font, smiteSelected ? "Smite colors" : "Storm Arrow colors", layoutWidth / 2, 60, 0xD8D8D8);
+            drawCenteredString(poseStack, this.font, stormLikeColorTitle(), layoutWidth / 2, 60, 0xD8D8D8);
             renderStormArrowColorPreviews(poseStack);
             renderStormArrowLabels(poseStack);
         } else if (vaultAltarSelected) {
@@ -1017,7 +1036,23 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
     }
 
+    private String stormLikeColorTitle() {
+        if (archonSelected) {
+            return "Archon colors";
+        }
+        return smiteSelected ? "Smite colors" : "Storm Arrow colors";
+    }
+
     private String stormArrowColorLabel(int slot) {
+        if (archonSelected) {
+            return switch (slot) {
+                case 0 -> "Circle";
+                case 1 -> "Plume";
+                case 2 -> "Core";
+                case 3 -> "Flash";
+                default -> "";
+            };
+        }
         return switch (slot) {
             case 0 -> "Circle";
             case 1 -> "Blaster";
@@ -1136,7 +1171,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void addProfile() {
-        if (smiteSelected) {
+        if (archonSelected) {
+            ArcaneBeamConfig.addArchonProfile(profileNameBox == null ? "" : profileNameBox.getValue());
+        } else if (smiteSelected) {
             ArcaneBeamConfig.addSmiteProfile(profileNameBox == null ? "" : profileNameBox.getValue());
         } else if (stormArrowSelected) {
             ArcaneBeamConfig.addStormArrowProfile(profileNameBox == null ? "" : profileNameBox.getValue());
@@ -1618,7 +1655,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         stormArrowFullbrightButton.setMessage(new TextComponent("Fullbright: " + (settings.fullbright ? "On" : "Off")));
         stormArrowImpactFlashButton.setMessage(new TextComponent("Impact Flash: " + (settings.impactFlashEnabled ? "On" : "Off")));
         stormArrowSoundButton.setMessage(new TextComponent("Strike: " + stormArrowSoundMode().label));
-        stormArrowProjectileSoundButton.setMessage(new TextComponent((smiteSelected ? "Activation: " : "Projectile: ") + stormArrowProjectileSoundMode().label));
+        stormArrowProjectileSoundButton.setMessage(new TextComponent((smiteSelected || archonSelected ? "Activation: " : "Projectile: ") + stormArrowProjectileSoundMode().label));
         fitButton(stormArrowEnabledButton, 150);
         fitButton(stormArrowTargetingCircleButton, 150);
         fitButton(stormArrowActualRadiusButton, 150);
@@ -2070,6 +2107,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private ArcaneBeamConfig.StormArrowSettings stormArrowSettings() {
+        if (archonSelected) {
+            return ArcaneBeamConfig.INSTANCE.archon;
+        }
         return smiteSelected ? ArcaneBeamConfig.INSTANCE.smite : ArcaneBeamConfig.INSTANCE.stormArrow;
     }
 
@@ -2220,6 +2260,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private List<String> profileNames() {
+        if (archonSelected) {
+            return ArcaneBeamConfig.archonProfileNames();
+        }
         if (smiteSelected) {
             return ArcaneBeamConfig.smiteProfileNames();
         }
@@ -2233,6 +2276,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private String selectedProfileName() {
+        if (archonSelected) {
+            return ArcaneBeamConfig.selectedArchonProfileName();
+        }
         if (smiteSelected) {
             return ArcaneBeamConfig.selectedSmiteProfileName();
         }
@@ -2246,7 +2292,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void selectProfile(String profileName) {
-        if (smiteSelected) {
+        if (archonSelected) {
+            ArcaneBeamConfig.selectArchonProfile(profileName);
+        } else if (smiteSelected) {
             ArcaneBeamConfig.selectSmiteProfile(profileName);
         } else if (stormArrowSelected) {
             ArcaneBeamConfig.selectStormArrowProfile(profileName);
@@ -2260,6 +2308,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private String profileLabel() {
+        if (archonSelected) {
+            return "Archon Profiles";
+        }
         if (smiteSelected) {
             return "Smite Profiles";
         }
