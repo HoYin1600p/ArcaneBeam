@@ -178,5 +178,59 @@
         "stream": false
       }
     ]
+  },
+  "archon_strike": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/archon_strike",
+        "stream": false
+      }
+    ]
+  },
+  "archon_activation": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/archon_activation",
+        "stream": false
+      }
+    ]
+  },
+  "archon_resourcepack_1": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/archon_resourcepack_1",
+        "stream": false
+      }
+    ]
+  },
+  "archon_resourcepack_2": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/archon_resourcepack_2",
+        "stream": false
+      }
+    ]
+  },
+  "archon_activation_resourcepack_1": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/archon_activation_resourcepack_1",
+        "stream": false
+      }
+    ]
+  },
+  "archon_activation_resourcepack_2": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "abilities/archon_activation_resourcepack_2",
+        "stream": false
+      }
+    ]
   }
 }

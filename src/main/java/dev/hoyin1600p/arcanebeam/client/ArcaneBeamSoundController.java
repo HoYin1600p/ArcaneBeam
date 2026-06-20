@@ -49,6 +49,12 @@ public final class ArcaneBeamSoundController {
     private static final String SMITE_RESOURCEPACK_2_PATH = "abilities/smite_resourcepack_2";
     private static final String SMITE_ACTIVATION_RESOURCEPACK_1_PATH = "abilities/smite_activation_resourcepack_1";
     private static final String SMITE_ACTIVATION_RESOURCEPACK_2_PATH = "abilities/smite_activation_resourcepack_2";
+    private static final String ARCHON_STRIKE_PATH = "abilities/archon_strike";
+    private static final String ARCHON_ACTIVATION_PATH = "abilities/archon_activation";
+    private static final String ARCHON_RESOURCEPACK_1_PATH = "abilities/archon_resourcepack_1";
+    private static final String ARCHON_RESOURCEPACK_2_PATH = "abilities/archon_resourcepack_2";
+    private static final String ARCHON_ACTIVATION_RESOURCEPACK_1_PATH = "abilities/archon_activation_resourcepack_1";
+    private static final String ARCHON_ACTIVATION_RESOURCEPACK_2_PATH = "abilities/archon_activation_resourcepack_2";
     private static final String VAULT_ALTAR_BEAM_EVENT = "vault_altar_beam";
     private static final String VAULT_ALTAR_RESOURCEPACK_1_EVENT = "vault_altar_resourcepack_1";
     private static final String VAULT_ALTAR_RESOURCEPACK_2_EVENT = "vault_altar_resourcepack_2";
@@ -64,6 +70,12 @@ public final class ArcaneBeamSoundController {
     private static final String SMITE_RESOURCEPACK_2_EVENT = "smite_resourcepack_2";
     private static final String SMITE_ACTIVATION_RESOURCEPACK_1_EVENT = "smite_activation_resourcepack_1";
     private static final String SMITE_ACTIVATION_RESOURCEPACK_2_EVENT = "smite_activation_resourcepack_2";
+    private static final String ARCHON_STRIKE_EVENT = "archon_strike";
+    private static final String ARCHON_ACTIVATION_EVENT = "archon_activation";
+    private static final String ARCHON_RESOURCEPACK_1_EVENT = "archon_resourcepack_1";
+    private static final String ARCHON_RESOURCEPACK_2_EVENT = "archon_resourcepack_2";
+    private static final String ARCHON_ACTIVATION_RESOURCEPACK_1_EVENT = "archon_activation_resourcepack_1";
+    private static final String ARCHON_ACTIVATION_RESOURCEPACK_2_EVENT = "archon_activation_resourcepack_2";
     private static final String LIGHTNING_SEISMIC_CHARGE_CAST_EVENT = "lightning_seismic_charge_cast";
     private static final String LIGHTNING_SEISMIC_CHARGE_IMPACT_EVENT = "lightning_seismic_charge_impact";
     private static final String LIGHTNING_RESOURCEPACK_1_CAST_EVENT = "lightning_resourcepack_1_cast";
@@ -234,6 +246,34 @@ public final class ArcaneBeamSoundController {
         return minecraft != null && slot != null && hasSoundFile(minecraft, slot.soundPath());
     }
 
+    public static boolean playArchonStrike(Minecraft minecraft, Vec3 position) {
+        StormArrowSoundSlot slot = archonSoundSlot(archonSoundMode());
+        if (minecraft == null || position == null || slot == null || !hasSoundFile(minecraft, slot.soundPath())) {
+            return false;
+        }
+        minecraft.getSoundManager().play(new PositionedFileSoundInstance(slot.eventName(), slot.soundPath(), position, ArcaneBeamConfig.INSTANCE.archon.soundVolume, archonAudioRange()));
+        return true;
+    }
+
+    public static boolean canPlayArchonStrike(Minecraft minecraft) {
+        StormArrowSoundSlot slot = archonSoundSlot(archonSoundMode());
+        return minecraft != null && slot != null && hasSoundFile(minecraft, slot.soundPath());
+    }
+
+    public static boolean playArchonActivation(Minecraft minecraft, Vec3 position) {
+        StormArrowSoundSlot slot = archonActivationSoundSlot(archonActivationSoundMode());
+        if (minecraft == null || position == null || slot == null || !hasSoundFile(minecraft, slot.soundPath())) {
+            return false;
+        }
+        minecraft.getSoundManager().play(new PositionedFileSoundInstance(slot.eventName(), slot.soundPath(), position, ArcaneBeamConfig.INSTANCE.archon.soundVolume, archonAudioRange()));
+        return true;
+    }
+
+    public static boolean canPlayArchonActivation(Minecraft minecraft) {
+        StormArrowSoundSlot slot = archonActivationSoundSlot(archonActivationSoundMode());
+        return minecraft != null && slot != null && hasSoundFile(minecraft, slot.soundPath());
+    }
+
     private static void playLightningStrikeSound(Minecraft minecraft, Vec3 position, boolean impact) {
         LightningSoundSlot slot = lightningSoundSlot(lightningSoundMode(), impact);
         if (impact) {
@@ -265,6 +305,10 @@ public final class ArcaneBeamSoundController {
 
     private static int smiteAudioRange() {
         return Math.max(16, Math.min(32, ArcaneBeamConfig.INSTANCE.smite.audioRange));
+    }
+
+    private static int archonAudioRange() {
+        return Math.max(16, Math.min(32, ArcaneBeamConfig.INSTANCE.archon.audioRange));
     }
 
     private static void stopArcaneSounds(Minecraft minecraft) {
@@ -310,6 +354,16 @@ public final class ArcaneBeamSoundController {
 
     private static ArcaneBeamConfig.StormArrowProjectileSoundMode smiteActivationSoundMode() {
         ArcaneBeamConfig.StormArrowProjectileSoundMode mode = ArcaneBeamConfig.StormArrowProjectileSoundMode.fromId(ArcaneBeamConfig.INSTANCE.smite.projectileSoundMode);
+        return mode == null ? ArcaneBeamConfig.StormArrowProjectileSoundMode.DEFAULT : mode;
+    }
+
+    private static ArcaneBeamConfig.StormArrowSoundMode archonSoundMode() {
+        ArcaneBeamConfig.StormArrowSoundMode mode = ArcaneBeamConfig.StormArrowSoundMode.fromId(ArcaneBeamConfig.INSTANCE.archon.soundMode);
+        return mode == null ? ArcaneBeamConfig.StormArrowSoundMode.DEFAULT : mode;
+    }
+
+    private static ArcaneBeamConfig.StormArrowProjectileSoundMode archonActivationSoundMode() {
+        ArcaneBeamConfig.StormArrowProjectileSoundMode mode = ArcaneBeamConfig.StormArrowProjectileSoundMode.fromId(ArcaneBeamConfig.INSTANCE.archon.projectileSoundMode);
         return mode == null ? ArcaneBeamConfig.StormArrowProjectileSoundMode.DEFAULT : mode;
     }
 
@@ -375,6 +429,24 @@ public final class ArcaneBeamSoundController {
             case OPTION_1 -> new StormArrowSoundSlot(SMITE_ACTIVATION_EVENT, SMITE_ACTIVATION_PATH);
             case RESOURCEPACK_1 -> new StormArrowSoundSlot(SMITE_ACTIVATION_RESOURCEPACK_1_EVENT, SMITE_ACTIVATION_RESOURCEPACK_1_PATH);
             case RESOURCEPACK_2 -> new StormArrowSoundSlot(SMITE_ACTIVATION_RESOURCEPACK_2_EVENT, SMITE_ACTIVATION_RESOURCEPACK_2_PATH);
+            default -> null;
+        };
+    }
+
+    private static StormArrowSoundSlot archonSoundSlot(ArcaneBeamConfig.StormArrowSoundMode mode) {
+        return switch (mode) {
+            case BLASTER -> new StormArrowSoundSlot(ARCHON_STRIKE_EVENT, ARCHON_STRIKE_PATH);
+            case RESOURCEPACK_1 -> new StormArrowSoundSlot(ARCHON_RESOURCEPACK_1_EVENT, ARCHON_RESOURCEPACK_1_PATH);
+            case RESOURCEPACK_2 -> new StormArrowSoundSlot(ARCHON_RESOURCEPACK_2_EVENT, ARCHON_RESOURCEPACK_2_PATH);
+            default -> null;
+        };
+    }
+
+    private static StormArrowSoundSlot archonActivationSoundSlot(ArcaneBeamConfig.StormArrowProjectileSoundMode mode) {
+        return switch (mode) {
+            case OPTION_1 -> new StormArrowSoundSlot(ARCHON_ACTIVATION_EVENT, ARCHON_ACTIVATION_PATH);
+            case RESOURCEPACK_1 -> new StormArrowSoundSlot(ARCHON_ACTIVATION_RESOURCEPACK_1_EVENT, ARCHON_ACTIVATION_RESOURCEPACK_1_PATH);
+            case RESOURCEPACK_2 -> new StormArrowSoundSlot(ARCHON_ACTIVATION_RESOURCEPACK_2_EVENT, ARCHON_ACTIVATION_RESOURCEPACK_2_PATH);
             default -> null;
         };
     }
