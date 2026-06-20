@@ -33,6 +33,8 @@ public final class SmiteVisualManager {
     private static final double SOUND_DUPLICATE_DISTANCE_SQR = 16.0D;
     private static final long STRIKE_VISUAL_DUPLICATE_TICKS = 2L;
     private static final double STRIKE_VISUAL_DUPLICATE_DISTANCE_SQR = 2.25D;
+    private static final long ARCHON_STRIKE_DUPLICATE_TICKS = 1L;
+    private static final double ARCHON_STRIKE_DUPLICATE_DISTANCE_SQR = 0.16D;
     private static final Map<Integer, ActiveSmiteStrike> activeStrikes = new LinkedHashMap<>();
     private static final Map<Integer, ActiveArchonStrike> activeArchonStrikes = new LinkedHashMap<>();
     private static long activeCircleUntilGameTime = Long.MIN_VALUE;
@@ -200,15 +202,7 @@ public final class SmiteVisualManager {
         if (settings == null || !settings.enabled || level == null || !ArcaneBeamSoundController.canPlayArchonStrike(minecraft)) {
             return false;
         }
-        if (now == lastArchonStrikeSoundGameTime) {
-            return true;
-        }
-        if (isDuplicate(now, position, lastArchonStrikeSoundGameTime, lastArchonStrikeSoundPosition)) {
-            return true;
-        }
-        if (activeArchonStrikes.values().stream().anyMatch(strike ->
-                strike.impact().distanceToSqr(position) <= 64.0D && strike.age(now, 0.0F) <= 5.0F
-        )) {
+        if (isArchonDuplicate(now, position, lastArchonStrikeSoundGameTime, lastArchonStrikeSoundPosition)) {
             return true;
         }
 
@@ -245,7 +239,7 @@ public final class SmiteVisualManager {
     }
 
     private static void spawnArchonStrikeVisual(Vec3 impact, long now, ArcaneBeamConfig.ArchonSettings settings) {
-        if (now == lastArchonStrikeVisualGameTime || hasRecentArchonStrikeAt(impact, now)) {
+        if (hasRecentArchonStrikeAt(impact, now)) {
             return;
         }
 
@@ -263,7 +257,7 @@ public final class SmiteVisualManager {
 
     private static void playArchonStrikeOnce(Minecraft minecraft, Vec3 position) {
         long now = gameTime();
-        if (isDuplicate(now, position, lastArchonStrikeSoundGameTime, lastArchonStrikeSoundPosition)) {
+        if (isArchonDuplicate(now, position, lastArchonStrikeSoundGameTime, lastArchonStrikeSoundPosition)) {
             return;
         }
         if (ArcaneBeamSoundController.playArchonStrike(minecraft, position)) {
@@ -293,6 +287,12 @@ public final class SmiteVisualManager {
                 && lastPosition.distanceToSqr(position) <= SOUND_DUPLICATE_DISTANCE_SQR;
     }
 
+    private static boolean isArchonDuplicate(long now, Vec3 position, long lastGameTime, Vec3 lastPosition) {
+        return lastPosition != null
+                && now - lastGameTime <= ARCHON_STRIKE_DUPLICATE_TICKS
+                && lastPosition.distanceToSqr(position) <= ARCHON_STRIKE_DUPLICATE_DISTANCE_SQR;
+    }
+
     private static long gameTime() {
         ClientLevel level = Minecraft.getInstance().level;
         return level == null ? 0L : level.getGameTime();
@@ -307,8 +307,8 @@ public final class SmiteVisualManager {
 
     private static boolean hasRecentArchonStrikeAt(Vec3 impact, long gameTime) {
         return activeArchonStrikes.values().stream().anyMatch(strike ->
-                strike.impact().distanceToSqr(impact) <= STRIKE_VISUAL_DUPLICATE_DISTANCE_SQR
-                        && strike.age(gameTime, 0.0F) <= STRIKE_VISUAL_DUPLICATE_TICKS
+                strike.impact().distanceToSqr(impact) <= ARCHON_STRIKE_DUPLICATE_DISTANCE_SQR
+                        && strike.age(gameTime, 0.0F) <= ARCHON_STRIKE_DUPLICATE_TICKS
         );
     }
 
