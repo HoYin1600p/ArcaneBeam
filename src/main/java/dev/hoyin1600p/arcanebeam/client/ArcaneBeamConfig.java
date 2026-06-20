@@ -5,8 +5,11 @@ import com.google.gson.GsonBuilder;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -18,8 +21,9 @@ public final class ArcaneBeamConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("ArcaneBeam.json");
     private static final String DEFAULT_PROFILE = "Default";
+    private static final String DEFAULT_CONFIG_RESOURCE = "/assets/arcanebeam/defaults/ArcaneBeam.json";
 
-    public static Config INSTANCE = new Config();
+    public static Config INSTANCE = defaultConfig();
 
     private ArcaneBeamConfig() {
     }
@@ -32,37 +36,52 @@ public final class ArcaneBeamConfig {
                     INSTANCE = loaded;
                 }
             } catch (IOException ignored) {
-                INSTANCE = new Config();
+                INSTANCE = defaultConfig();
             }
         }
         validate();
         save();
     }
 
+    private static Config defaultConfig() {
+        try (InputStream stream = ArcaneBeamConfig.class.getResourceAsStream(DEFAULT_CONFIG_RESOURCE)) {
+            if (stream == null) {
+                return new Config();
+            }
+            try (Reader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
+                Config defaults = GSON.fromJson(reader, Config.class);
+                return defaults == null ? new Config() : defaults;
+            }
+        } catch (IOException | RuntimeException ignored) {
+            return new Config();
+        }
+    }
+
     private static void validate() {
+        Config defaults = defaultConfig();
         if (INSTANCE.shaderCompatibility == null) {
-            INSTANCE.shaderCompatibility = ShaderCompatibility.OFF.id;
+            INSTANCE.shaderCompatibility = defaults.shaderCompatibility == null ? ShaderCompatibility.OFF.id : defaults.shaderCompatibility;
         }
         if (INSTANCE.arcane == null) {
-            INSTANCE.arcane = defaultArcaneSettings();
+            INSTANCE.arcane = copyOf(defaults.arcane == null ? defaultArcaneSettings() : defaults.arcane);
         }
         if (INSTANCE.rail == null) {
-            INSTANCE.rail = defaultRailSettings();
+            INSTANCE.rail = copyOf(defaults.rail == null ? defaultRailSettings() : defaults.rail);
         }
         if (INSTANCE.lightningStrike == null) {
-            INSTANCE.lightningStrike = defaultLightningStrikeSettings();
+            INSTANCE.lightningStrike = copyOf(defaults.lightningStrike == null ? defaultLightningStrikeSettings() : defaults.lightningStrike);
         }
         if (INSTANCE.vaultAltar == null) {
-            INSTANCE.vaultAltar = defaultVaultAltarSettings();
+            INSTANCE.vaultAltar = copyOf(defaults.vaultAltar == null ? defaultVaultAltarSettings() : defaults.vaultAltar);
         }
         if (INSTANCE.stormArrow == null) {
-            INSTANCE.stormArrow = defaultStormArrowSettings();
+            INSTANCE.stormArrow = copyOf(defaults.stormArrow == null ? defaultStormArrowSettings() : defaults.stormArrow);
         }
         if (INSTANCE.smite == null) {
-            INSTANCE.smite = defaultSmiteSettings();
+            INSTANCE.smite = copyOf(defaults.smite == null ? defaultSmiteSettings() : defaults.smite);
         }
         if (INSTANCE.archon == null) {
-            INSTANCE.archon = defaultArchonSettings();
+            INSTANCE.archon = copyOf(defaults.archon == null ? defaultArchonSettings() : defaults.archon);
         }
         validateShaderCompatibility();
         validateBeamSettings(INSTANCE.arcane, false);
