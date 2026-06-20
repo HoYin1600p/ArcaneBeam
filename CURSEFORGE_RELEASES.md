@@ -9,6 +9,139 @@ Rules for future updates:
 - Keep the user-facing release text clean and ready to paste.
 - If Codex needs internal notes for a release, put them in a clearly separate `Internal Notes` subsection.
 
+## 0.1.10
+
+### Release Copy
+
+```markdown
+## 0.1.10
+
+This update adds several new client-side visual and sound replacements for Vault Hunters abilities and altar imbuement effects. All gameplay behavior, damage, targeting, cooldowns, mana costs, and server logic are unchanged.
+
+### Vault Altar Imbuement
+
+Adds a configurable Vault Altar imbuement replacement.
+
+When an altar imbuement starts, the default particle column is replaced with four small corner beams that converge on the altar, followed by a center beam and outer glow rising from the altar surface.
+
+Config options include:
+- Enable/disable replacement
+- Profiles
+- Shader Compatibility
+- Fullbright
+- Corner beam colors
+- Center beam colors
+- Center glow colors
+- Beam opacity, size, taper, height, and fade
+- Corner beam origin height and radius for aligning the beams with ceiling builds
+- Optional origin marker X renders for easier setup
+- Timing controls for the corner hold, convergence, and center growth
+- Sound mode and volume
+
+Sound options:
+- Default
+- Altar 1
+- Resourcepack1
+- Resourcepack2
+
+Resource pack sound paths:
+- `assets/arcanebeam/sounds/abilities/vault_altar_resourcepack_1.ogg`
+- `assets/arcanebeam/sounds/abilities/vault_altar_resourcepack_2.ogg`
+
+### Storm Arrow
+
+Adds a configurable Storm Arrow replacement.
+
+The fired arrow is replaced with a small rolling target designator sphere, and successful Storm Arrow strikes are replaced with fast orbital-style energy bolts from above. Impacts include a larger rendered spark plume without using a heavy particle system.
+
+Config options include:
+- Enable/disable replacement
+- Profiles
+- Shader Compatibility
+- Fullbright
+- Targeting circle
+- Optional actual-radius display
+- Circle color, opacity, and width
+- Bolt color, core color, width, length, lifetime, and origin height
+- Impact flash color and size
+- Audio range
+- Sound volume
+
+Sound options include separate selections for:
+- Strike sound
+- Projectile/designator launch sound
+
+Resource pack sound paths:
+- `assets/arcanebeam/sounds/abilities/storm_arrow_resourcepack_1.ogg`
+- `assets/arcanebeam/sounds/abilities/storm_arrow_resourcepack_2.ogg`
+- `assets/arcanebeam/sounds/abilities/storm_arrow_projectile_resourcepack_1.ogg`
+- `assets/arcanebeam/sounds/abilities/storm_arrow_projectile_resourcepack_2.ogg`
+
+### Smite
+
+Adds a configurable Smite replacement.
+
+Smite strikes are replaced with the same style of fast orbital energy bolt used by Storm Arrow, including configurable impact flashes and spark plumes. Smite does not use a projectile replacement, but it does support a separate activation sound.
+
+Config options include:
+- Enable/disable replacement
+- Profiles
+- Shader Compatibility
+- Fullbright
+- Targeting circle
+- Optional actual-radius display
+- Circle color, opacity, and width
+- Bolt color, core color, width, length, lifetime, and origin height
+- Impact flash color and size
+- Audio range
+- Sound volume
+
+Sound options include separate selections for:
+- Strike sound
+- Activation sound
+
+Resource pack sound paths:
+- `assets/arcanebeam/sounds/abilities/smite_resourcepack_1.ogg`
+- `assets/arcanebeam/sounds/abilities/smite_resourcepack_2.ogg`
+- `assets/arcanebeam/sounds/abilities/smite_activation_resourcepack_1.ogg`
+- `assets/arcanebeam/sounds/abilities/smite_activation_resourcepack_2.ogg`
+
+### Archon
+
+Adds a configurable Archon replacement.
+
+Archon is treated separately from Smite and uses a small homing missile-style visual inspired by Whistling Birds. Missiles spawn from a configurable radius around the player, curve toward their target, and use a configurable plume color, core color, impact flash, and short lifetime.
+
+Config options include:
+- Enable/disable replacement
+- Profiles
+- Shader Compatibility
+- Fullbright
+- Targeting circle
+- Optional actual-radius display
+- Circle color, opacity, and width
+- Missile color/plume color, core color, width, length, lifetime, height, and origin radius
+- Impact flash color and size
+- Audio range
+- Sound volume
+
+Sound options include separate selections for:
+- Strike sound, including the bundled Whistling Bird option
+- Activation sound
+
+Resource pack sound paths:
+- `assets/arcanebeam/sounds/abilities/archon_resourcepack_1.ogg`
+- `assets/arcanebeam/sounds/abilities/archon_resourcepack_2.ogg`
+- `assets/arcanebeam/sounds/abilities/archon_activation_resourcepack_1.ogg`
+- `assets/arcanebeam/sounds/abilities/archon_activation_resourcepack_2.ogg`
+
+### Resource Pack Example
+
+The example Arcane Beam resource pack zip has been updated with the new Storm Arrow, Smite, Archon, and Vault Altar sound replacement paths.
+
+No custom `sounds.json` is needed for these Arcane Beam resource pack slots. Replace the placeholder `.ogg` files with your own Ogg Vorbis files, enable the resource pack, then select Resourcepack1 or Resourcepack2 in the relevant Arcane Beam config tab.
+```
+
 ## 0.1.9
 
 ### Release Copy
