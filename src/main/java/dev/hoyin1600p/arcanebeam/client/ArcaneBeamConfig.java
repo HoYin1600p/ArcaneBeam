@@ -71,7 +71,7 @@ public final class ArcaneBeamConfig {
         validateVaultAltarSettings(INSTANCE.vaultAltar);
         validateStormArrowSettings(INSTANCE.stormArrow);
         validateStormArrowSettings(INSTANCE.smite);
-        validateStormArrowSettings(INSTANCE.archon);
+        validateArchonSettings(INSTANCE.archon);
         INSTANCE.arcaneProfiles = validateProfiles(INSTANCE.arcaneProfiles, INSTANCE.arcane, false);
         INSTANCE.railProfiles = validateProfiles(INSTANCE.railProfiles, INSTANCE.rail, true);
         INSTANCE.lightningStrikeProfiles = validateLightningProfiles(INSTANCE.lightningStrikeProfiles, INSTANCE.lightningStrike);
@@ -228,13 +228,13 @@ public final class ArcaneBeamConfig {
                     continue;
                 }
                 ArchonSettings settings = entry.getValue() == null ? defaultArchonSettings() : entry.getValue();
-                validateStormArrowSettings(settings);
+                validateArchonSettings(settings);
                 validated.put(uniqueProfileName(validated, name), settings);
             }
         }
         if (validated.isEmpty()) {
             ArchonSettings settings = copyOf(migrationSettings == null ? defaultArchonSettings() : migrationSettings);
-            validateStormArrowSettings(settings);
+            validateArchonSettings(settings);
             validated.put(DEFAULT_PROFILE, settings);
         }
         return validated;
@@ -540,6 +540,11 @@ public final class ArcaneBeamConfig {
         settings.audioRange = clampInt(settings.audioRange <= 0 ? 16 : settings.audioRange, 16, 32);
     }
 
+    private static void validateArchonSettings(ArchonSettings settings) {
+        validateStormArrowSettings(settings);
+        settings.missileOriginRadius = clampFloat(settings.missileOriginRadius <= 0.0F ? 2.0F : settings.missileOriginRadius, 0.0F, 16.0F);
+    }
+
     private static int clampInt(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
     }
@@ -775,7 +780,7 @@ public final class ArcaneBeamConfig {
         syncActiveProfiles();
         String profileName = uniqueProfileName(INSTANCE.archonProfiles, baseName);
         ArchonSettings settings = copyOf(INSTANCE.archon);
-        validateStormArrowSettings(settings);
+        validateArchonSettings(settings);
         INSTANCE.archonProfiles.put(profileName, settings);
         INSTANCE.selectedArchonProfile = profileName;
         INSTANCE.archon = settings;
@@ -988,6 +993,7 @@ public final class ArcaneBeamConfig {
         copy.segmentGap = source.segmentGap;
         copy.lifetimeTicks = source.lifetimeTicks;
         copy.originHeight = source.originHeight;
+        copy.missileOriginRadius = source.missileOriginRadius;
         copy.impactFlashEnabled = source.impactFlashEnabled;
         copy.impactFlashColor = source.impactFlashColor;
         copy.impactFlashSize = source.impactFlashSize;
@@ -1229,6 +1235,8 @@ public final class ArcaneBeamConfig {
     }
 
     public static final class ArchonSettings extends StormArrowSettings {
+        public float missileOriginRadius = 2.0F;
+
         public ArchonSettings() {
             showTargetingCircle = true;
             useActualRadius = false;
@@ -1242,6 +1250,7 @@ public final class ArcaneBeamConfig {
             segmentLength = 2.8F;
             lifetimeTicks = 5;
             originHeight = 8.0F;
+            missileOriginRadius = 2.0F;
             impactFlashColor = 0xBFEFFF;
             impactFlashSize = 0.36F;
             soundMode = StormArrowSoundMode.BLASTER.id;

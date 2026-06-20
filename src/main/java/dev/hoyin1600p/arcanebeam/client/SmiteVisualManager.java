@@ -73,6 +73,7 @@ public final class SmiteVisualManager {
                         playArchonStrikeOnce(Minecraft.getInstance(), impact);
                         lastArchonStrikeVisualGameTime = now;
                         return new ActiveArchonStrike(
+                                createArchonMissileOrigin(impact, settings),
                                 impact,
                                 now,
                                 StormArrowVisualManager.StormArrowRenderSettings.from(settings)
@@ -249,6 +250,7 @@ public final class SmiteVisualManager {
         }
 
         activeArchonStrikes.put(nextArchonSoundStrikeId--, new ActiveArchonStrike(
+                createArchonMissileOrigin(impact, settings),
                 impact,
                 now,
                 StormArrowVisualManager.StormArrowRenderSettings.from(settings)
@@ -268,6 +270,21 @@ public final class SmiteVisualManager {
             lastArchonStrikeSoundGameTime = now;
             lastArchonStrikeSoundPosition = position;
         }
+    }
+
+    private static Vec3 createArchonMissileOrigin(Vec3 impact, ArcaneBeamConfig.ArchonSettings settings) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        Vec3 base = player == null ? impact : player.position();
+        Vec3 horizontal = new Vec3(impact.x - base.x, 0.0D, impact.z - base.z);
+        if (horizontal.lengthSqr() < 1.0E-4D && player != null) {
+            Vec3 look = player.getLookAngle();
+            horizontal = new Vec3(look.x, 0.0D, look.z);
+        }
+        if (horizontal.lengthSqr() < 1.0E-4D) {
+            horizontal = new Vec3(1.0D, 0.0D, 0.0D);
+        }
+        Vec3 outward = horizontal.normalize().scale(settings.missileOriginRadius);
+        return new Vec3(base.x + outward.x, impact.y + Math.max(0.5F, settings.originHeight), base.z + outward.z);
     }
 
     private static boolean isDuplicate(long now, Vec3 position, long lastGameTime, Vec3 lastPosition) {
@@ -432,7 +449,7 @@ public final class SmiteVisualManager {
         }
     }
 
-    public record ActiveArchonStrike(Vec3 impact, long startGameTime, StormArrowVisualManager.StormArrowRenderSettings settings) implements ArchonMissileRenderer.MissileVisual {
+    public record ActiveArchonStrike(Vec3 origin, Vec3 impact, long startGameTime, StormArrowVisualManager.StormArrowRenderSettings settings) implements ArchonMissileRenderer.MissileVisual {
         public float age(long gameTime, float partialTick) {
             return Math.max(0.0F, gameTime - startGameTime + partialTick);
         }

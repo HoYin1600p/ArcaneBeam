@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.math.Matrix3f;
 import com.mojang.math.Matrix4f;
+import com.mojang.math.Quaternion;
 import com.mojang.math.Vector3f;
 import dev.hoyin1600p.arcanebeam.ArcaneBeam;
 import net.minecraft.client.Minecraft;
@@ -64,10 +65,17 @@ public class ArchonMissileRenderer extends RenderType {
         VertexConsumer bodyBuilder = buffer.getBuffer(shaderCompatibility ? SHADER_BODY : BODY);
         VertexConsumer glowBuilder = buffer.getBuffer(shaderCompatibility ? SHADER_GLOW : GLOW);
         Vec3 impact = missile.impact().add(0.0D, 0.42D, 0.0D);
-        Vec3 current = missilePosition(impact, settings.originHeight(), progress);
+        Vec3 origin = missile.origin();
+        Vec3 current = missilePosition(origin, impact, progress);
+        Vec3 previous = missilePosition(origin, impact, Math.max(0.0F, progress - 0.035F));
+        Vec3 direction = current.subtract(previous);
+        if (direction.lengthSqr() < 1.0E-5D) {
+            direction = impact.subtract(origin);
+        }
 
         poseStack.pushPose();
         poseStack.translate(current.x, current.y, current.z);
+        alignLocalNegativeYToDirection(poseStack, direction);
         renderBody(poseStack, bodyBuilder, shaderCompatibility, settings.fullbright());
         renderPlume(poseStack, glowBuilder, settings, shaderCompatibility);
         poseStack.popPose();
@@ -83,11 +91,50 @@ public class ArchonMissileRenderer extends RenderType {
         }
     }
 
-    private static Vec3 missilePosition(Vec3 impact, float originHeight, float progress) {
+    private static Vec3 missilePosition(Vec3 origin, Vec3 impact, float progress) {
+        float t = Mth.clamp(progress, 0.0F, 1.0F);
+        Vec3 control = missileControlPoint(origin, impact);
+        double inv = 1.0D - t;
+        return origin.scale(inv * inv)
+                .add(control.scale(2.0D * inv * t))
+                .add(impact.scale(t * t));
+    }
+
+    private static Vec3 missileControlPoint(Vec3 origin, Vec3 impact) {
         float seed = (float) (impact.x * 17.37D + impact.y * 5.91D + impact.z * 23.43D);
-        float angle = hash01(seed) * ((float) Math.PI * 2.0F);
-        float curve = Mth.sin(progress * (float) Math.PI) * 0.28F;
-        return impact.add(Mth.cos(angle) * curve, originHeight * (1.0F - progress), Mth.sin(angle) * curve);
+        Vec3 delta = impact.subtract(origin);
+        Vec3 horizontal = new Vec3(delta.x, 0.0D, delta.z);
+        double horizontalDistance = Math.max(0.1D, horizontal.length());
+        Vec3 perpendicular = horizontal.lengthSqr() < 1.0E-5D
+                ? new Vec3(1.0D, 0.0D, 0.0D)
+                : new Vec3(-horizontal.z, 0.0D, horizontal.x).normalize();
+        double side = hash01(seed) < 0.5F ? -1.0D : 1.0D;
+        double sweep = Mth.clamp((float) (horizontalDistance * 0.45D), 0.35F, 2.5F);
+        double arch = Mth.clamp((float) (horizontalDistance * 0.30D), 0.50F, 3.0F);
+        Vec3 midpoint = origin.add(impact).scale(0.5D);
+        return new Vec3(
+                midpoint.x + perpendicular.x * side * sweep,
+                Math.max(origin.y, impact.y) + arch,
+                midpoint.z + perpendicular.z * side * sweep
+        );
+    }
+
+    private static void alignLocalNegativeYToDirection(PoseStack poseStack, Vec3 direction) {
+        if (direction.lengthSqr() < 1.0E-5D) {
+            return;
+        }
+        Vec3 target = direction.normalize();
+        Vec3 localForward = new Vec3(0.0D, -1.0D, 0.0D);
+        double dot = Mth.clamp((float) localForward.dot(target), -1.0F, 1.0F);
+        Vec3 axis = localForward.cross(target);
+        if (axis.lengthSqr() < 1.0E-5D) {
+            if (dot < 0.0D) {
+                poseStack.mulPose(Vector3f.XP.rotationDegrees(180.0F));
+            }
+            return;
+        }
+        Vec3 normalizedAxis = axis.normalize();
+        poseStack.mulPose(new Quaternion(new Vector3f((float) normalizedAxis.x, (float) normalizedAxis.y, (float) normalizedAxis.z), (float) Math.acos(dot), false));
     }
 
     private static void renderBody(PoseStack stack, VertexConsumer builder, boolean shaderCompatibility, boolean fullbright) {
@@ -226,6 +273,8 @@ public class ArchonMissileRenderer extends RenderType {
 
     public interface MissileVisual {
         StormArrowVisualManager.StormArrowRenderSettings settings();
+
+        Vec3 origin();
 
         Vec3 impact();
 
