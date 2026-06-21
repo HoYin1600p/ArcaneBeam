@@ -31,19 +31,21 @@ Assign the keybind in:
 
 The keybind is unbound by default.
 
-Arcane and Rail each have their own tab in the config screen.
+Arcane, Rail, Lightning Strike, Vault Altar, Storm Arrow, Smite, and Archon each have their own tab in the config screen.
 
 While the config screen is open, Arcane Beam renders a live world-space preview beam behind the translucent UI using the currently selected settings.
+The config screen suppresses vanilla, Forge, and Vault HUD overlays while it is open. Use `Collapse` to reduce the controls to a handle, or `Clean View` / `H` to hide ArcaneBeam chrome for an unobstructed preview. Clean View leaves a small `Restore Menu (H)` handle on screen so the menu can be reopened without closing the screen.
+Click a color swatch or hex field to open the color picker popover above the drawer. The popover includes its own hex field for exact color edits.
 
 ### Profiles
 
-Arcane and Rail each have independent profile lists.
+Each tab has an independent profile list.
 
-Profile controls are on the left side of the config screen:
+Profile controls are in the left side of the bottom drawer:
 
 - Type a profile name and click `Add` to copy the current tab's settings into a new profile.
 - Use the profile dropdown to switch the current tab to a saved profile.
-- Arcane profiles and Rail profiles save independently.
+- Profiles save independently per tab.
 - Existing configs are migrated into `Default` profiles the first time the new format is loaded.
 
 Profiles are saved in `config/ArcaneBeam.json`.
