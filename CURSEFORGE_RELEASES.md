@@ -9,6 +9,26 @@ Rules for future updates:
 - Keep the user-facing release text clean and ready to paste.
 - If Codex needs internal notes for a release, put them in a clearly separate `Internal Notes` subsection.
 
+## 0.1.11
+
+### Release Copy
+
+```markdown
+## 0.1.11
+
+This update improves Arcane Beam's custom sound handling and reduces the chance of Minecraft audio cutting out during longer play sessions.
+
+### Audio Stability
+
+- Improved cleanup for Arcane Beam custom sounds when leaving a world, disconnecting, or when Minecraft stops active sounds
+- Changed Arcane Beam's bundled ability sounds to avoid unnecessary streamed audio playback
+- Changed Arcane Beam's runtime custom sounds to use the lighter non-streamed sound path by default
+- Improved cleanup for active Arcane, Lightning Strike, Rail, Vault Altar, Storm Arrow, Smite, and Archon replacement sounds
+- Kept all existing sound options, resource pack sound slots, visual effects, and ability behavior unchanged
+
+This is a maintenance release focused on client audio stability. Gameplay behavior, damage, cooldowns, targeting, mana costs, and server logic are unchanged.
+```
+
 ## 0.1.10
 
 ### Release Copy
