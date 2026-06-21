@@ -31,10 +31,8 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     compileOnly fg.deobf("curse.maven:vault-hunters-official-mod-458203:${vault_hunters_version}")
-    compileOnly files(
-            "C:/Users/HoYin1600p/AppData/Roaming/PrismLauncher/instances/vaultcrafters-bootstrap-1.0.0/.minecraft/mods/sophisticatedcore-1.18.2-0.6.4.604.jar",
-            "C:/Users/HoYin1600p/AppData/Roaming/PrismLauncher/instances/vaultcrafters-bootstrap-1.0.0/.minecraft/mods/sophisticatedstorage-1.18.2-0.9.8.915.jar"
-    )
+    compileOnly fg.deobf("curse.maven:sophisticated-core-618298:5296312")
+    compileOnly fg.deobf("curse.maven:sophisticated-storage-619320:5809745")
     annotationProcessor "org.spongepowered:mixin:${mixin_version}:processor"
 }
 

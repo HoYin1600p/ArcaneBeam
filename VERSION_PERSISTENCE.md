@@ -12,11 +12,59 @@ When the user asks to append to this file, add a new subsection for the new vers
 
 ## Current Version
 
-- Current version: `0.1.7`
+- Current version: `0.1.10`
 - Repo: `https://github.com/HoYin1600p/ArcaneBeam`
 - Main technical reference: [PERSISTENCE.md](PERSISTENCE.md)
 
 ## Version History
+
+### 0.1.10 - Menu Overhaul Worktree Build (2026-06-21)
+
+#### Summary
+
+This build keeps the existing `0.1.10` version and adds the Option B Arcane Starforge Hybrid config-menu foundation.
+It is a UI/layout implementation pass, not a gameplay behavior change.
+
+#### Changes
+
+- Added production GUI atlas `assets/arcanebeam/textures/gui/config_atlas.png`
+- Added `NineSliceRenderer` and `ArcaneBeamGuiTheme`
+- Replaced the config screen's full-screen dim background with localized top-bar and bottom-drawer chrome
+- Added `EXPANDED`, `COLLAPSED`, and `HIDDEN` drawer states
+- Added `Collapse`, `Clean View`, and non-text-field `H` hide/restore behavior
+- Added a compact clickable `Restore Menu (H)` handle while Clean View is active
+- Moved existing config widgets into bottom-drawer/card coordinates while preserving existing config save/load handlers
+- Added `ConfigTabId` and descriptor-driven tab layout with overflow arrows and mouse-wheel scrolling
+- Replaced the always-visible palette with a color picker popover opened from swatches or hex fields
+- Added themed rendering for buttons, sliders, and edit box frames
+- Increased the expanded bottom drawer height and tightened dense-tab row spacing so lower input/button rows stay inside the drawer
+- Kept native `EditBox` bordered text layout inside the themed frame so input text is vertically centered
+- Suppresses vanilla, Forge, and Vault HUD overlays for the full duration of the config screen
+- Keeps Clean View focused on hiding ArcaneBeam chrome for an unobstructed preview
+- Restores the player's previous `options.hideGui` state when closing the config screen
+- Reworked slider rendering so labels sit above the track/handle with compact labels on narrow controls
+- Removed redundant Arcane/Rail transition tick labels that visually collided with buttons
+- Shortened the color picker helper caption so it no longer clips
+- Anchored dense-tab color labels above each swatch/hex group and removed redundant in-card row titles
+- Iterated on Arcane/Rail color-row spacing during the card conversion
+- Reduced the color picker inset frame width so it no longer protrudes past the popover's right edge
+- Added titled control-card backgrounds without changing config behavior
+- Added a selected-slot hex input inside the color picker popover
+- Added lightweight sub-card backgrounds behind existing control groups while preserving widget positions and config behavior
+- Added horizontal control-card overflow scrolling with viewport-aware widget and label visibility
+- Converted Arcane/Rail controls and color rows into titled Phase 6 cards while preserving config behavior
+- Converted Lightning Strike, Vault Altar, Storm Arrow, Smite, and Archon controls into titled Phase 6 cards
+- Reduced the expanded drawer height and standardized the Colors card width across tabs
+- Switched Arcane/Rail color rows to `Core 1-4` and `Glow 1-4` label-above-slot formatting
+- Changed control-card scrolling to snap by actual card boundaries, render partial card chrome at scroll edges, and hide only clipped child controls
+- Replaced local Sophisticated Core/Storage compile-only jar paths with CurseMaven compile-only coordinates for reproducible builds
+- Updated README and project memory for the new config-menu behavior
+
+#### Release Notes
+
+- Artifact: `build/libs/ArcaneBeam-1.18.2-0.1.10.jar`
+- Version source: `gradle.properties -> mod_version=0.1.10`
+- SHA256: `1147AF17FAFF4DD51BFE62960256B08A261C77989EA3598B8DC0318BC45890C8`
 
 ### 0.1.7
 
