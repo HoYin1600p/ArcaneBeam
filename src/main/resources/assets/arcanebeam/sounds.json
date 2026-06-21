@@ -4,7 +4,7 @@
     "sounds": [
       {
         "name": "abilities/arcane_1",
-        "stream": true
+        "stream": false
       }
     ]
   },
@@ -13,7 +13,7 @@
     "sounds": [
       {
         "name": "abilities/arcane_2_startup",
-        "stream": true
+        "stream": false
       }
     ]
   },
@@ -22,7 +22,7 @@
     "sounds": [
       {
         "name": "abilities/arcane_2_loop",
-        "stream": true
+        "stream": false
       }
     ]
   },
@@ -31,7 +31,7 @@
     "sounds": [
       {
         "name": "abilities/rail_1",
-        "stream": true
+        "stream": false
       }
     ]
   },
@@ -40,7 +40,7 @@
     "sounds": [
       {
         "name": "abilities/rail_2",
-        "stream": true
+        "stream": false
       }
     ]
   },
@@ -67,7 +67,7 @@
     "sounds": [
       {
         "name": "abilities/vault_altar_beam",
-        "stream": true
+        "stream": false
       }
     ]
   },

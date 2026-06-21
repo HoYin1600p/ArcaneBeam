@@ -13,7 +13,10 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.Collections;
 import java.io.IOException;
+import java.util.Set;
+import java.util.WeakHashMap;
 
 public final class ArcaneBeamSoundController {
     private static final int ARCANE_OPTION_2_STARTUP_TICKS = 49;
@@ -86,6 +89,7 @@ public final class ArcaneBeamSoundController {
     private static FileSoundInstance arcaneStartupSound;
     private static ArcaneLoopSound arcaneLoopSound;
     private static PositionedFileSoundInstance lightningCastSound;
+    private static final Set<FileSoundInstance> ACTIVE_SOUNDS = Collections.newSetFromMap(new WeakHashMap<>());
     private static long lastArcaneFirstSeen = Long.MIN_VALUE;
     private static long pendingArcaneLoopStart = Long.MIN_VALUE;
     private static long lastRailFirstSeen = Long.MIN_VALUE;
@@ -95,16 +99,24 @@ public final class ArcaneBeamSoundController {
 
     public static void tick(Minecraft minecraft) {
         if (minecraft.level == null || minecraft.player == null) {
-            stopArcaneSounds(minecraft);
-            stopLightningCastSound(minecraft);
-            lastArcaneFirstSeen = Long.MIN_VALUE;
-            pendingArcaneLoopStart = Long.MIN_VALUE;
-            lastRailFirstSeen = Long.MIN_VALUE;
+            stopAll(minecraft);
             return;
         }
 
         syncArcane(minecraft, minecraft.player, ArcaneBeamManager.getLocalActiveBeam(ArcaneBeamManager.BeamKind.ARCANE));
         syncRail(minecraft, ArcaneBeamManager.getLocalActiveBeam(ArcaneBeamManager.BeamKind.RAIL));
+    }
+
+    public static void stopAll(Minecraft minecraft) {
+        stopArcaneSounds(minecraft);
+        stopLightningCastSound(minecraft);
+        for (FileSoundInstance sound : Set.copyOf(ACTIVE_SOUNDS)) {
+            stopSound(minecraft, sound);
+        }
+        ACTIVE_SOUNDS.clear();
+        lastArcaneFirstSeen = Long.MIN_VALUE;
+        pendingArcaneLoopStart = Long.MIN_VALUE;
+        lastRailFirstSeen = Long.MIN_VALUE;
     }
 
     private static void syncArcane(Minecraft minecraft, LocalPlayer player, ArcaneBeamManager.ActiveBeam beam) {
@@ -187,7 +199,7 @@ public final class ArcaneBeamSoundController {
         if (minecraft == null || position == null || slot == null || !hasSoundFile(minecraft, slot.soundPath())) {
             return;
         }
-        minecraft.getSoundManager().play(new PositionedFileSoundInstance(slot.eventName(), slot.soundPath(), position, volume, true, VAULT_ALTAR_BEAM_LIFETIME_TICKS));
+        minecraft.getSoundManager().play(new PositionedFileSoundInstance(slot.eventName(), slot.soundPath(), position, volume, false, VAULT_ALTAR_BEAM_LIFETIME_TICKS));
     }
 
     public static boolean playStormArrowStrike(Minecraft minecraft, Vec3 position) {
@@ -313,12 +325,22 @@ public final class ArcaneBeamSoundController {
 
     private static void stopArcaneSounds(Minecraft minecraft) {
         if (arcaneStartupSound != null) {
-            minecraft.getSoundManager().stop(arcaneStartupSound);
+            stopSound(minecraft, arcaneStartupSound);
             arcaneStartupSound = null;
         }
         if (arcaneLoopSound != null) {
-            minecraft.getSoundManager().stop(arcaneLoopSound);
+            stopSound(minecraft, arcaneLoopSound);
             arcaneLoopSound = null;
+        }
+    }
+
+    private static void stopSound(Minecraft minecraft, FileSoundInstance sound) {
+        if (sound == null) {
+            return;
+        }
+        sound.stopAndUntrack();
+        if (minecraft != null) {
+            minecraft.getSoundManager().stop(sound);
         }
     }
 
@@ -466,7 +488,7 @@ public final class ArcaneBeamSoundController {
         @Override
         public void tick() {
             if (player.isRemoved() || player.isDeadOrDying()) {
-                stop();
+                stopAndUntrack();
             }
         }
     }
@@ -481,7 +503,7 @@ public final class ArcaneBeamSoundController {
         }
 
         private FileSoundInstance(String path, float volume) {
-            this(new ResourceLocation(ArcaneBeam.MOD_ID, path), new ResourceLocation(ArcaneBeam.MOD_ID, path), volume, true);
+            this(new ResourceLocation(ArcaneBeam.MOD_ID, path), new ResourceLocation(ArcaneBeam.MOD_ID, path), volume, false);
         }
 
         private FileSoundInstance(ResourceLocation eventId, ResourceLocation fileId, float volume, boolean stream) {
@@ -504,6 +526,7 @@ public final class ArcaneBeamSoundController {
             this.pitch = 1.0F;
             this.relative = true;
             this.attenuation = Attenuation.NONE;
+            ACTIVE_SOUNDS.add(this);
         }
 
         @Override
@@ -514,14 +537,19 @@ public final class ArcaneBeamSoundController {
         @Override
         public void tick() {
             if (!this.looping && ++ageTicks >= maxAgeTicks) {
-                stop();
+                stopAndUntrack();
             }
+        }
+
+        protected final void stopAndUntrack() {
+            stop();
+            ACTIVE_SOUNDS.remove(this);
         }
     }
 
     private static void stopLightningCastSound(Minecraft minecraft) {
         if (lightningCastSound != null) {
-            minecraft.getSoundManager().stop(lightningCastSound);
+            stopSound(minecraft, lightningCastSound);
             lightningCastSound = null;
         }
     }
