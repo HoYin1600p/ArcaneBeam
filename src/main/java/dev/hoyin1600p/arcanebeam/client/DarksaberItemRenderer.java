@@ -41,11 +41,12 @@ public class DarksaberItemRenderer extends RenderType {
     private static final ResourceLocation VAULT_SWORD = new ResourceLocation("the_vault", "sword");
     private static final String GEAR_MODEL_TAG = "the_vault:gear_model";
     private static final RenderType HILT = RenderType.entityCutoutNoCull(TEXTURE);
-    private static final RenderType BLADE = RenderType.entityTranslucent(WHITE_TEXTURE);
+    private static final RenderType BLADE = createBladeRenderType();
     private static final RenderType GLOW = createGlowRenderType();
     private static final int TEXTURE_SIZE = 64;
     private static final float BLADE_X_MIN = -0.31F;
     private static final float BLADE_X_MAX = 0.56F;
+    private static final float BLADE_X_CENTER = (BLADE_X_MIN + BLADE_X_MAX) * 0.5F;
     private static final float BLADE_BASE_Z = 7.15F;
     private static final float BLADE_TIP_Z = -22.85F;
     private static DarksaberModel cachedModel;
@@ -214,18 +215,14 @@ public class DarksaberItemRenderer extends RenderType {
             float t1 = (i + 1) / (float) segments;
             BladeSlice a = bladeSlice(t0);
             BladeSlice b = bladeSlice(t1);
-            renderBladeFace(poseStack, blade, BLADE_X_MIN, a, b, settings.coreColor, settings.coreOpacity, settings.coreOpacity);
-            renderBladeFace(poseStack, blade, BLADE_X_MAX, b, a, settings.coreColor, settings.coreOpacity, settings.coreOpacity);
+            renderBladeFace(poseStack, blade, BLADE_X_CENTER, a, b, settings.coreColor, settings.coreOpacity, settings.coreOpacity);
 
             float leadingAlpha = settings.edgeOpacity * (0.72F + 0.28F * shimmer);
-            renderLeadingGlowFace(poseStack, blade, BLADE_X_MIN - 0.006F, a, b, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
-            renderLeadingGlowFace(poseStack, blade, BLADE_X_MAX + 0.006F, b, a, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
-            renderLeadingGlowFace(poseStack, glow, BLADE_X_MIN - 0.018F, a, b, settings.glowColor, settings.glowOpacity * shimmer, -0.12F, 0.58F);
-            renderLeadingGlowFace(poseStack, glow, BLADE_X_MAX + 0.018F, b, a, settings.glowColor, settings.glowOpacity * shimmer, -0.12F, 0.58F);
+            renderLeadingGlowFace(poseStack, blade, BLADE_X_CENTER, a, b, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
+            renderLeadingGlowFace(poseStack, glow, BLADE_X_CENTER, a, b, settings.glowColor, settings.glowOpacity * shimmer, -0.12F, 0.58F);
 
             float trailingAlpha = settings.edgeOpacity * 0.22F * (0.65F + 0.35F * shimmer);
-            renderTrailingGlowFace(poseStack, blade, BLADE_X_MIN - 0.004F, a, b, settings.edgeColor, trailingAlpha);
-            renderTrailingGlowFace(poseStack, blade, BLADE_X_MAX + 0.004F, b, a, settings.edgeColor, trailingAlpha);
+            renderTrailingGlowFace(poseStack, blade, BLADE_X_CENTER, a, b, settings.edgeColor, trailingAlpha);
         }
         renderBladeArcs(poseStack, glow, settings, partialTick, shimmer);
     }
@@ -262,8 +259,7 @@ public class DarksaberItemRenderer extends RenderType {
             float pulse = 0.5F + 0.5F * (float) Math.sin(time * 0.52F + i * 1.71F);
             float alpha = settings.edgeOpacity * (0.22F + 0.58F * pulse) * (0.45F + 0.55F * shimmer);
             float inward = 0.14F + 0.18F * hash(cycle * 53 + i * 23);
-            drawArcStroke(poseStack, builder, t, inward, alpha, settings.edgeColor, cycle * 97 + i * 11, BLADE_X_MIN - 0.026F);
-            drawArcStroke(poseStack, builder, t, inward, alpha * 0.78F, settings.edgeColor, cycle * 97 + i * 11, BLADE_X_MAX + 0.026F);
+            drawArcStroke(poseStack, builder, t, inward, alpha, settings.edgeColor, cycle * 97 + i * 11, BLADE_X_CENTER);
         }
     }
 
@@ -417,6 +413,17 @@ public class DarksaberItemRenderer extends RenderType {
             cachedModel = DarksaberModel.EMPTY;
         }
         return cachedModel == DarksaberModel.EMPTY ? null : cachedModel;
+    }
+
+    private static RenderType createBladeRenderType() {
+        CompositeState state = CompositeState.builder()
+                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                .setTextureState(new TextureStateShard(WHITE_TEXTURE, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setWriteMaskState(COLOR_DEPTH_WRITE)
+                .createCompositeState(false);
+        return RenderType.create("arcanebeam_darksaber_blade", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 512, false, true, state);
     }
 
     private static RenderType createGlowRenderType() {
