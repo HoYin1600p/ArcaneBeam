@@ -59,7 +59,7 @@ public class DarksaberItemRenderer extends RenderType {
     private static final float FIRST_PERSON_SURFACE_OFFSET = 0.052F;
     private static final float BLADE_BASE_Z = 7.15F;
     private static final float BLADE_TIP_Z = -22.85F;
-    private static final float EFFECT_START_T = 0.105F;
+    private static final float EFFECT_START_T = 0.0F;
     private static final float SHADER_EDGE_INTENSITY = 0.48F;
     private static final float SHADER_GLOW_INTENSITY = 0.24F;
     private static final float SHADER_ARC_INTENSITY = 0.42F;
@@ -341,7 +341,7 @@ public class DarksaberItemRenderer extends RenderType {
             float fade = smoothstep(phase / 0.22F) * smoothstep((1.0F - phase) / 0.28F);
             float start = hash(cycle * 37 + i * 19);
             float end = hash((cycle + 1) * 37 + i * 19);
-            float t = EFFECT_START_T + 0.86F * lerp(start, end, motion);
+            float t = EFFECT_START_T + 0.96F * lerp(start, end, motion);
             float inwardStart = hash(cycle * 53 + i * 23);
             float inwardEnd = hash((cycle + 1) * 53 + i * 23);
             float inward = 0.18F + 0.34F * lerp(inwardStart, inwardEnd, motion);
@@ -560,7 +560,7 @@ public class DarksaberItemRenderer extends RenderType {
                 .setShaderState(POSITION_COLOR_SHADER)
                 .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                 .setCullState(NO_CULL)
-                .setWriteMaskState(COLOR_DEPTH_WRITE)
+                .setWriteMaskState(COLOR_WRITE)
                 .createCompositeState(false);
         return RenderType.create("arcanebeam_darksaber_blade_mesh", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 512, false, true, state);
     }
