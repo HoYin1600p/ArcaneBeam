@@ -19,7 +19,7 @@ public class DarksaberItemRendererMixin {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/ItemRenderer;renderModelLists(Lnet/minecraft/client/resources/model/BakedModel;Lnet/minecraft/world/item/ItemStack;IILcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;)V")
     )
     private void arcanebeam$renderDarksaber(ItemRenderer itemRenderer, BakedModel model, ItemStack stack, int packedLight, int packedOverlay, PoseStack poseStack, VertexConsumer originalConsumer, ItemStack originalStack, ItemTransforms.TransformType transformType, boolean leftHand, PoseStack originalPoseStack, MultiBufferSource buffer, int originalPackedLight, int originalPackedOverlay, BakedModel originalModel) {
-        if (DarksaberItemRenderer.renderItem(stack, poseStack, buffer, packedLight, packedOverlay)) {
+        if (DarksaberItemRenderer.renderItem(stack, poseStack, buffer, packedLight, packedOverlay, transformType)) {
             return;
         }
         itemRenderer.renderModelLists(model, stack, packedLight, packedOverlay, poseStack, originalConsumer);
