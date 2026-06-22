@@ -1729,7 +1729,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         renderChrome(poseStack);
         if (darksaberSelected) {
             MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
-            DarksaberItemRenderer.renderScreenPreview(poseStack, buffer, layoutWidth / 2, Math.max(110, drawerY() - 105), partialTick);
+            DarksaberItemRenderer.renderScreenPreview(poseStack, buffer, layoutWidth, drawerY(), partialTick);
             buffer.endBatch();
         }
         if (drawerState == DrawerState.EXPANDED) {

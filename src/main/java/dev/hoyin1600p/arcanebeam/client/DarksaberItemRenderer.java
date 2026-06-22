@@ -18,6 +18,8 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
@@ -25,10 +27,12 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 public class DarksaberItemRenderer extends RenderType {
     private static final ResourceLocation MODEL = new ResourceLocation(ArcaneBeam.MOD_ID, "models/darksaber/darksaber2.1.bbmodel");
@@ -59,18 +63,21 @@ public class DarksaberItemRenderer extends RenderType {
         return true;
     }
 
-    public static void renderScreenPreview(PoseStack poseStack, MultiBufferSource buffer, int x, int y, float partialTick) {
+    public static void renderScreenPreview(PoseStack poseStack, MultiBufferSource buffer, int layoutWidth, int drawerY, float partialTick) {
         DarksaberModel model = model();
         if (model == null) {
             return;
         }
+        int x = layoutWidth / 2;
+        float pixelScale = Math.min(1500.0F, Math.max(420.0F, layoutWidth * 0.45F));
+        int y = Math.max(150, drawerY - Math.round(pixelScale * 0.24F));
         poseStack.pushPose();
         poseStack.translate(x, y, 180.0D);
-        poseStack.scale(72.0F, -72.0F, 72.0F);
-        poseStack.mulPose(Vector3f.XP.rotationDegrees(20.0F));
-        poseStack.mulPose(Vector3f.YP.rotationDegrees(-35.0F));
-        poseStack.mulPose(Vector3f.ZP.rotationDegrees(18.0F));
-        renderModel(poseStack, buffer, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ArcaneBeamConfig.INSTANCE.darksaber, partialTick, 1.2F);
+        poseStack.scale(pixelScale, -pixelScale, pixelScale);
+        poseStack.mulPose(Vector3f.YP.rotationDegrees(90.0F));
+        poseStack.mulPose(Vector3f.XP.rotationDegrees(8.0F));
+        poseStack.mulPose(Vector3f.ZP.rotationDegrees(-12.0F));
+        renderModel(poseStack, buffer, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ArcaneBeamConfig.INSTANCE.darksaber, partialTick, 1.0F);
         poseStack.popPose();
     }
 
@@ -78,17 +85,93 @@ public class DarksaberItemRenderer extends RenderType {
         if (stack == null || stack.isEmpty()) {
             return false;
         }
-        ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(stack.getItem());
-        if (!VAULT_SWORD.equals(itemId)) {
+        if (!isVaultSword(stack)) {
             return false;
+        }
+        String configured = ArcaneBeamConfig.normalizeSwordTransmog(settings.transmog);
+        String dynamicModel = dynamicModelId(stack);
+        if (matchesConfiguredModel(dynamicModel, configured)) {
+            return true;
         }
         CompoundTag tag = stack.getTag();
-        if (tag == null || !tag.contains(GEAR_MODEL_TAG)) {
+        return tag != null && tagContainsModel(tag, configured);
+    }
+
+    private static boolean isVaultSword(ItemStack stack) {
+        ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(stack.getItem());
+        if (VAULT_SWORD.equals(itemId)) {
+            return true;
+        }
+        String className = stack.getItem().getClass().getName();
+        return className.equals("iskallia.vault.item.gear.VaultSwordItem") || className.endsWith(".VaultSwordItem");
+    }
+
+    private static String dynamicModelId(ItemStack stack) {
+        try {
+            Method method = stack.getItem().getClass().getMethod("getDynamicModelId", ItemStack.class);
+            Object result = method.invoke(stack.getItem(), stack);
+            if (result instanceof Optional<?> optional && optional.isPresent()) {
+                return optional.get().toString();
+            }
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            // Vault keeps the current transmog in its gear cache; fall back to NBT for older or unusual stacks.
+        }
+        return null;
+    }
+
+    private static boolean tagContainsModel(CompoundTag tag, String configured) {
+        if (tag.contains(GEAR_MODEL_TAG) && matchesConfiguredModel(tag.getString(GEAR_MODEL_TAG), configured)) {
+            return true;
+        }
+        for (String key : tag.getAllKeys()) {
+            Tag child = tag.get(key);
+            if (child == null) {
+                continue;
+            }
+            if (child.getId() == 8 && matchesConfiguredModel(child.getAsString(), configured)) {
+                return true;
+            }
+            if (child instanceof CompoundTag compound && tagContainsModel(compound, configured)) {
+                return true;
+            }
+            if (child instanceof ListTag list && listContainsModel(list, configured)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean listContainsModel(ListTag list, String configured) {
+        for (Tag child : list) {
+            if (child.getId() == 8 && matchesConfiguredModel(child.getAsString(), configured)) {
+                return true;
+            }
+            if (child instanceof CompoundTag compound && tagContainsModel(compound, configured)) {
+                return true;
+            }
+            if (child instanceof ListTag nested && listContainsModel(nested, configured)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean matchesConfiguredModel(String candidate, String configured) {
+        if (candidate == null || candidate.isBlank()) {
             return false;
         }
-        String modelId = ArcaneBeamConfig.normalizeSwordTransmog(tag.getString(GEAR_MODEL_TAG));
-        String configured = ArcaneBeamConfig.normalizeSwordTransmog(settings.transmog);
-        return configured.equals(modelId);
+        String normalizedCandidate = ArcaneBeamConfig.normalizeSwordTransmog(candidate);
+        if (configured.equals(normalizedCandidate)) {
+            return true;
+        }
+        String rawCandidate = candidate.trim().toLowerCase(Locale.ROOT).replace('\\', '/');
+        String shortName = shortTransmogName(configured);
+        return rawCandidate.equals(shortName) || rawCandidate.endsWith("/" + shortName) || rawCandidate.endsWith(":" + shortName);
+    }
+
+    private static String shortTransmogName(String modelId) {
+        int slash = modelId.lastIndexOf('/');
+        return slash >= 0 ? modelId.substring(slash + 1) : modelId;
     }
 
     private static void renderModel(PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float previewScale) {
