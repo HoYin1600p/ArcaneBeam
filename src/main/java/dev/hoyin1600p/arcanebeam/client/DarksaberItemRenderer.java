@@ -60,10 +60,10 @@ public class DarksaberItemRenderer extends RenderType {
     private static final float BLADE_BASE_Z = 7.15F;
     private static final float BLADE_TIP_Z = -22.85F;
     private static final float EFFECT_START_T = 0.0F;
-    private static final float SHADER_EDGE_INTENSITY = 0.48F;
-    private static final float SHADER_GLOW_INTENSITY = 0.24F;
-    private static final float SHADER_ARC_INTENSITY = 0.42F;
-    private static final float SHADER_CORE_INTENSITY = 0.18F;
+    private static final float SHADER_EDGE_INTENSITY = 1.0F;
+    private static final float SHADER_GLOW_INTENSITY = 0.72F;
+    private static final float SHADER_ARC_INTENSITY = 1.0F;
+    private static final float SHADER_CORE_INTENSITY = 0.0F;
     private static DarksaberModel cachedModel;
     private static boolean shaderApiInitialized;
     private static Method irisGetInstanceMethod;
@@ -576,7 +576,7 @@ public class DarksaberItemRenderer extends RenderType {
                 .setCullState(NO_CULL)
                 .setWriteMaskState(COLOR_WRITE)
                 .createCompositeState(false);
-        return RenderType.create("arcanebeam_darksaber_blade_mesh", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.TRIANGLES, 512, false, true, state);
+        return RenderType.create("arcanebeam_darksaber_blade_mesh", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.TRIANGLES, 512, false, false, state);
     }
 
     private static RenderType createGlowRenderType() {
@@ -593,6 +593,7 @@ public class DarksaberItemRenderer extends RenderType {
         CompositeState state = CompositeState.builder()
                 .setShaderState(POSITION_COLOR_SHADER)
                 .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setDepthTestState(NO_DEPTH_TEST)
                 .setCullState(NO_CULL)
                 .setWriteMaskState(COLOR_WRITE)
                 .createCompositeState(false);
@@ -603,6 +604,7 @@ public class DarksaberItemRenderer extends RenderType {
         CompositeState state = CompositeState.builder()
                 .setShaderState(POSITION_COLOR_SHADER)
                 .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setDepthTestState(NO_DEPTH_TEST)
                 .setCullState(NO_CULL)
                 .setWriteMaskState(COLOR_WRITE)
                 .createCompositeState(false);
