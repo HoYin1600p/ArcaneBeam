@@ -63,6 +63,7 @@ public class DarksaberItemRenderer extends RenderType {
     private static final float SHADER_EDGE_INTENSITY = 0.48F;
     private static final float SHADER_GLOW_INTENSITY = 0.24F;
     private static final float SHADER_ARC_INTENSITY = 0.42F;
+    private static final float SHADER_CORE_INTENSITY = 0.18F;
     private static DarksaberModel cachedModel;
     private static boolean shaderApiInitialized;
     private static Method irisGetInstanceMethod;
@@ -238,10 +239,11 @@ public class DarksaberItemRenderer extends RenderType {
 
     private static void renderImportedBlade(PoseStack poseStack, MultiBufferSource buffer, BladeMesh bladeMesh, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer, boolean shaderPackActive, boolean firstPerson) {
         VertexConsumer mesh = buffer.getBuffer(BLADE_TRIANGLES);
+        int coreColor = shaderPackActive ? scaleColor(settings.coreColor, SHADER_CORE_INTENSITY) : settings.coreColor;
         for (Triangle triangle : bladeMesh.triangles) {
-            addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.a), settings.coreColor, settings.coreOpacity);
-            addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.b), settings.coreColor, settings.coreOpacity);
-            addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.c), settings.coreColor, settings.coreOpacity);
+            addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.a), coreColor, settings.coreOpacity);
+            addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.b), coreColor, settings.coreOpacity);
+            addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.c), coreColor, settings.coreOpacity);
         }
         renderBladeEffects(poseStack, buffer, bladeMesh::slice, settings, partialTick, shimmer, shaderPackActive, firstPerson);
     }
@@ -412,7 +414,11 @@ public class DarksaberItemRenderer extends RenderType {
     }
 
     private static void addMeshVertex(PoseStack poseStack, VertexConsumer builder, MeshVertex vertex, int color, float alpha) {
-        addBladeVertex(poseStack, builder, vertex.x, vertex.y, vertex.z, color, alpha);
+        Matrix4f matrix = poseStack.last().pose();
+        builder.vertex(matrix, vertex.x / 16.0F, vertex.y / 16.0F, vertex.z / 16.0F)
+                .color(red(color), green(color), blue(color), Math.max(0.0F, Math.min(1.0F, alpha)))
+                .uv(0.0F, 0.0F)
+                .endVertex();
     }
 
     private static float smoothstep(float value) {
@@ -499,6 +505,13 @@ public class DarksaberItemRenderer extends RenderType {
         return (color & 0xFF) / 255.0F;
     }
 
+    private static int scaleColor(int color, float scale) {
+        int red = Math.max(0, Math.min(255, Math.round(((color >> 16) & 0xFF) * scale)));
+        int green = Math.max(0, Math.min(255, Math.round(((color >> 8) & 0xFF) * scale)));
+        int blue = Math.max(0, Math.min(255, Math.round((color & 0xFF) * scale)));
+        return red << 16 | green << 8 | blue;
+    }
+
     private static DarksaberModel model() {
         if (cachedModel != null) {
             return cachedModel;
@@ -557,12 +570,13 @@ public class DarksaberItemRenderer extends RenderType {
 
     private static RenderType createBladeTriangleRenderType() {
         CompositeState state = CompositeState.builder()
-                .setShaderState(POSITION_COLOR_SHADER)
+                .setShaderState(POSITION_COLOR_TEX_SHADER)
+                .setTextureState(new TextureStateShard(WHITE_TEXTURE, false, false))
                 .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                 .setCullState(NO_CULL)
                 .setWriteMaskState(COLOR_WRITE)
                 .createCompositeState(false);
-        return RenderType.create("arcanebeam_darksaber_blade_mesh", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 512, false, true, state);
+        return RenderType.create("arcanebeam_darksaber_blade_mesh", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.TRIANGLES, 512, false, true, state);
     }
 
     private static RenderType createGlowRenderType() {
