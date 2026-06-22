@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public final class ArcaneBeamConfig {
@@ -83,6 +84,9 @@ public final class ArcaneBeamConfig {
         if (INSTANCE.archon == null) {
             INSTANCE.archon = copyOf(defaults.archon == null ? defaultArchonSettings() : defaults.archon);
         }
+        if (INSTANCE.darksaber == null) {
+            INSTANCE.darksaber = copyOf(defaults.darksaber == null ? defaultDarksaberSettings() : defaults.darksaber);
+        }
         validateShaderCompatibility();
         validateBeamSettings(INSTANCE.arcane, false);
         validateBeamSettings(INSTANCE.rail, true);
@@ -91,6 +95,7 @@ public final class ArcaneBeamConfig {
         validateStormArrowSettings(INSTANCE.stormArrow);
         validateStormArrowSettings(INSTANCE.smite);
         validateArchonSettings(INSTANCE.archon);
+        validateDarksaberSettings(INSTANCE.darksaber);
         INSTANCE.arcaneProfiles = validateProfiles(INSTANCE.arcaneProfiles, INSTANCE.arcane, false);
         INSTANCE.railProfiles = validateProfiles(INSTANCE.railProfiles, INSTANCE.rail, true);
         INSTANCE.lightningStrikeProfiles = validateLightningProfiles(INSTANCE.lightningStrikeProfiles, INSTANCE.lightningStrike);
@@ -98,6 +103,7 @@ public final class ArcaneBeamConfig {
         INSTANCE.stormArrowProfiles = validateStormArrowProfiles(INSTANCE.stormArrowProfiles, INSTANCE.stormArrow);
         INSTANCE.smiteProfiles = validateSmiteProfiles(INSTANCE.smiteProfiles, INSTANCE.smite);
         INSTANCE.archonProfiles = validateArchonProfiles(INSTANCE.archonProfiles, INSTANCE.archon);
+        INSTANCE.darksaberProfiles = validateDarksaberProfiles(INSTANCE.darksaberProfiles, INSTANCE.darksaber);
         INSTANCE.selectedArcaneProfile = validateSelectedProfile(INSTANCE.selectedArcaneProfile, INSTANCE.arcaneProfiles);
         INSTANCE.selectedRailProfile = validateSelectedProfile(INSTANCE.selectedRailProfile, INSTANCE.railProfiles);
         INSTANCE.selectedLightningStrikeProfile = validateSelectedLightningProfile(INSTANCE.selectedLightningStrikeProfile, INSTANCE.lightningStrikeProfiles);
@@ -105,6 +111,7 @@ public final class ArcaneBeamConfig {
         INSTANCE.selectedStormArrowProfile = validateSelectedStormArrowProfile(INSTANCE.selectedStormArrowProfile, INSTANCE.stormArrowProfiles);
         INSTANCE.selectedSmiteProfile = validateSelectedSmiteProfile(INSTANCE.selectedSmiteProfile, INSTANCE.smiteProfiles);
         INSTANCE.selectedArchonProfile = validateSelectedArchonProfile(INSTANCE.selectedArchonProfile, INSTANCE.archonProfiles);
+        INSTANCE.selectedDarksaberProfile = validateSelectedDarksaberProfile(INSTANCE.selectedDarksaberProfile, INSTANCE.darksaberProfiles);
         activateSelectedProfiles();
     }
 
@@ -259,6 +266,27 @@ public final class ArcaneBeamConfig {
         return validated;
     }
 
+    private static LinkedHashMap<String, DarksaberSettings> validateDarksaberProfiles(Map<String, DarksaberSettings> profiles, DarksaberSettings migrationSettings) {
+        LinkedHashMap<String, DarksaberSettings> validated = new LinkedHashMap<>();
+        if (profiles != null) {
+            for (Map.Entry<String, DarksaberSettings> entry : profiles.entrySet()) {
+                String name = normalizeProfileName(entry.getKey());
+                if (name.isEmpty()) {
+                    continue;
+                }
+                DarksaberSettings settings = entry.getValue() == null ? defaultDarksaberSettings() : entry.getValue();
+                validateDarksaberSettings(settings);
+                validated.put(uniqueProfileName(validated, name), settings);
+            }
+        }
+        if (validated.isEmpty()) {
+            DarksaberSettings settings = copyOf(migrationSettings == null ? defaultDarksaberSettings() : migrationSettings);
+            validateDarksaberSettings(settings);
+            validated.put(DEFAULT_PROFILE, settings);
+        }
+        return validated;
+    }
+
     private static String validateSelectedProfile(String selectedProfile, LinkedHashMap<String, BeamSettings> profiles) {
         String normalized = normalizeProfileName(selectedProfile);
         if (!normalized.isEmpty() && profiles.containsKey(normalized)) {
@@ -307,6 +335,14 @@ public final class ArcaneBeamConfig {
         return profiles.keySet().iterator().next();
     }
 
+    private static String validateSelectedDarksaberProfile(String selectedProfile, LinkedHashMap<String, DarksaberSettings> profiles) {
+        String normalized = normalizeProfileName(selectedProfile);
+        if (!normalized.isEmpty() && profiles.containsKey(normalized)) {
+            return normalized;
+        }
+        return profiles.keySet().iterator().next();
+    }
+
     private static void activateSelectedProfiles() {
         INSTANCE.arcane = INSTANCE.arcaneProfiles.get(INSTANCE.selectedArcaneProfile);
         INSTANCE.rail = INSTANCE.railProfiles.get(INSTANCE.selectedRailProfile);
@@ -315,6 +351,7 @@ public final class ArcaneBeamConfig {
         INSTANCE.stormArrow = INSTANCE.stormArrowProfiles.get(INSTANCE.selectedStormArrowProfile);
         INSTANCE.smite = INSTANCE.smiteProfiles.get(INSTANCE.selectedSmiteProfile);
         INSTANCE.archon = INSTANCE.archonProfiles.get(INSTANCE.selectedArchonProfile);
+        INSTANCE.darksaber = INSTANCE.darksaberProfiles.get(INSTANCE.selectedDarksaberProfile);
         INSTANCE.shaderCompatibility = INSTANCE.arcane.shaderCompatibility;
     }
 
@@ -339,6 +376,9 @@ public final class ArcaneBeamConfig {
         }
         if (INSTANCE.archonProfiles != null && INSTANCE.selectedArchonProfile != null && INSTANCE.archon != null) {
             INSTANCE.archonProfiles.put(INSTANCE.selectedArchonProfile, INSTANCE.archon);
+        }
+        if (INSTANCE.darksaberProfiles != null && INSTANCE.selectedDarksaberProfile != null && INSTANCE.darksaber != null) {
+            INSTANCE.darksaberProfiles.put(INSTANCE.selectedDarksaberProfile, INSTANCE.darksaber);
         }
     }
 
@@ -564,6 +604,51 @@ public final class ArcaneBeamConfig {
         settings.missileOriginRadius = clampFloat(settings.missileOriginRadius <= 0.0F ? 2.0F : settings.missileOriginRadius, 0.0F, 16.0F);
     }
 
+    private static void validateDarksaberSettings(DarksaberSettings settings) {
+        if (settings.transmog == null || settings.transmog.isBlank()) {
+            settings.transmog = "forsaken";
+        }
+        settings.transmog = normalizeSwordTransmog(settings.transmog);
+        if (settings.coreColor == 0) {
+            settings.coreColor = 0x050506;
+        }
+        if (settings.edgeColor == 0) {
+            settings.edgeColor = 0xF4F7FF;
+        }
+        if (settings.glowColor == 0) {
+            settings.glowColor = 0x8EA8FF;
+        }
+        settings.coreOpacity = clampFloat(settings.coreOpacity <= 0.0F ? 0.88F : settings.coreOpacity, 0.0F, 1.0F);
+        settings.edgeOpacity = clampFloat(settings.edgeOpacity <= 0.0F ? 1.0F : settings.edgeOpacity, 0.0F, 1.0F);
+        settings.glowOpacity = clampFloat(settings.glowOpacity < 0.0F ? 0.0F : settings.glowOpacity, 0.0F, 1.0F);
+        settings.shimmerAmount = clampFloat(settings.shimmerAmount < 0.0F ? 0.0F : settings.shimmerAmount, 0.0F, 1.0F);
+        settings.shimmerSpeed = clampFloat(settings.shimmerSpeed <= 0.0F ? 24.0F : settings.shimmerSpeed, 1.0F, 120.0F);
+        settings.scale = clampFloat(settings.scale <= 0.0F ? 1.0F : settings.scale, 0.1F, 4.0F);
+        settings.offsetX = clampFloat(settings.offsetX, -4.0F, 4.0F);
+        settings.offsetY = clampFloat(settings.offsetY, -4.0F, 4.0F);
+        settings.offsetZ = clampFloat(settings.offsetZ, -4.0F, 4.0F);
+        settings.rotationX = clampFloat(settings.rotationX, -180.0F, 180.0F);
+        settings.rotationY = clampFloat(settings.rotationY, -180.0F, 180.0F);
+        settings.rotationZ = clampFloat(settings.rotationZ, -180.0F, 180.0F);
+    }
+
+    public static String normalizeSwordTransmog(String value) {
+        if (value == null) {
+            return "the_vault:gear/sword/forsaken";
+        }
+        String normalized = value.trim().toLowerCase(Locale.ROOT).replace('\\', '/');
+        if (normalized.isEmpty()) {
+            return "the_vault:gear/sword/forsaken";
+        }
+        if (normalized.startsWith("the_vault:gear/sword/")) {
+            return normalized;
+        }
+        if (normalized.startsWith("gear/sword/")) {
+            return "the_vault:" + normalized;
+        }
+        return "the_vault:gear/sword/" + normalized;
+    }
+
     private static int clampInt(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
     }
@@ -629,6 +714,14 @@ public final class ArcaneBeamConfig {
 
     public static String selectedArchonProfileName() {
         return INSTANCE.selectedArchonProfile;
+    }
+
+    public static List<String> darksaberProfileNames() {
+        return new ArrayList<>(INSTANCE.darksaberProfiles.keySet());
+    }
+
+    public static String selectedDarksaberProfileName() {
+        return INSTANCE.selectedDarksaberProfile;
     }
 
     public static void selectProfile(boolean rail, String profileName) {
@@ -803,6 +896,33 @@ public final class ArcaneBeamConfig {
         INSTANCE.archonProfiles.put(profileName, settings);
         INSTANCE.selectedArchonProfile = profileName;
         INSTANCE.archon = settings;
+        save();
+        return profileName;
+    }
+
+    public static void selectDarksaberProfile(String profileName) {
+        String normalized = normalizeProfileName(profileName);
+        if (normalized.isEmpty() || !INSTANCE.darksaberProfiles.containsKey(normalized)) {
+            return;
+        }
+        syncActiveProfiles();
+        INSTANCE.selectedDarksaberProfile = normalized;
+        INSTANCE.darksaber = INSTANCE.darksaberProfiles.get(normalized);
+        save();
+    }
+
+    public static String addDarksaberProfile(String requestedName) {
+        String baseName = normalizeProfileName(requestedName);
+        if (baseName.isEmpty()) {
+            baseName = "Profile";
+        }
+        syncActiveProfiles();
+        String profileName = uniqueProfileName(INSTANCE.darksaberProfiles, baseName);
+        DarksaberSettings settings = copyOf(INSTANCE.darksaber);
+        validateDarksaberSettings(settings);
+        INSTANCE.darksaberProfiles.put(profileName, settings);
+        INSTANCE.selectedDarksaberProfile = profileName;
+        INSTANCE.darksaber = settings;
         save();
         return profileName;
     }
@@ -1025,6 +1145,28 @@ public final class ArcaneBeamConfig {
         return copy;
     }
 
+    private static DarksaberSettings copyOf(DarksaberSettings source) {
+        DarksaberSettings copy = new DarksaberSettings();
+        copy.enabled = source.enabled;
+        copy.transmog = source.transmog;
+        copy.coreColor = source.coreColor;
+        copy.edgeColor = source.edgeColor;
+        copy.glowColor = source.glowColor;
+        copy.coreOpacity = source.coreOpacity;
+        copy.edgeOpacity = source.edgeOpacity;
+        copy.glowOpacity = source.glowOpacity;
+        copy.shimmerAmount = source.shimmerAmount;
+        copy.shimmerSpeed = source.shimmerSpeed;
+        copy.scale = source.scale;
+        copy.offsetX = source.offsetX;
+        copy.offsetY = source.offsetY;
+        copy.offsetZ = source.offsetZ;
+        copy.rotationX = source.rotationX;
+        copy.rotationY = source.rotationY;
+        copy.rotationZ = source.rotationZ;
+        return copy;
+    }
+
     public static final class Config {
         public String shaderCompatibility;
         public String selectedArcaneProfile = DEFAULT_PROFILE;
@@ -1034,6 +1176,7 @@ public final class ArcaneBeamConfig {
         public String selectedStormArrowProfile = DEFAULT_PROFILE;
         public String selectedSmiteProfile = DEFAULT_PROFILE;
         public String selectedArchonProfile = DEFAULT_PROFILE;
+        public String selectedDarksaberProfile = DEFAULT_PROFILE;
         public BeamSettings arcane = defaultArcaneSettings();
         public BeamSettings rail = defaultRailSettings();
         public LightningStrikeSettings lightningStrike = defaultLightningStrikeSettings();
@@ -1041,6 +1184,7 @@ public final class ArcaneBeamConfig {
         public StormArrowSettings stormArrow = defaultStormArrowSettings();
         public SmiteSettings smite = defaultSmiteSettings();
         public ArchonSettings archon = defaultArchonSettings();
+        public DarksaberSettings darksaber = defaultDarksaberSettings();
         public LinkedHashMap<String, BeamSettings> arcaneProfiles;
         public LinkedHashMap<String, BeamSettings> railProfiles;
         public LinkedHashMap<String, LightningStrikeSettings> lightningStrikeProfiles;
@@ -1048,6 +1192,7 @@ public final class ArcaneBeamConfig {
         public LinkedHashMap<String, StormArrowSettings> stormArrowProfiles;
         public LinkedHashMap<String, SmiteSettings> smiteProfiles;
         public LinkedHashMap<String, ArchonSettings> archonProfiles;
+        public LinkedHashMap<String, DarksaberSettings> darksaberProfiles;
     }
 
     public static final class BeamSettings {
@@ -1281,6 +1426,30 @@ public final class ArcaneBeamConfig {
 
     private static ArchonSettings defaultArchonSettings() {
         return new ArchonSettings();
+    }
+
+    public static final class DarksaberSettings {
+        public boolean enabled = true;
+        public String transmog = "the_vault:gear/sword/forsaken";
+        public int coreColor = 0x050506;
+        public int edgeColor = 0xF4F7FF;
+        public int glowColor = 0x8EA8FF;
+        public float coreOpacity = 0.88F;
+        public float edgeOpacity = 1.0F;
+        public float glowOpacity = 0.22F;
+        public float shimmerAmount = 0.18F;
+        public float shimmerSpeed = 24.0F;
+        public float scale = 0.55F;
+        public float offsetX = 0.0F;
+        public float offsetY = 0.0F;
+        public float offsetZ = 0.0F;
+        public float rotationX = 0.0F;
+        public float rotationY = 0.0F;
+        public float rotationZ = 0.0F;
+    }
+
+    private static DarksaberSettings defaultDarksaberSettings() {
+        return new DarksaberSettings();
     }
 
     public enum LightningSoundMode {

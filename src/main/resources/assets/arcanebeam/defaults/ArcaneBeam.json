@@ -7,6 +7,7 @@
   "selectedStormArrowProfile": "Default",
   "selectedSmiteProfile": "Default",
   "selectedArchonProfile": "Default",
+  "selectedDarksaberProfile": "Default",
   "arcane": {
     "color": 849935,
     "colors": [
@@ -227,6 +228,25 @@
     "projectileSoundMode": "option_1",
     "soundVolume": 1.0,
     "audioRange": 32
+  },
+  "darksaber": {
+    "enabled": true,
+    "transmog": "the_vault:gear/sword/forsaken",
+    "coreColor": 329990,
+    "edgeColor": 16054271,
+    "glowColor": 9349375,
+    "coreOpacity": 0.88,
+    "edgeOpacity": 1.0,
+    "glowOpacity": 0.22,
+    "shimmerAmount": 0.18,
+    "shimmerSpeed": 24.0,
+    "scale": 0.55,
+    "offsetX": 0.0,
+    "offsetY": 0.0,
+    "offsetZ": 0.0,
+    "rotationX": 0.0,
+    "rotationY": 0.0,
+    "rotationZ": 0.0
   },
   "arcaneProfiles": {
     "Default": {
@@ -530,6 +550,27 @@
       "projectileSoundMode": "option_1",
       "soundVolume": 1.0,
       "audioRange": 32
+    }
+  },
+  "darksaberProfiles": {
+    "Default": {
+      "enabled": true,
+      "transmog": "the_vault:gear/sword/forsaken",
+      "coreColor": 329990,
+      "edgeColor": 16054271,
+      "glowColor": 9349375,
+      "coreOpacity": 0.88,
+      "edgeOpacity": 1.0,
+      "glowOpacity": 0.22,
+      "shimmerAmount": 0.18,
+      "shimmerSpeed": 24.0,
+      "scale": 0.55,
+      "offsetX": 0.0,
+      "offsetY": 0.0,
+      "offsetZ": 0.0,
+      "rotationX": 0.0,
+      "rotationY": 0.0,
+      "rotationZ": 0.0
     }
   }
 }
