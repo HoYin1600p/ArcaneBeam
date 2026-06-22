@@ -313,13 +313,13 @@ public class DarksaberItemRenderer extends RenderType {
         Minecraft minecraft = Minecraft.getInstance();
         float time = (minecraft.level == null ? 0.0F : minecraft.level.getGameTime()) + partialTick;
         int cycle = (int) Math.floor(time / Math.max(4.0F, settings.shimmerSpeed * 0.35F));
-        int arcs = 7;
+        int arcs = 12;
         for (int i = 0; i < arcs; i++) {
             float seed = hash(cycle * 37 + i * 19);
             float t = 0.08F + 0.86F * seed;
             float pulse = 0.5F + 0.5F * (float) Math.sin(time * 0.52F + i * 1.71F);
-            float alpha = settings.edgeOpacity * (0.22F + 0.58F * pulse) * (0.45F + 0.55F * shimmer);
-            float inward = 0.14F + 0.18F * hash(cycle * 53 + i * 23);
+            float alpha = settings.edgeOpacity * (0.46F + 0.54F * pulse) * (0.55F + 0.45F * shimmer);
+            float inward = 0.18F + 0.34F * hash(cycle * 53 + i * 23);
             drawArcStroke(poseStack, builder, profile, t, inward, alpha, settings.edgeColor, cycle * 97 + i * 11, BLADE_X_FRONT + BLADE_SURFACE_OFFSET * 2.0F);
             drawArcStroke(poseStack, builder, profile, t, inward, alpha * 0.82F, settings.edgeColor, cycle * 97 + i * 11, BLADE_X_BACK - BLADE_SURFACE_OFFSET * 2.0F);
         }
@@ -333,7 +333,7 @@ public class DarksaberItemRenderer extends RenderType {
             float nextInward = inward * (i / 3.0F);
             BladePoint a = pointInsideBlade(profile, lastT, lastInward);
             BladePoint b = pointInsideBlade(profile, nextT, nextInward);
-            drawBladeLine(poseStack, builder, x, a, b, color, alpha * (1.0F - i * 0.18F), 0.035F);
+            drawBladeLine(poseStack, builder, x, a, b, color, alpha * (1.0F - i * 0.14F), 0.055F);
             lastT = nextT;
             lastInward = nextInward;
         }
@@ -378,15 +378,9 @@ public class DarksaberItemRenderer extends RenderType {
     }
 
     private static void addBladeVertex(PoseStack poseStack, VertexConsumer builder, float x, float y, float z, int color, float alpha) {
-        PoseStack.Pose pose = poseStack.last();
-        Matrix4f matrix = pose.pose();
-        Matrix3f normal = pose.normal();
+        Matrix4f matrix = poseStack.last().pose();
         builder.vertex(matrix, x / 16.0F, y / 16.0F, z / 16.0F)
                 .color(red(color), green(color), blue(color), Math.max(0.0F, Math.min(1.0F, alpha)))
-                .uv(0.5F, 0.5F)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(LightTexture.FULL_BRIGHT)
-                .normal(normal, 0.0F, 1.0F, 0.0F)
                 .endVertex();
     }
 
@@ -502,35 +496,34 @@ public class DarksaberItemRenderer extends RenderType {
 
     private static RenderType createBladeRenderType() {
         CompositeState state = CompositeState.builder()
-                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
-                .setTextureState(new TextureStateShard(WHITE_TEXTURE, false, false))
-                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setShaderState(POSITION_COLOR_SHADER)
+                .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                .setDepthTestState(NO_DEPTH_TEST)
                 .setCullState(NO_CULL)
                 .setWriteMaskState(COLOR_WRITE)
                 .createCompositeState(false);
-        return RenderType.create("arcanebeam_darksaber_blade", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 512, false, true, state);
+        return RenderType.create("arcanebeam_darksaber_blade", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 512, false, true, state);
     }
 
     private static RenderType createBladeTriangleRenderType() {
         CompositeState state = CompositeState.builder()
-                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
-                .setTextureState(new TextureStateShard(WHITE_TEXTURE, false, false))
+                .setShaderState(POSITION_COLOR_SHADER)
                 .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                 .setCullState(NO_CULL)
                 .setWriteMaskState(COLOR_DEPTH_WRITE)
                 .createCompositeState(false);
-        return RenderType.create("arcanebeam_darksaber_blade_mesh", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.TRIANGLES, 512, false, true, state);
+        return RenderType.create("arcanebeam_darksaber_blade_mesh", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 512, false, true, state);
     }
 
     private static RenderType createGlowRenderType() {
         CompositeState state = CompositeState.builder()
-                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
-                .setTextureState(new TextureStateShard(WHITE_TEXTURE, false, false))
-                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setShaderState(POSITION_COLOR_SHADER)
+                .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                .setDepthTestState(NO_DEPTH_TEST)
                 .setCullState(NO_CULL)
                 .setWriteMaskState(COLOR_WRITE)
                 .createCompositeState(false);
-        return RenderType.create("arcanebeam_darksaber_glow", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 512, false, true, state);
+        return RenderType.create("arcanebeam_darksaber_glow", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 512, false, true, state);
     }
 
     private enum Group {
