@@ -302,21 +302,20 @@ public class DarksaberItemRenderer extends RenderType {
     }
 
     private static BladeSlice bladeSlice(float t) {
-        float eased = smoothstep(t);
         float z = BLADE_BASE_Z + (BLADE_TIP_Z - BLADE_BASE_Z) * t;
-        float trailingY = 3.88F + 0.78F * eased;
-        float leadingY;
-        if (t < 0.58F) {
-            float grow = smoothstep(t / 0.58F);
-            leadingY = 4.58F + 2.22F * grow;
-        } else {
-            float taper = smoothstep((t - 0.58F) / 0.42F);
-            leadingY = 6.80F + (4.92F - 6.80F) * taper;
-        }
-        float tipBlend = smoothstep(Math.max(0.0F, (t - 0.84F) / 0.16F));
-        float tipY = 4.86F;
-        trailingY = trailingY + (tipY - trailingY) * tipBlend;
-        leadingY = leadingY + (tipY - leadingY) * tipBlend;
+        float tipY = 4.78F;
+
+        float trailingBaseY = 3.96F;
+        float leadingBaseY = 6.28F;
+
+        float leadingTaper = smoothstep((t - 0.18F) / 0.82F);
+        float trailingTaper = smoothstep((t - 0.72F) / 0.28F);
+        float leadingY = leadingBaseY + (tipY - leadingBaseY) * leadingTaper;
+        float trailingY = trailingBaseY + (tipY - trailingBaseY) * trailingTaper;
+
+        float finalTip = smoothstep((t - 0.93F) / 0.07F);
+        leadingY = leadingY + (tipY - leadingY) * finalTip;
+        trailingY = trailingY + (tipY - trailingY) * finalTip;
         return new BladeSlice(trailingY, leadingY, z);
     }
 
