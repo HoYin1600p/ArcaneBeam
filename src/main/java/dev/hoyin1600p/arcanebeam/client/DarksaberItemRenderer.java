@@ -506,7 +506,7 @@ public class DarksaberItemRenderer extends RenderType {
                 .setTextureState(new TextureStateShard(WHITE_TEXTURE, false, false))
                 .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                 .setCullState(NO_CULL)
-                .setWriteMaskState(COLOR_DEPTH_WRITE)
+                .setWriteMaskState(COLOR_WRITE)
                 .createCompositeState(false);
         return RenderType.create("arcanebeam_darksaber_blade", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 512, false, true, state);
     }
@@ -528,7 +528,7 @@ public class DarksaberItemRenderer extends RenderType {
                 .setTextureState(new TextureStateShard(WHITE_TEXTURE, false, false))
                 .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                 .setCullState(NO_CULL)
-                .setWriteMaskState(COLOR_DEPTH_WRITE)
+                .setWriteMaskState(COLOR_WRITE)
                 .createCompositeState(false);
         return RenderType.create("arcanebeam_darksaber_glow", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 512, false, true, state);
     }
