@@ -47,6 +47,10 @@ public class DarksaberItemRenderer extends RenderType {
     private static final float BLADE_X_MIN = -0.31F;
     private static final float BLADE_X_MAX = 0.56F;
     private static final float BLADE_X_CENTER = (BLADE_X_MIN + BLADE_X_MAX) * 0.5F;
+    private static final float BLADE_THICKNESS = 0.08F; // 5 mm: 0.005 blocks * 16 model units.
+    private static final float BLADE_X_BACK = BLADE_X_CENTER - BLADE_THICKNESS * 0.5F;
+    private static final float BLADE_X_FRONT = BLADE_X_CENTER + BLADE_THICKNESS * 0.5F;
+    private static final float BLADE_SURFACE_OFFSET = 0.006F;
     private static final float BLADE_BASE_Z = 7.15F;
     private static final float BLADE_TIP_Z = -22.85F;
     private static DarksaberModel cachedModel;
@@ -215,14 +219,25 @@ public class DarksaberItemRenderer extends RenderType {
             float t1 = (i + 1) / (float) segments;
             BladeSlice a = bladeSlice(t0);
             BladeSlice b = bladeSlice(t1);
-            renderBladeFace(poseStack, blade, BLADE_X_CENTER, a, b, settings.coreColor, settings.coreOpacity, settings.coreOpacity);
+            renderBladeFace(poseStack, blade, BLADE_X_FRONT, a, b, settings.coreColor, settings.coreOpacity, settings.coreOpacity);
+            renderBladeFace(poseStack, blade, BLADE_X_BACK, b, a, settings.coreColor, settings.coreOpacity, settings.coreOpacity);
+            renderBladeEdge(poseStack, blade, a.leadingY, a.z, b.leadingY, b.z, settings.edgeColor, settings.edgeOpacity * 0.78F);
+            renderBladeEdge(poseStack, blade, b.trailingY, b.z, a.trailingY, a.z, settings.edgeColor, settings.edgeOpacity * 0.34F);
+            if (i == 0) {
+                renderBladeCap(poseStack, blade, a, settings.edgeColor, settings.edgeOpacity * 0.46F);
+            } else if (i == segments - 1) {
+                renderBladeCap(poseStack, blade, b, settings.edgeColor, settings.edgeOpacity * 0.62F);
+            }
 
             float leadingAlpha = settings.edgeOpacity * (0.72F + 0.28F * shimmer);
-            renderLeadingGlowFace(poseStack, blade, BLADE_X_CENTER, a, b, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
-            renderLeadingGlowFace(poseStack, glow, BLADE_X_CENTER, a, b, settings.glowColor, settings.glowOpacity * shimmer, -0.12F, 0.58F);
+            renderLeadingGlowFace(poseStack, blade, BLADE_X_FRONT + BLADE_SURFACE_OFFSET, a, b, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
+            renderLeadingGlowFace(poseStack, blade, BLADE_X_BACK - BLADE_SURFACE_OFFSET, b, a, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
+            renderLeadingGlowFace(poseStack, glow, BLADE_X_FRONT + BLADE_SURFACE_OFFSET * 2.0F, a, b, settings.glowColor, settings.glowOpacity * shimmer, -0.12F, 0.58F);
+            renderLeadingGlowFace(poseStack, glow, BLADE_X_BACK - BLADE_SURFACE_OFFSET * 2.0F, b, a, settings.glowColor, settings.glowOpacity * shimmer, -0.12F, 0.58F);
 
             float trailingAlpha = settings.edgeOpacity * 0.22F * (0.65F + 0.35F * shimmer);
-            renderTrailingGlowFace(poseStack, blade, BLADE_X_CENTER, a, b, settings.edgeColor, trailingAlpha);
+            renderTrailingGlowFace(poseStack, blade, BLADE_X_FRONT + BLADE_SURFACE_OFFSET, a, b, settings.edgeColor, trailingAlpha);
+            renderTrailingGlowFace(poseStack, blade, BLADE_X_BACK - BLADE_SURFACE_OFFSET, b, a, settings.edgeColor, trailingAlpha);
         }
         renderBladeArcs(poseStack, glow, settings, partialTick, shimmer);
     }
@@ -232,6 +247,20 @@ public class DarksaberItemRenderer extends RenderType {
         addBladeVertex(poseStack, builder, x, b.trailingY, b.z, color, alphaB);
         addBladeVertex(poseStack, builder, x, b.leadingY, b.z, color, alphaB);
         addBladeVertex(poseStack, builder, x, a.leadingY, a.z, color, alphaA);
+    }
+
+    private static void renderBladeEdge(PoseStack poseStack, VertexConsumer builder, float y0, float z0, float y1, float z1, int color, float alpha) {
+        addBladeVertex(poseStack, builder, BLADE_X_BACK, y0, z0, color, alpha);
+        addBladeVertex(poseStack, builder, BLADE_X_BACK, y1, z1, color, alpha);
+        addBladeVertex(poseStack, builder, BLADE_X_FRONT, y1, z1, color, alpha);
+        addBladeVertex(poseStack, builder, BLADE_X_FRONT, y0, z0, color, alpha);
+    }
+
+    private static void renderBladeCap(PoseStack poseStack, VertexConsumer builder, BladeSlice slice, int color, float alpha) {
+        addBladeVertex(poseStack, builder, BLADE_X_BACK, slice.trailingY, slice.z, color, alpha);
+        addBladeVertex(poseStack, builder, BLADE_X_FRONT, slice.trailingY, slice.z, color, alpha);
+        addBladeVertex(poseStack, builder, BLADE_X_FRONT, slice.leadingY, slice.z, color, alpha);
+        addBladeVertex(poseStack, builder, BLADE_X_BACK, slice.leadingY, slice.z, color, alpha);
     }
 
     private static void renderLeadingGlowFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice a, BladeSlice b, int color, float alpha, float outerOffset, float innerFactor) {
@@ -259,7 +288,8 @@ public class DarksaberItemRenderer extends RenderType {
             float pulse = 0.5F + 0.5F * (float) Math.sin(time * 0.52F + i * 1.71F);
             float alpha = settings.edgeOpacity * (0.22F + 0.58F * pulse) * (0.45F + 0.55F * shimmer);
             float inward = 0.14F + 0.18F * hash(cycle * 53 + i * 23);
-            drawArcStroke(poseStack, builder, t, inward, alpha, settings.edgeColor, cycle * 97 + i * 11, BLADE_X_CENTER);
+            drawArcStroke(poseStack, builder, t, inward, alpha, settings.edgeColor, cycle * 97 + i * 11, BLADE_X_FRONT + BLADE_SURFACE_OFFSET * 2.0F);
+            drawArcStroke(poseStack, builder, t, inward, alpha * 0.82F, settings.edgeColor, cycle * 97 + i * 11, BLADE_X_BACK - BLADE_SURFACE_OFFSET * 2.0F);
         }
     }
 
