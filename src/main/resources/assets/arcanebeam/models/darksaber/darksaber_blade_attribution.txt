@@ -1,0 +1,3 @@
+Blade mesh derived from "Dark - Saber Blender 2.90" by Darth_Ir0n.
+Source: https://sketchfab.com/3d-models/dark-saber-blender-290-73bb3524d59445c580552c71bce7543d
+License: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

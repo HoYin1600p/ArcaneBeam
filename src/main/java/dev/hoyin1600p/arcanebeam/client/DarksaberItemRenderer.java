@@ -36,12 +36,14 @@ import java.util.Optional;
 
 public class DarksaberItemRenderer extends RenderType {
     private static final ResourceLocation MODEL = new ResourceLocation(ArcaneBeam.MOD_ID, "models/darksaber/darksaber2.1.bbmodel");
+    private static final ResourceLocation BLADE_MESH = new ResourceLocation(ArcaneBeam.MOD_ID, "models/darksaber/darksaber_blade_mesh.json");
     private static final ResourceLocation TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/item/darksaber/darksaber2.png");
     private static final ResourceLocation WHITE_TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/entity/white.png");
     private static final ResourceLocation VAULT_SWORD = new ResourceLocation("the_vault", "sword");
     private static final String GEAR_MODEL_TAG = "the_vault:gear_model";
     private static final RenderType HILT = RenderType.entityCutoutNoCull(TEXTURE);
     private static final RenderType BLADE = createBladeRenderType();
+    private static final RenderType BLADE_TRIANGLES = createBladeTriangleRenderType();
     private static final RenderType GLOW = createGlowRenderType();
     private static final int TEXTURE_SIZE = 64;
     private static final float BLADE_X_MIN = -0.31F;
@@ -206,13 +208,30 @@ public class DarksaberItemRenderer extends RenderType {
                 renderElement(poseStack, hilt, element, 0xFFFFFF, 1.0F, LightTexture.FULL_BRIGHT, packedOverlay, true);
             }
         }
-        renderCustomBlade(poseStack, buffer, settings, partialTick, shimmer);
+        renderCustomBlade(poseStack, buffer, model.bladeMesh, settings, partialTick, shimmer);
         poseStack.popPose();
     }
 
-    private static void renderCustomBlade(PoseStack poseStack, MultiBufferSource buffer, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer) {
+    private static void renderCustomBlade(PoseStack poseStack, MultiBufferSource buffer, BladeMesh bladeMesh, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer) {
+        if (bladeMesh != null && !bladeMesh.triangles.isEmpty()) {
+            renderImportedBlade(poseStack, buffer, bladeMesh, settings, partialTick, shimmer);
+            return;
+        }
+        renderProceduralBlade(poseStack, buffer, settings, partialTick, shimmer);
+    }
+
+    private static void renderImportedBlade(PoseStack poseStack, MultiBufferSource buffer, BladeMesh bladeMesh, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer) {
+        VertexConsumer mesh = buffer.getBuffer(BLADE_TRIANGLES);
+        for (Triangle triangle : bladeMesh.triangles) {
+            addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.a), settings.coreColor, settings.coreOpacity);
+            addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.b), settings.coreColor, settings.coreOpacity);
+            addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.c), settings.coreColor, settings.coreOpacity);
+        }
+        renderBladeEffects(poseStack, buffer, bladeMesh::slice, settings, partialTick, shimmer);
+    }
+
+    private static void renderProceduralBlade(PoseStack poseStack, MultiBufferSource buffer, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer) {
         VertexConsumer blade = buffer.getBuffer(BLADE);
-        VertexConsumer glow = buffer.getBuffer(GLOW);
         int segments = 18;
         for (int i = 0; i < segments; i++) {
             float t0 = i / (float) segments;
@@ -228,6 +247,19 @@ public class DarksaberItemRenderer extends RenderType {
             } else if (i == segments - 1) {
                 renderBladeCap(poseStack, blade, b, settings.edgeColor, settings.edgeOpacity * 0.62F);
             }
+        }
+        renderBladeEffects(poseStack, buffer, DarksaberItemRenderer::bladeSlice, settings, partialTick, shimmer);
+    }
+
+    private static void renderBladeEffects(PoseStack poseStack, MultiBufferSource buffer, BladeProfile profile, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer) {
+        VertexConsumer blade = buffer.getBuffer(BLADE);
+        VertexConsumer glow = buffer.getBuffer(GLOW);
+        int segments = 18;
+        for (int i = 0; i < segments; i++) {
+            float t0 = i / (float) segments;
+            float t1 = (i + 1) / (float) segments;
+            BladeSlice a = profile.slice(t0);
+            BladeSlice b = profile.slice(t1);
 
             float leadingAlpha = settings.edgeOpacity * (0.72F + 0.28F * shimmer);
             renderLeadingGlowFace(poseStack, blade, BLADE_X_FRONT + BLADE_SURFACE_OFFSET, a, b, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
@@ -239,7 +271,7 @@ public class DarksaberItemRenderer extends RenderType {
             renderTrailingGlowFace(poseStack, blade, BLADE_X_FRONT + BLADE_SURFACE_OFFSET, a, b, settings.edgeColor, trailingAlpha);
             renderTrailingGlowFace(poseStack, blade, BLADE_X_BACK - BLADE_SURFACE_OFFSET, b, a, settings.edgeColor, trailingAlpha);
         }
-        renderBladeArcs(poseStack, glow, settings, partialTick, shimmer);
+        renderBladeArcs(poseStack, glow, profile, settings, partialTick, shimmer);
     }
 
     private static void renderBladeFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice a, BladeSlice b, int color, float alphaA, float alphaB) {
@@ -277,7 +309,7 @@ public class DarksaberItemRenderer extends RenderType {
         addBladeVertex(poseStack, builder, x, a.blendY(0.14F), a.z, color, 0.0F);
     }
 
-    private static void renderBladeArcs(PoseStack poseStack, VertexConsumer builder, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer) {
+    private static void renderBladeArcs(PoseStack poseStack, VertexConsumer builder, BladeProfile profile, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer) {
         Minecraft minecraft = Minecraft.getInstance();
         float time = (minecraft.level == null ? 0.0F : minecraft.level.getGameTime()) + partialTick;
         int cycle = (int) Math.floor(time / Math.max(4.0F, settings.shimmerSpeed * 0.35F));
@@ -288,19 +320,19 @@ public class DarksaberItemRenderer extends RenderType {
             float pulse = 0.5F + 0.5F * (float) Math.sin(time * 0.52F + i * 1.71F);
             float alpha = settings.edgeOpacity * (0.22F + 0.58F * pulse) * (0.45F + 0.55F * shimmer);
             float inward = 0.14F + 0.18F * hash(cycle * 53 + i * 23);
-            drawArcStroke(poseStack, builder, t, inward, alpha, settings.edgeColor, cycle * 97 + i * 11, BLADE_X_FRONT + BLADE_SURFACE_OFFSET * 2.0F);
-            drawArcStroke(poseStack, builder, t, inward, alpha * 0.82F, settings.edgeColor, cycle * 97 + i * 11, BLADE_X_BACK - BLADE_SURFACE_OFFSET * 2.0F);
+            drawArcStroke(poseStack, builder, profile, t, inward, alpha, settings.edgeColor, cycle * 97 + i * 11, BLADE_X_FRONT + BLADE_SURFACE_OFFSET * 2.0F);
+            drawArcStroke(poseStack, builder, profile, t, inward, alpha * 0.82F, settings.edgeColor, cycle * 97 + i * 11, BLADE_X_BACK - BLADE_SURFACE_OFFSET * 2.0F);
         }
     }
 
-    private static void drawArcStroke(PoseStack poseStack, VertexConsumer builder, float startT, float inward, float alpha, int color, int seed, float x) {
+    private static void drawArcStroke(PoseStack poseStack, VertexConsumer builder, BladeProfile profile, float startT, float inward, float alpha, int color, int seed, float x) {
         float lastT = startT;
         float lastInward = 0.02F;
         for (int i = 1; i <= 3; i++) {
             float nextT = clamp01(startT + (hash(seed + i * 17) - 0.5F) * 0.075F + i * 0.012F);
             float nextInward = inward * (i / 3.0F);
-            BladePoint a = pointInsideBlade(lastT, lastInward);
-            BladePoint b = pointInsideBlade(nextT, nextInward);
+            BladePoint a = pointInsideBlade(profile, lastT, lastInward);
+            BladePoint b = pointInsideBlade(profile, nextT, nextInward);
             drawBladeLine(poseStack, builder, x, a, b, color, alpha * (1.0F - i * 0.18F), 0.035F);
             lastT = nextT;
             lastInward = nextInward;
@@ -322,8 +354,8 @@ public class DarksaberItemRenderer extends RenderType {
         addBladeVertex(poseStack, builder, x, a.y - offY, a.z - offZ, color, 0.0F);
     }
 
-    private static BladePoint pointInsideBlade(float t, float inward) {
-        BladeSlice slice = bladeSlice(clamp01(t));
+    private static BladePoint pointInsideBlade(BladeProfile profile, float t, float inward) {
+        BladeSlice slice = profile.slice(clamp01(t));
         return new BladePoint(slice.leadingY + (slice.trailingY - slice.leadingY) * clamp01(inward), slice.z);
     }
 
@@ -356,6 +388,10 @@ public class DarksaberItemRenderer extends RenderType {
                 .uv2(LightTexture.FULL_BRIGHT)
                 .normal(normal, 0.0F, 1.0F, 0.0F)
                 .endVertex();
+    }
+
+    private static void addMeshVertex(PoseStack poseStack, VertexConsumer builder, MeshVertex vertex, int color, float alpha) {
+        addBladeVertex(poseStack, builder, vertex.x, vertex.y, vertex.z, color, alpha);
     }
 
     private static float smoothstep(float value) {
@@ -437,12 +473,31 @@ public class DarksaberItemRenderer extends RenderType {
                     };
                     elements.add(Element.fromJson(object, group));
                 }
-                cachedModel = DarksaberModel.from(elements);
+                cachedModel = DarksaberModel.from(elements, loadBladeMesh());
             }
         } catch (Exception ignored) {
             cachedModel = DarksaberModel.EMPTY;
         }
         return cachedModel == DarksaberModel.EMPTY ? null : cachedModel;
+    }
+
+    private static BladeMesh loadBladeMesh() {
+        try (Reader reader = new InputStreamReader(Minecraft.getInstance().getResourceManager().getResource(BLADE_MESH).getInputStream(), StandardCharsets.UTF_8)) {
+            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+            List<MeshVertex> vertices = new ArrayList<>();
+            for (JsonElement element : root.getAsJsonArray("vertices")) {
+                JsonArray array = element.getAsJsonArray();
+                vertices.add(new MeshVertex(array.get(0).getAsFloat(), array.get(1).getAsFloat(), array.get(2).getAsFloat()));
+            }
+            List<Triangle> triangles = new ArrayList<>();
+            for (JsonElement element : root.getAsJsonArray("triangles")) {
+                JsonArray array = element.getAsJsonArray();
+                triangles.add(new Triangle(array.get(0).getAsInt(), array.get(1).getAsInt(), array.get(2).getAsInt()));
+            }
+            return BladeMesh.from(vertices, triangles);
+        } catch (Exception ignored) {
+            return BladeMesh.EMPTY;
+        }
     }
 
     private static RenderType createBladeRenderType() {
@@ -454,6 +509,17 @@ public class DarksaberItemRenderer extends RenderType {
                 .setWriteMaskState(COLOR_DEPTH_WRITE)
                 .createCompositeState(false);
         return RenderType.create("arcanebeam_darksaber_blade", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 512, false, true, state);
+    }
+
+    private static RenderType createBladeTriangleRenderType() {
+        CompositeState state = CompositeState.builder()
+                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                .setTextureState(new TextureStateShard(WHITE_TEXTURE, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setWriteMaskState(COLOR_DEPTH_WRITE)
+                .createCompositeState(false);
+        return RenderType.create("arcanebeam_darksaber_blade_mesh", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.TRIANGLES, 512, false, true, state);
     }
 
     private static RenderType createGlowRenderType() {
@@ -582,10 +648,106 @@ public class DarksaberItemRenderer extends RenderType {
     private record BladePoint(float y, float z) {
     }
 
-    private record DarksaberModel(List<Element> elements, double centerX, double centerY, double centerZ) {
-        private static final DarksaberModel EMPTY = new DarksaberModel(List.of(), 0.0D, 0.0D, 0.0D);
+    private interface BladeProfile {
+        BladeSlice slice(float t);
+    }
 
-        private static DarksaberModel from(List<Element> elements) {
+    private record MeshVertex(float x, float y, float z) {
+    }
+
+    private record Triangle(int a, int b, int c) {
+    }
+
+    private record BladeMesh(List<MeshVertex> vertices, List<Triangle> triangles, BladeSlice[] profile) {
+        private static final BladeMesh EMPTY = new BladeMesh(List.of(), List.of(), new BladeSlice[0]);
+
+        private static BladeMesh from(List<MeshVertex> vertices, List<Triangle> triangles) {
+            if (vertices.isEmpty() || triangles.isEmpty()) {
+                return EMPTY;
+            }
+            return new BladeMesh(vertices, triangles, buildProfile(vertices, triangles));
+        }
+
+        private BladeSlice slice(float t) {
+            if (profile.length == 0) {
+                return bladeSlice(t);
+            }
+            float clamped = clamp01(t);
+            float scaled = clamped * (profile.length - 1);
+            int lower = Math.min(profile.length - 1, (int) Math.floor(scaled));
+            int upper = Math.min(profile.length - 1, lower + 1);
+            float blend = scaled - lower;
+            BladeSlice a = profile[lower];
+            BladeSlice b = profile[upper];
+            return new BladeSlice(
+                    lerp(a.trailingY, b.trailingY, blend),
+                    lerp(a.leadingY, b.leadingY, blend),
+                    lerp(a.z, b.z, blend));
+        }
+
+        private static BladeSlice[] buildProfile(List<MeshVertex> vertices, List<Triangle> triangles) {
+            float minZ = Float.MAX_VALUE;
+            float maxZ = -Float.MAX_VALUE;
+            for (MeshVertex vertex : vertices) {
+                minZ = Math.min(minZ, vertex.z);
+                maxZ = Math.max(maxZ, vertex.z);
+            }
+            int samples = 33;
+            BladeSlice[] slices = new BladeSlice[samples];
+            for (int i = 0; i < samples; i++) {
+                float t = i / (float) (samples - 1);
+                float z = maxZ + (minZ - maxZ) * t;
+                float trailing = Float.MAX_VALUE;
+                float leading = -Float.MAX_VALUE;
+                for (Triangle triangle : triangles) {
+                    MeshVertex a = vertices.get(triangle.a);
+                    MeshVertex b = vertices.get(triangle.b);
+                    MeshVertex c = vertices.get(triangle.c);
+                    float y = intersectionY(a, b, z);
+                    if (!Float.isNaN(y)) {
+                        trailing = Math.min(trailing, y);
+                        leading = Math.max(leading, y);
+                    }
+                    y = intersectionY(b, c, z);
+                    if (!Float.isNaN(y)) {
+                        trailing = Math.min(trailing, y);
+                        leading = Math.max(leading, y);
+                    }
+                    y = intersectionY(c, a, z);
+                    if (!Float.isNaN(y)) {
+                        trailing = Math.min(trailing, y);
+                        leading = Math.max(leading, y);
+                    }
+                }
+                if (trailing == Float.MAX_VALUE || leading == -Float.MAX_VALUE) {
+                    BladeSlice fallback = bladeSlice(t);
+                    trailing = fallback.trailingY;
+                    leading = fallback.leadingY;
+                }
+                slices[i] = new BladeSlice(trailing, leading, z);
+            }
+            return slices;
+        }
+
+        private static float intersectionY(MeshVertex a, MeshVertex b, float z) {
+            float min = Math.min(a.z, b.z);
+            float max = Math.max(a.z, b.z);
+            if (z < min || z > max || Math.abs(a.z - b.z) < 0.00001F) {
+                return Float.NaN;
+            }
+            float t = (z - a.z) / (b.z - a.z);
+            return a.y + (b.y - a.y) * t;
+        }
+    }
+
+    private static float lerp(float a, float b, float t) {
+        return a + (b - a) * t;
+    }
+
+    private record DarksaberModel(List<Element> elements, BladeMesh bladeMesh, double centerX, double centerY, double centerZ) {
+        private static final DarksaberModel EMPTY = new DarksaberModel(List.of(), BladeMesh.EMPTY, 0.0D, 0.0D, 0.0D);
+
+        private static DarksaberModel from(List<Element> elements, BladeMesh bladeMesh) {
             if (elements.isEmpty()) {
                 return EMPTY;
             }
@@ -605,7 +767,7 @@ public class DarksaberItemRenderer extends RenderType {
                     maxZ = Math.max(maxZ, vertex.z);
                 }
             }
-            return new DarksaberModel(elements, (minX + maxX) * 0.5D, (minY + maxY) * 0.5D, (minZ + maxZ) * 0.5D);
+            return new DarksaberModel(elements, bladeMesh, (minX + maxX) * 0.5D, (minY + maxY) * 0.5D, (minZ + maxZ) * 0.5D);
         }
     }
 }
