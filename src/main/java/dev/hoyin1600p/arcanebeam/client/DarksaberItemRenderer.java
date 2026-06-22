@@ -45,6 +45,8 @@ public class DarksaberItemRenderer extends RenderType {
     private static final RenderType BLADE = createBladeRenderType();
     private static final RenderType BLADE_TRIANGLES = createBladeTriangleRenderType();
     private static final RenderType GLOW = createGlowRenderType();
+    private static final RenderType SHADER_BLADE = createShaderBladeRenderType();
+    private static final RenderType SHADER_GLOW = createShaderGlowRenderType();
     private static final int TEXTURE_SIZE = 64;
     private static final float BLADE_X_MIN = -0.31F;
     private static final float BLADE_X_MAX = 0.56F;
@@ -56,7 +58,13 @@ public class DarksaberItemRenderer extends RenderType {
     private static final float BLADE_BASE_Z = 7.15F;
     private static final float BLADE_TIP_Z = -22.85F;
     private static final float EFFECT_START_T = 0.075F;
+    private static final float SHADER_EDGE_INTENSITY = 0.48F;
+    private static final float SHADER_GLOW_INTENSITY = 0.24F;
+    private static final float SHADER_ARC_INTENSITY = 0.42F;
     private static DarksaberModel cachedModel;
+    private static boolean shaderApiInitialized;
+    private static Method irisGetInstanceMethod;
+    private static Method irisShaderPackInUseMethod;
 
     private DarksaberItemRenderer(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize, boolean affectsCrumbling, boolean sortOnUpload, Runnable setupState, Runnable clearState) {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
@@ -193,6 +201,7 @@ public class DarksaberItemRenderer extends RenderType {
             return;
         }
         float shimmer = 1.0F - settings.shimmerAmount + settings.shimmerAmount * (0.5F + 0.5F * (float) Math.sin((Minecraft.getInstance().level == null ? 0.0F : Minecraft.getInstance().level.getGameTime() + partialTick) / settings.shimmerSpeed * Math.PI * 2.0D));
+        boolean shaderPackActive = shaderPackActive();
 
         poseStack.pushPose();
         poseStack.translate(0.5D + settings.offsetX / 16.0D, 0.5D + settings.offsetY / 16.0D, 0.5D + settings.offsetZ / 16.0D);
@@ -206,32 +215,32 @@ public class DarksaberItemRenderer extends RenderType {
         VertexConsumer hilt = buffer.getBuffer(HILT);
         for (Element element : model.elements) {
             if (element.group == Group.HILT) {
-                renderElement(poseStack, hilt, element, 0xFFFFFF, 1.0F, LightTexture.FULL_BRIGHT, packedOverlay, true);
+                renderElement(poseStack, hilt, element, 0xFFFFFF, 1.0F, packedLight, packedOverlay, true);
             }
         }
-        renderCustomBlade(poseStack, buffer, model.bladeMesh, settings, partialTick, shimmer);
+        renderCustomBlade(poseStack, buffer, model.bladeMesh, settings, partialTick, shimmer, shaderPackActive);
         poseStack.popPose();
     }
 
-    private static void renderCustomBlade(PoseStack poseStack, MultiBufferSource buffer, BladeMesh bladeMesh, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer) {
+    private static void renderCustomBlade(PoseStack poseStack, MultiBufferSource buffer, BladeMesh bladeMesh, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer, boolean shaderPackActive) {
         if (bladeMesh != null && !bladeMesh.triangles.isEmpty()) {
-            renderImportedBlade(poseStack, buffer, bladeMesh, settings, partialTick, shimmer);
+            renderImportedBlade(poseStack, buffer, bladeMesh, settings, partialTick, shimmer, shaderPackActive);
             return;
         }
-        renderProceduralBlade(poseStack, buffer, settings, partialTick, shimmer);
+        renderProceduralBlade(poseStack, buffer, settings, partialTick, shimmer, shaderPackActive);
     }
 
-    private static void renderImportedBlade(PoseStack poseStack, MultiBufferSource buffer, BladeMesh bladeMesh, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer) {
+    private static void renderImportedBlade(PoseStack poseStack, MultiBufferSource buffer, BladeMesh bladeMesh, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer, boolean shaderPackActive) {
         VertexConsumer mesh = buffer.getBuffer(BLADE_TRIANGLES);
         for (Triangle triangle : bladeMesh.triangles) {
             addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.a), settings.coreColor, settings.coreOpacity);
             addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.b), settings.coreColor, settings.coreOpacity);
             addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.c), settings.coreColor, settings.coreOpacity);
         }
-        renderBladeEffects(poseStack, buffer, bladeMesh::slice, settings, partialTick, shimmer);
+        renderBladeEffects(poseStack, buffer, bladeMesh::slice, settings, partialTick, shimmer, shaderPackActive);
     }
 
-    private static void renderProceduralBlade(PoseStack poseStack, MultiBufferSource buffer, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer) {
+    private static void renderProceduralBlade(PoseStack poseStack, MultiBufferSource buffer, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer, boolean shaderPackActive) {
         VertexConsumer blade = buffer.getBuffer(BLADE);
         int segments = 18;
         for (int i = 0; i < segments; i++) {
@@ -249,12 +258,14 @@ public class DarksaberItemRenderer extends RenderType {
                 renderBladeCap(poseStack, blade, b, settings.edgeColor, settings.edgeOpacity * 0.62F);
             }
         }
-        renderBladeEffects(poseStack, buffer, DarksaberItemRenderer::bladeSlice, settings, partialTick, shimmer);
+        renderBladeEffects(poseStack, buffer, DarksaberItemRenderer::bladeSlice, settings, partialTick, shimmer, shaderPackActive);
     }
 
-    private static void renderBladeEffects(PoseStack poseStack, MultiBufferSource buffer, BladeProfile profile, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer) {
-        VertexConsumer blade = buffer.getBuffer(BLADE);
-        VertexConsumer glow = buffer.getBuffer(GLOW);
+    private static void renderBladeEffects(PoseStack poseStack, MultiBufferSource buffer, BladeProfile profile, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer, boolean shaderPackActive) {
+        VertexConsumer blade = buffer.getBuffer(shaderPackActive ? SHADER_BLADE : BLADE);
+        VertexConsumer glow = buffer.getBuffer(shaderPackActive ? SHADER_GLOW : GLOW);
+        float edgeIntensity = shaderPackActive ? SHADER_EDGE_INTENSITY : 1.0F;
+        float glowIntensity = shaderPackActive ? SHADER_GLOW_INTENSITY : 1.0F;
         int segments = 18;
         for (int i = 0; i < segments; i++) {
             float t0 = EFFECT_START_T + (1.0F - EFFECT_START_T) * i / (float) segments;
@@ -262,17 +273,17 @@ public class DarksaberItemRenderer extends RenderType {
             BladeSlice a = profile.slice(t0);
             BladeSlice b = profile.slice(t1);
 
-            float leadingAlpha = settings.edgeOpacity * (0.72F + 0.28F * shimmer);
+            float leadingAlpha = settings.edgeOpacity * edgeIntensity * (0.72F + 0.28F * shimmer);
             renderLeadingGlowFace(poseStack, blade, BLADE_X_FRONT + BLADE_SURFACE_OFFSET, a, b, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
             renderLeadingGlowFace(poseStack, blade, BLADE_X_BACK - BLADE_SURFACE_OFFSET, b, a, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
-            renderLeadingGlowFace(poseStack, glow, BLADE_X_FRONT + BLADE_SURFACE_OFFSET * 2.0F, a, b, settings.glowColor, settings.glowOpacity * shimmer, -0.12F, 0.58F);
-            renderLeadingGlowFace(poseStack, glow, BLADE_X_BACK - BLADE_SURFACE_OFFSET * 2.0F, b, a, settings.glowColor, settings.glowOpacity * shimmer, -0.12F, 0.58F);
+            renderLeadingGlowFace(poseStack, glow, BLADE_X_FRONT + BLADE_SURFACE_OFFSET * 2.0F, a, b, settings.glowColor, settings.glowOpacity * glowIntensity * shimmer, -0.12F, 0.58F);
+            renderLeadingGlowFace(poseStack, glow, BLADE_X_BACK - BLADE_SURFACE_OFFSET * 2.0F, b, a, settings.glowColor, settings.glowOpacity * glowIntensity * shimmer, -0.12F, 0.58F);
 
-            float trailingAlpha = settings.edgeOpacity * 0.22F * (0.65F + 0.35F * shimmer);
+            float trailingAlpha = settings.edgeOpacity * edgeIntensity * 0.22F * (0.65F + 0.35F * shimmer);
             renderTrailingGlowFace(poseStack, blade, BLADE_X_FRONT + BLADE_SURFACE_OFFSET, a, b, settings.edgeColor, trailingAlpha);
             renderTrailingGlowFace(poseStack, blade, BLADE_X_BACK - BLADE_SURFACE_OFFSET, b, a, settings.edgeColor, trailingAlpha);
         }
-        renderBladeArcs(poseStack, glow, profile, settings, partialTick, shimmer);
+        renderBladeArcs(poseStack, glow, profile, settings, partialTick, shimmer, shaderPackActive);
     }
 
     private static void renderBladeFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice a, BladeSlice b, int color, float alphaA, float alphaB) {
@@ -310,7 +321,7 @@ public class DarksaberItemRenderer extends RenderType {
         addBladeVertex(poseStack, builder, x, a.blendY(0.14F), a.z, color, 0.0F);
     }
 
-    private static void renderBladeArcs(PoseStack poseStack, VertexConsumer builder, BladeProfile profile, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer) {
+    private static void renderBladeArcs(PoseStack poseStack, VertexConsumer builder, BladeProfile profile, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer, boolean shaderPackActive) {
         Minecraft minecraft = Minecraft.getInstance();
         float time = (minecraft.level == null ? 0.0F : minecraft.level.getGameTime()) + partialTick;
         float period = Math.max(10.0F, settings.shimmerSpeed * 0.7F);
@@ -327,7 +338,7 @@ public class DarksaberItemRenderer extends RenderType {
             float inwardStart = hash(cycle * 53 + i * 23);
             float inwardEnd = hash((cycle + 1) * 53 + i * 23);
             float inward = 0.18F + 0.34F * lerp(inwardStart, inwardEnd, motion);
-            float alpha = settings.edgeOpacity * fade * (0.62F + 0.38F * shimmer);
+            float alpha = settings.edgeOpacity * (shaderPackActive ? SHADER_ARC_INTENSITY : 1.0F) * fade * (0.62F + 0.38F * shimmer);
             int seed = cycle * 97 + i * 11;
             drawArcStroke(poseStack, builder, profile, t, inward, alpha, settings.edgeColor, seed, BLADE_X_FRONT + BLADE_SURFACE_OFFSET * 2.0F);
             drawArcStroke(poseStack, builder, profile, t, inward, alpha * 0.82F, settings.edgeColor, seed, BLADE_X_BACK - BLADE_SURFACE_OFFSET * 2.0F);
@@ -445,6 +456,30 @@ public class DarksaberItemRenderer extends RenderType {
                 .endVertex();
     }
 
+    private static boolean shaderPackActive() {
+        if (!shaderApiInitialized) {
+            shaderApiInitialized = true;
+            try {
+                Class<?> irisApi = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
+                irisGetInstanceMethod = irisApi.getMethod("getInstance");
+                irisShaderPackInUseMethod = irisApi.getMethod("isShaderPackInUse");
+            } catch (ReflectiveOperationException | LinkageError ignored) {
+                irisGetInstanceMethod = null;
+                irisShaderPackInUseMethod = null;
+            }
+        }
+        if (irisGetInstanceMethod == null || irisShaderPackInUseMethod == null) {
+            return false;
+        }
+        try {
+            Object api = irisGetInstanceMethod.invoke(null);
+            Object result = irisShaderPackInUseMethod.invoke(api);
+            return result instanceof Boolean active && active;
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            return false;
+        }
+    }
+
     private static float red(int color) {
         return ((color >> 16) & 0xFF) / 255.0F;
     }
@@ -531,6 +566,26 @@ public class DarksaberItemRenderer extends RenderType {
                 .setWriteMaskState(COLOR_WRITE)
                 .createCompositeState(false);
         return RenderType.create("arcanebeam_darksaber_glow", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 512, false, true, state);
+    }
+
+    private static RenderType createShaderBladeRenderType() {
+        CompositeState state = CompositeState.builder()
+                .setShaderState(POSITION_COLOR_SHADER)
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setWriteMaskState(COLOR_WRITE)
+                .createCompositeState(false);
+        return RenderType.create("arcanebeam_darksaber_shader_blade", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 512, false, true, state);
+    }
+
+    private static RenderType createShaderGlowRenderType() {
+        CompositeState state = CompositeState.builder()
+                .setShaderState(POSITION_COLOR_SHADER)
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setWriteMaskState(COLOR_WRITE)
+                .createCompositeState(false);
+        return RenderType.create("arcanebeam_darksaber_shader_glow", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 512, false, true, state);
     }
 
     private enum Group {
