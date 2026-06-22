@@ -44,6 +44,10 @@ public class DarksaberItemRenderer extends RenderType {
     private static final RenderType BLADE = RenderType.entityTranslucent(WHITE_TEXTURE);
     private static final RenderType GLOW = createGlowRenderType();
     private static final int TEXTURE_SIZE = 64;
+    private static final float BLADE_X_MIN = -0.31F;
+    private static final float BLADE_X_MAX = 0.56F;
+    private static final float BLADE_BASE_Z = 7.15F;
+    private static final float BLADE_TIP_Z = -22.85F;
     private static DarksaberModel cachedModel;
 
     private DarksaberItemRenderer(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize, boolean affectsCrumbling, boolean sortOnUpload, Runnable setupState, Runnable clearState) {
@@ -192,22 +196,155 @@ public class DarksaberItemRenderer extends RenderType {
         poseStack.translate(-model.centerX / 16.0D, -model.centerY / 16.0D, -model.centerZ / 16.0D);
 
         VertexConsumer hilt = buffer.getBuffer(HILT);
-        VertexConsumer blade = buffer.getBuffer(BLADE);
-        VertexConsumer glow = buffer.getBuffer(GLOW);
         for (Element element : model.elements) {
             if (element.group == Group.HILT) {
-                renderElement(poseStack, hilt, element, 0xFFFFFF, 1.0F, packedLight, packedOverlay, true);
-            } else if (element.group == Group.BLADE) {
-                renderElement(poseStack, blade, element, settings.coreColor, settings.coreOpacity, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, false);
-            } else if (element.group == Group.WHITE) {
-                renderElement(poseStack, blade, element, settings.edgeColor, settings.edgeOpacity * shimmer, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, false);
-                poseStack.pushPose();
-                poseStack.scale(1.015F, 1.015F, 1.015F);
-                renderElement(poseStack, glow, element, settings.glowColor, settings.glowOpacity * shimmer, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, false);
-                poseStack.popPose();
+                renderElement(poseStack, hilt, element, 0xFFFFFF, 1.0F, LightTexture.FULL_BRIGHT, packedOverlay, true);
             }
         }
+        renderCustomBlade(poseStack, buffer, settings, partialTick, shimmer);
         poseStack.popPose();
+    }
+
+    private static void renderCustomBlade(PoseStack poseStack, MultiBufferSource buffer, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer) {
+        VertexConsumer blade = buffer.getBuffer(BLADE);
+        VertexConsumer glow = buffer.getBuffer(GLOW);
+        int segments = 18;
+        for (int i = 0; i < segments; i++) {
+            float t0 = i / (float) segments;
+            float t1 = (i + 1) / (float) segments;
+            BladeSlice a = bladeSlice(t0);
+            BladeSlice b = bladeSlice(t1);
+            renderBladeFace(poseStack, blade, BLADE_X_MIN, a, b, settings.coreColor, settings.coreOpacity, settings.coreOpacity);
+            renderBladeFace(poseStack, blade, BLADE_X_MAX, b, a, settings.coreColor, settings.coreOpacity, settings.coreOpacity);
+
+            float leadingAlpha = settings.edgeOpacity * (0.72F + 0.28F * shimmer);
+            renderLeadingGlowFace(poseStack, blade, BLADE_X_MIN - 0.006F, a, b, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
+            renderLeadingGlowFace(poseStack, blade, BLADE_X_MAX + 0.006F, b, a, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
+            renderLeadingGlowFace(poseStack, glow, BLADE_X_MIN - 0.018F, a, b, settings.glowColor, settings.glowOpacity * shimmer, -0.12F, 0.58F);
+            renderLeadingGlowFace(poseStack, glow, BLADE_X_MAX + 0.018F, b, a, settings.glowColor, settings.glowOpacity * shimmer, -0.12F, 0.58F);
+
+            float trailingAlpha = settings.edgeOpacity * 0.22F * (0.65F + 0.35F * shimmer);
+            renderTrailingGlowFace(poseStack, blade, BLADE_X_MIN - 0.004F, a, b, settings.edgeColor, trailingAlpha);
+            renderTrailingGlowFace(poseStack, blade, BLADE_X_MAX + 0.004F, b, a, settings.edgeColor, trailingAlpha);
+        }
+        renderBladeArcs(poseStack, glow, settings, partialTick, shimmer);
+    }
+
+    private static void renderBladeFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice a, BladeSlice b, int color, float alphaA, float alphaB) {
+        addBladeVertex(poseStack, builder, x, a.trailingY, a.z, color, alphaA);
+        addBladeVertex(poseStack, builder, x, b.trailingY, b.z, color, alphaB);
+        addBladeVertex(poseStack, builder, x, b.leadingY, b.z, color, alphaB);
+        addBladeVertex(poseStack, builder, x, a.leadingY, a.z, color, alphaA);
+    }
+
+    private static void renderLeadingGlowFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice a, BladeSlice b, int color, float alpha, float outerOffset, float innerFactor) {
+        addBladeVertex(poseStack, builder, x, a.leadingY + outerOffset, a.z, color, alpha);
+        addBladeVertex(poseStack, builder, x, b.leadingY + outerOffset, b.z, color, alpha);
+        addBladeVertex(poseStack, builder, x, b.blendY(innerFactor), b.z, color, 0.0F);
+        addBladeVertex(poseStack, builder, x, a.blendY(innerFactor), a.z, color, 0.0F);
+    }
+
+    private static void renderTrailingGlowFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice a, BladeSlice b, int color, float alpha) {
+        addBladeVertex(poseStack, builder, x, a.trailingY, a.z, color, alpha);
+        addBladeVertex(poseStack, builder, x, b.trailingY, b.z, color, alpha);
+        addBladeVertex(poseStack, builder, x, b.blendY(0.14F), b.z, color, 0.0F);
+        addBladeVertex(poseStack, builder, x, a.blendY(0.14F), a.z, color, 0.0F);
+    }
+
+    private static void renderBladeArcs(PoseStack poseStack, VertexConsumer builder, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer) {
+        Minecraft minecraft = Minecraft.getInstance();
+        float time = (minecraft.level == null ? 0.0F : minecraft.level.getGameTime()) + partialTick;
+        int cycle = (int) Math.floor(time / Math.max(4.0F, settings.shimmerSpeed * 0.35F));
+        int arcs = 7;
+        for (int i = 0; i < arcs; i++) {
+            float seed = hash(cycle * 37 + i * 19);
+            float t = 0.08F + 0.86F * seed;
+            float pulse = 0.5F + 0.5F * (float) Math.sin(time * 0.52F + i * 1.71F);
+            float alpha = settings.edgeOpacity * (0.22F + 0.58F * pulse) * (0.45F + 0.55F * shimmer);
+            float inward = 0.14F + 0.18F * hash(cycle * 53 + i * 23);
+            drawArcStroke(poseStack, builder, t, inward, alpha, settings.edgeColor, cycle * 97 + i * 11, BLADE_X_MIN - 0.026F);
+            drawArcStroke(poseStack, builder, t, inward, alpha * 0.78F, settings.edgeColor, cycle * 97 + i * 11, BLADE_X_MAX + 0.026F);
+        }
+    }
+
+    private static void drawArcStroke(PoseStack poseStack, VertexConsumer builder, float startT, float inward, float alpha, int color, int seed, float x) {
+        float lastT = startT;
+        float lastInward = 0.02F;
+        for (int i = 1; i <= 3; i++) {
+            float nextT = clamp01(startT + (hash(seed + i * 17) - 0.5F) * 0.075F + i * 0.012F);
+            float nextInward = inward * (i / 3.0F);
+            BladePoint a = pointInsideBlade(lastT, lastInward);
+            BladePoint b = pointInsideBlade(nextT, nextInward);
+            drawBladeLine(poseStack, builder, x, a, b, color, alpha * (1.0F - i * 0.18F), 0.035F);
+            lastT = nextT;
+            lastInward = nextInward;
+        }
+    }
+
+    private static void drawBladeLine(PoseStack poseStack, VertexConsumer builder, float x, BladePoint a, BladePoint b, int color, float alpha, float width) {
+        float dy = b.y - a.y;
+        float dz = b.z - a.z;
+        float length = (float) Math.sqrt(dy * dy + dz * dz);
+        if (length <= 0.0001F) {
+            return;
+        }
+        float offY = -dz / length * width;
+        float offZ = dy / length * width;
+        addBladeVertex(poseStack, builder, x, a.y + offY, a.z + offZ, color, alpha);
+        addBladeVertex(poseStack, builder, x, b.y + offY, b.z + offZ, color, alpha * 0.65F);
+        addBladeVertex(poseStack, builder, x, b.y - offY, b.z - offZ, color, 0.0F);
+        addBladeVertex(poseStack, builder, x, a.y - offY, a.z - offZ, color, 0.0F);
+    }
+
+    private static BladePoint pointInsideBlade(float t, float inward) {
+        BladeSlice slice = bladeSlice(clamp01(t));
+        return new BladePoint(slice.leadingY + (slice.trailingY - slice.leadingY) * clamp01(inward), slice.z);
+    }
+
+    private static BladeSlice bladeSlice(float t) {
+        float eased = smoothstep(t);
+        float z = BLADE_BASE_Z + (BLADE_TIP_Z - BLADE_BASE_Z) * t;
+        float trailingY = 3.88F + 0.78F * eased;
+        float leadingY;
+        if (t < 0.58F) {
+            float grow = smoothstep(t / 0.58F);
+            leadingY = 4.58F + 2.22F * grow;
+        } else {
+            float taper = smoothstep((t - 0.58F) / 0.42F);
+            leadingY = 6.80F + (4.92F - 6.80F) * taper;
+        }
+        float tipBlend = smoothstep(Math.max(0.0F, (t - 0.84F) / 0.16F));
+        float tipY = 4.86F;
+        trailingY = trailingY + (tipY - trailingY) * tipBlend;
+        leadingY = leadingY + (tipY - leadingY) * tipBlend;
+        return new BladeSlice(trailingY, leadingY, z);
+    }
+
+    private static void addBladeVertex(PoseStack poseStack, VertexConsumer builder, float x, float y, float z, int color, float alpha) {
+        PoseStack.Pose pose = poseStack.last();
+        Matrix4f matrix = pose.pose();
+        Matrix3f normal = pose.normal();
+        builder.vertex(matrix, x / 16.0F, y / 16.0F, z / 16.0F)
+                .color(red(color), green(color), blue(color), Math.max(0.0F, Math.min(1.0F, alpha)))
+                .uv(0.5F, 0.5F)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(LightTexture.FULL_BRIGHT)
+                .normal(normal, 0.0F, 1.0F, 0.0F)
+                .endVertex();
+    }
+
+    private static float smoothstep(float value) {
+        float t = clamp01(value);
+        return t * t * (3.0F - 2.0F * t);
+    }
+
+    private static float clamp01(float value) {
+        return Math.max(0.0F, Math.min(1.0F, value));
+    }
+
+    private static float hash(int seed) {
+        double value = Math.sin(seed * 12.9898D) * 43758.5453D;
+        return (float) (value - Math.floor(value));
     }
 
     private static void renderElement(PoseStack poseStack, VertexConsumer builder, Element element, int color, float alpha, int packedLight, int packedOverlay, boolean textured) {
@@ -398,6 +535,15 @@ public class DarksaberItemRenderer extends RenderType {
             double sin = Math.sin(radians);
             return new Vec3(point.x * cos - point.y * sin, point.x * sin + point.y * cos, point.z);
         }
+    }
+
+    private record BladeSlice(float trailingY, float leadingY, float z) {
+        private float blendY(float leadingFactor) {
+            return leadingY + (trailingY - leadingY) * leadingFactor;
+        }
+    }
+
+    private record BladePoint(float y, float z) {
     }
 
     private record DarksaberModel(List<Element> elements, double centerX, double centerY, double centerZ) {
