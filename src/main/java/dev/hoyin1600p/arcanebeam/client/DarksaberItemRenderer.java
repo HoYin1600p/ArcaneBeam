@@ -55,6 +55,7 @@ public class DarksaberItemRenderer extends RenderType {
     private static final float BLADE_SURFACE_OFFSET = 0.006F;
     private static final float BLADE_BASE_Z = 7.15F;
     private static final float BLADE_TIP_Z = -22.85F;
+    private static final float EFFECT_START_T = 0.075F;
     private static DarksaberModel cachedModel;
 
     private DarksaberItemRenderer(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize, boolean affectsCrumbling, boolean sortOnUpload, Runnable setupState, Runnable clearState) {
@@ -256,8 +257,8 @@ public class DarksaberItemRenderer extends RenderType {
         VertexConsumer glow = buffer.getBuffer(GLOW);
         int segments = 18;
         for (int i = 0; i < segments; i++) {
-            float t0 = i / (float) segments;
-            float t1 = (i + 1) / (float) segments;
+            float t0 = EFFECT_START_T + (1.0F - EFFECT_START_T) * i / (float) segments;
+            float t1 = EFFECT_START_T + (1.0F - EFFECT_START_T) * (i + 1) / (float) segments;
             BladeSlice a = profile.slice(t0);
             BladeSlice b = profile.slice(t1);
 
@@ -312,16 +313,24 @@ public class DarksaberItemRenderer extends RenderType {
     private static void renderBladeArcs(PoseStack poseStack, VertexConsumer builder, BladeProfile profile, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer) {
         Minecraft minecraft = Minecraft.getInstance();
         float time = (minecraft.level == null ? 0.0F : minecraft.level.getGameTime()) + partialTick;
-        int cycle = (int) Math.floor(time / Math.max(4.0F, settings.shimmerSpeed * 0.35F));
+        float period = Math.max(10.0F, settings.shimmerSpeed * 0.7F);
         int arcs = 12;
         for (int i = 0; i < arcs; i++) {
-            float seed = hash(cycle * 37 + i * 19);
-            float t = 0.08F + 0.86F * seed;
-            float pulse = 0.5F + 0.5F * (float) Math.sin(time * 0.52F + i * 1.71F);
-            float alpha = settings.edgeOpacity * (0.46F + 0.54F * pulse) * (0.55F + 0.45F * shimmer);
-            float inward = 0.18F + 0.34F * hash(cycle * 53 + i * 23);
-            drawArcStroke(poseStack, builder, profile, t, inward, alpha, settings.edgeColor, cycle * 97 + i * 11, BLADE_X_FRONT + BLADE_SURFACE_OFFSET * 2.0F);
-            drawArcStroke(poseStack, builder, profile, t, inward, alpha * 0.82F, settings.edgeColor, cycle * 97 + i * 11, BLADE_X_BACK - BLADE_SURFACE_OFFSET * 2.0F);
+            float track = time / period + i * 0.173F;
+            int cycle = (int) Math.floor(track);
+            float phase = track - cycle;
+            float motion = smoothstep(phase);
+            float fade = smoothstep(phase / 0.22F) * smoothstep((1.0F - phase) / 0.28F);
+            float start = hash(cycle * 37 + i * 19);
+            float end = hash((cycle + 1) * 37 + i * 19);
+            float t = EFFECT_START_T + 0.88F * lerp(start, end, motion);
+            float inwardStart = hash(cycle * 53 + i * 23);
+            float inwardEnd = hash((cycle + 1) * 53 + i * 23);
+            float inward = 0.18F + 0.34F * lerp(inwardStart, inwardEnd, motion);
+            float alpha = settings.edgeOpacity * fade * (0.62F + 0.38F * shimmer);
+            int seed = cycle * 97 + i * 11;
+            drawArcStroke(poseStack, builder, profile, t, inward, alpha, settings.edgeColor, seed, BLADE_X_FRONT + BLADE_SURFACE_OFFSET * 2.0F);
+            drawArcStroke(poseStack, builder, profile, t, inward, alpha * 0.82F, settings.edgeColor, seed, BLADE_X_BACK - BLADE_SURFACE_OFFSET * 2.0F);
         }
     }
 
@@ -498,7 +507,6 @@ public class DarksaberItemRenderer extends RenderType {
         CompositeState state = CompositeState.builder()
                 .setShaderState(POSITION_COLOR_SHADER)
                 .setTransparencyState(LIGHTNING_TRANSPARENCY)
-                .setDepthTestState(NO_DEPTH_TEST)
                 .setCullState(NO_CULL)
                 .setWriteMaskState(COLOR_WRITE)
                 .createCompositeState(false);
@@ -519,7 +527,6 @@ public class DarksaberItemRenderer extends RenderType {
         CompositeState state = CompositeState.builder()
                 .setShaderState(POSITION_COLOR_SHADER)
                 .setTransparencyState(LIGHTNING_TRANSPARENCY)
-                .setDepthTestState(NO_DEPTH_TEST)
                 .setCullState(NO_CULL)
                 .setWriteMaskState(COLOR_WRITE)
                 .createCompositeState(false);
