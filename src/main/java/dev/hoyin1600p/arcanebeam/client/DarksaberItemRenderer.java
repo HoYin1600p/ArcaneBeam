@@ -68,16 +68,17 @@ public class DarksaberItemRenderer extends RenderType {
         if (model == null) {
             return;
         }
-        int x = layoutWidth / 2;
-        float pixelScale = Math.min(1500.0F, Math.max(420.0F, layoutWidth * 0.45F));
-        int y = Math.max(150, drawerY - Math.round(pixelScale * 0.24F));
+        ArcaneBeamConfig.DarksaberSettings settings = ArcaneBeamConfig.INSTANCE.darksaber;
+        int x = layoutWidth / 2 + Math.round(settings.previewOffsetX);
+        float pixelScale = Math.min(1500.0F, Math.max(420.0F, layoutWidth * 0.45F)) * settings.previewZoom;
+        int y = Math.max(150, drawerY - Math.round(pixelScale * 0.24F)) + Math.round(settings.previewOffsetY);
         poseStack.pushPose();
         poseStack.translate(x, y, 180.0D);
         poseStack.scale(pixelScale, -pixelScale, pixelScale);
-        poseStack.mulPose(Vector3f.YP.rotationDegrees(90.0F));
-        poseStack.mulPose(Vector3f.XP.rotationDegrees(8.0F));
-        poseStack.mulPose(Vector3f.ZP.rotationDegrees(-12.0F));
-        renderModel(poseStack, buffer, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ArcaneBeamConfig.INSTANCE.darksaber, partialTick, 1.0F);
+        poseStack.mulPose(Vector3f.YP.rotationDegrees(settings.previewYaw));
+        poseStack.mulPose(Vector3f.XP.rotationDegrees(settings.previewPitch));
+        poseStack.mulPose(Vector3f.ZP.rotationDegrees(settings.previewRoll));
+        renderModel(poseStack, buffer, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, settings, partialTick, 1.0F);
         poseStack.popPose();
     }
 

@@ -246,7 +246,13 @@
     "offsetZ": 0.0,
     "rotationX": 0.0,
     "rotationY": 0.0,
-    "rotationZ": 0.0
+    "rotationZ": 0.0,
+    "previewZoom": 1.0,
+    "previewOffsetX": 0.0,
+    "previewOffsetY": 0.0,
+    "previewPitch": 8.0,
+    "previewYaw": 90.0,
+    "previewRoll": -12.0
   },
   "arcaneProfiles": {
     "Default": {
@@ -570,7 +576,13 @@
       "offsetZ": 0.0,
       "rotationX": 0.0,
       "rotationY": 0.0,
-      "rotationZ": 0.0
+      "rotationZ": 0.0,
+      "previewZoom": 1.0,
+      "previewOffsetX": 0.0,
+      "previewOffsetY": 0.0,
+      "previewPitch": 8.0,
+      "previewYaw": 90.0,
+      "previewRoll": -12.0
     }
   }
 }

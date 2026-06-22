@@ -119,6 +119,12 @@ public class ArcaneBeamConfigScreen extends Screen {
     private SettingSlider darksaberRotationXSlider;
     private SettingSlider darksaberRotationYSlider;
     private SettingSlider darksaberRotationZSlider;
+    private SettingSlider darksaberPreviewZoomSlider;
+    private SettingSlider darksaberPreviewOffsetXSlider;
+    private SettingSlider darksaberPreviewOffsetYSlider;
+    private SettingSlider darksaberPreviewPitchSlider;
+    private SettingSlider darksaberPreviewYawSlider;
+    private SettingSlider darksaberPreviewRollSlider;
     private Button soundButton;
     private Button handButton;
     private Button shaderCompatibilityButton;
@@ -651,13 +657,19 @@ public class ArcaneBeamConfigScreen extends Screen {
         darksaberGlowOpacitySlider = new SettingSlider(x, y + 104, 150, 20, "Glow Opacity", 0.0D, 1.0D, () -> darksaberSettings().glowOpacity, value -> darksaberSettings().glowOpacity = (float) value);
         darksaberShimmerAmountSlider = new SettingSlider(x, y + 128, 150, 20, "Shimmer", 0.0D, 1.0D, () -> darksaberSettings().shimmerAmount, value -> darksaberSettings().shimmerAmount = (float) value);
         darksaberShimmerSpeedSlider = new SettingSlider(x, y + 152, 150, 20, "Shimmer Speed", 1.0D, 120.0D, () -> darksaberSettings().shimmerSpeed, value -> darksaberSettings().shimmerSpeed = (float) value);
-        darksaberScaleSlider = new SettingSlider(x, y + 176, 150, 20, "Scale", 0.1D, 2.0D, () -> darksaberSettings().scale, value -> darksaberSettings().scale = (float) value);
-        darksaberOffsetXSlider = new SettingSlider(x, y + 200, 150, 20, "Offset X", -16.0D, 16.0D, () -> darksaberSettings().offsetX, value -> darksaberSettings().offsetX = (float) value);
-        darksaberOffsetYSlider = new SettingSlider(x, y + 224, 150, 20, "Offset Y", -16.0D, 16.0D, () -> darksaberSettings().offsetY, value -> darksaberSettings().offsetY = (float) value);
-        darksaberOffsetZSlider = new SettingSlider(x, y + 248, 150, 20, "Offset Z", -16.0D, 16.0D, () -> darksaberSettings().offsetZ, value -> darksaberSettings().offsetZ = (float) value);
-        darksaberRotationXSlider = new SettingSlider(x, y + 272, 150, 20, "Rotate X", -180.0D, 180.0D, () -> darksaberSettings().rotationX, value -> darksaberSettings().rotationX = (float) value);
-        darksaberRotationYSlider = new SettingSlider(x, y + 296, 150, 20, "Rotate Y", -180.0D, 180.0D, () -> darksaberSettings().rotationY, value -> darksaberSettings().rotationY = (float) value);
-        darksaberRotationZSlider = new SettingSlider(x, y + 320, 150, 20, "Rotate Z", -180.0D, 180.0D, () -> darksaberSettings().rotationZ, value -> darksaberSettings().rotationZ = (float) value);
+        darksaberScaleSlider = new SettingSlider(x, y + 176, 150, 20, "Item Scale", 0.1D, 2.0D, () -> darksaberSettings().scale, value -> darksaberSettings().scale = (float) value);
+        darksaberOffsetXSlider = new SettingSlider(x, y + 200, 150, 20, "Item X", -16.0D, 16.0D, () -> darksaberSettings().offsetX, value -> darksaberSettings().offsetX = (float) value);
+        darksaberOffsetYSlider = new SettingSlider(x, y + 224, 150, 20, "Item Y", -16.0D, 16.0D, () -> darksaberSettings().offsetY, value -> darksaberSettings().offsetY = (float) value);
+        darksaberOffsetZSlider = new SettingSlider(x, y + 248, 150, 20, "Item Z", -16.0D, 16.0D, () -> darksaberSettings().offsetZ, value -> darksaberSettings().offsetZ = (float) value);
+        darksaberRotationXSlider = new SettingSlider(x, y + 272, 150, 20, "Item Pitch", -180.0D, 180.0D, () -> darksaberSettings().rotationX, value -> darksaberSettings().rotationX = (float) value);
+        darksaberRotationYSlider = new SettingSlider(x, y + 296, 150, 20, "Item Yaw", -180.0D, 180.0D, () -> darksaberSettings().rotationY, value -> darksaberSettings().rotationY = (float) value);
+        darksaberRotationZSlider = new SettingSlider(x, y + 320, 150, 20, "Item Roll", -180.0D, 180.0D, () -> darksaberSettings().rotationZ, value -> darksaberSettings().rotationZ = (float) value);
+        darksaberPreviewZoomSlider = new SettingSlider(x, y + 344, 150, 20, "Preview Zoom", 0.25D, 2.5D, () -> darksaberSettings().previewZoom, value -> darksaberSettings().previewZoom = (float) value);
+        darksaberPreviewOffsetXSlider = new SettingSlider(x, y + 368, 150, 20, "Preview X", -800.0D, 800.0D, () -> darksaberSettings().previewOffsetX, value -> darksaberSettings().previewOffsetX = (float) value);
+        darksaberPreviewOffsetYSlider = new SettingSlider(x, y + 392, 150, 20, "Preview Y", -500.0D, 500.0D, () -> darksaberSettings().previewOffsetY, value -> darksaberSettings().previewOffsetY = (float) value);
+        darksaberPreviewPitchSlider = new SettingSlider(x, y + 416, 150, 20, "Preview Pitch", -180.0D, 180.0D, () -> darksaberSettings().previewPitch, value -> darksaberSettings().previewPitch = (float) value);
+        darksaberPreviewYawSlider = new SettingSlider(x, y + 440, 150, 20, "Preview Yaw", -180.0D, 180.0D, () -> darksaberSettings().previewYaw, value -> darksaberSettings().previewYaw = (float) value);
+        darksaberPreviewRollSlider = new SettingSlider(x, y + 464, 150, 20, "Preview Roll", -180.0D, 180.0D, () -> darksaberSettings().previewRoll, value -> darksaberSettings().previewRoll = (float) value);
         this.addRenderableWidget(darksaberCoreOpacitySlider);
         this.addRenderableWidget(darksaberEdgeOpacitySlider);
         this.addRenderableWidget(darksaberGlowOpacitySlider);
@@ -670,6 +682,12 @@ public class ArcaneBeamConfigScreen extends Screen {
         this.addRenderableWidget(darksaberRotationXSlider);
         this.addRenderableWidget(darksaberRotationYSlider);
         this.addRenderableWidget(darksaberRotationZSlider);
+        this.addRenderableWidget(darksaberPreviewZoomSlider);
+        this.addRenderableWidget(darksaberPreviewOffsetXSlider);
+        this.addRenderableWidget(darksaberPreviewOffsetYSlider);
+        this.addRenderableWidget(darksaberPreviewPitchSlider);
+        this.addRenderableWidget(darksaberPreviewYawSlider);
+        this.addRenderableWidget(darksaberPreviewRollSlider);
     }
 
     private void syncBooleansFromActiveTab() {
@@ -874,6 +892,7 @@ public class ArcaneBeamConfigScreen extends Screen {
                     DENSE_SETUP_CARD_WIDTH,
                     DENSE_MEDIUM_CARD_WIDTH,
                     DENSE_MEDIUM_CARD_WIDTH,
+                    DENSE_WIDE_CARD_WIDTH,
                     DENSE_WIDE_CARD_WIDTH,
                     DENSE_WIDE_CARD_WIDTH
             };
@@ -1354,6 +1373,16 @@ public class ArcaneBeamConfigScreen extends Screen {
         moveWidget(darksaberRotationXSlider, rotationX, y, rotationWidth);
         moveWidget(darksaberRotationYSlider, rotationX, y + 23, rotationWidth);
         moveWidget(darksaberRotationZSlider, rotationX, y + 46, rotationWidth);
+        cardX += DENSE_WIDE_CARD_WIDTH + CONTROL_CARD_GAP;
+
+        int previewX = controlCardInnerX(cardX);
+        int previewWidth = controlCardInnerWidth(DENSE_WIDE_CARD_WIDTH);
+        moveWidget(darksaberPreviewZoomSlider, previewX, y, previewWidth);
+        moveWidget(darksaberPreviewOffsetXSlider, previewX, y + 23, previewWidth);
+        moveWidget(darksaberPreviewOffsetYSlider, previewX, y + 46, previewWidth);
+        moveWidget(darksaberPreviewPitchSlider, previewX, y + 69, previewWidth);
+        moveWidget(darksaberPreviewYawSlider, previewX, y + 92, previewWidth);
+        moveWidget(darksaberPreviewRollSlider, previewX, y + 115, previewWidth);
     }
 
     private void layoutStormArrowOnlyWidgets(int y) {
@@ -1883,8 +1912,8 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
         if (darksaberSelected) {
             renderDenseCardRow(poseStack,
-                    new String[]{"Setup", "Opacity", "Shimmer", "Transform", "Rotation"},
-                    new int[]{DENSE_SETUP_CARD_WIDTH, DENSE_MEDIUM_CARD_WIDTH, DENSE_MEDIUM_CARD_WIDTH, DENSE_WIDE_CARD_WIDTH, DENSE_WIDE_CARD_WIDTH});
+                    new String[]{"Setup", "Opacity", "Shimmer", "Item Position", "Item Rotation", "Preview"},
+                    new int[]{DENSE_SETUP_CARD_WIDTH, DENSE_MEDIUM_CARD_WIDTH, DENSE_MEDIUM_CARD_WIDTH, DENSE_WIDE_CARD_WIDTH, DENSE_WIDE_CARD_WIDTH, DENSE_WIDE_CARD_WIDTH});
         }
     }
 
@@ -3162,6 +3191,12 @@ public class ArcaneBeamConfigScreen extends Screen {
         setControlVisible(darksaberRotationXSlider, darksaberVisible);
         setControlVisible(darksaberRotationYSlider, darksaberVisible);
         setControlVisible(darksaberRotationZSlider, darksaberVisible);
+        setControlVisible(darksaberPreviewZoomSlider, darksaberVisible);
+        setControlVisible(darksaberPreviewOffsetXSlider, darksaberVisible);
+        setControlVisible(darksaberPreviewOffsetYSlider, darksaberVisible);
+        setControlVisible(darksaberPreviewPitchSlider, darksaberVisible);
+        setControlVisible(darksaberPreviewYawSlider, darksaberVisible);
+        setControlVisible(darksaberPreviewRollSlider, darksaberVisible);
     }
 
     private static void setVisible(net.minecraft.client.gui.components.AbstractWidget widget, boolean visible) {
@@ -3326,6 +3361,12 @@ public class ArcaneBeamConfigScreen extends Screen {
         darksaberRotationXSlider.refresh();
         darksaberRotationYSlider.refresh();
         darksaberRotationZSlider.refresh();
+        darksaberPreviewZoomSlider.refresh();
+        darksaberPreviewOffsetXSlider.refresh();
+        darksaberPreviewOffsetYSlider.refresh();
+        darksaberPreviewPitchSlider.refresh();
+        darksaberPreviewYawSlider.refresh();
+        darksaberPreviewRollSlider.refresh();
     }
 
     private void cycleShaderCompatibility() {

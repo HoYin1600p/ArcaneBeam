@@ -624,12 +624,18 @@ public final class ArcaneBeamConfig {
         settings.shimmerAmount = clampFloat(settings.shimmerAmount < 0.0F ? 0.0F : settings.shimmerAmount, 0.0F, 1.0F);
         settings.shimmerSpeed = clampFloat(settings.shimmerSpeed <= 0.0F ? 24.0F : settings.shimmerSpeed, 1.0F, 120.0F);
         settings.scale = clampFloat(settings.scale <= 0.0F ? 1.0F : settings.scale, 0.1F, 4.0F);
-        settings.offsetX = clampFloat(settings.offsetX, -4.0F, 4.0F);
-        settings.offsetY = clampFloat(settings.offsetY, -4.0F, 4.0F);
-        settings.offsetZ = clampFloat(settings.offsetZ, -4.0F, 4.0F);
+        settings.offsetX = clampFloat(settings.offsetX, -16.0F, 16.0F);
+        settings.offsetY = clampFloat(settings.offsetY, -16.0F, 16.0F);
+        settings.offsetZ = clampFloat(settings.offsetZ, -16.0F, 16.0F);
         settings.rotationX = clampFloat(settings.rotationX, -180.0F, 180.0F);
         settings.rotationY = clampFloat(settings.rotationY, -180.0F, 180.0F);
         settings.rotationZ = clampFloat(settings.rotationZ, -180.0F, 180.0F);
+        settings.previewZoom = clampFloat(settings.previewZoom <= 0.0F ? 1.0F : settings.previewZoom, 0.25F, 2.5F);
+        settings.previewOffsetX = clampFloat(settings.previewOffsetX, -800.0F, 800.0F);
+        settings.previewOffsetY = clampFloat(settings.previewOffsetY, -500.0F, 500.0F);
+        settings.previewPitch = clampFloat(settings.previewPitch, -180.0F, 180.0F);
+        settings.previewYaw = clampFloat(settings.previewYaw, -180.0F, 180.0F);
+        settings.previewRoll = clampFloat(settings.previewRoll, -180.0F, 180.0F);
     }
 
     public static String normalizeSwordTransmog(String value) {
@@ -1164,6 +1170,12 @@ public final class ArcaneBeamConfig {
         copy.rotationX = source.rotationX;
         copy.rotationY = source.rotationY;
         copy.rotationZ = source.rotationZ;
+        copy.previewZoom = source.previewZoom;
+        copy.previewOffsetX = source.previewOffsetX;
+        copy.previewOffsetY = source.previewOffsetY;
+        copy.previewPitch = source.previewPitch;
+        copy.previewYaw = source.previewYaw;
+        copy.previewRoll = source.previewRoll;
         return copy;
     }
 
@@ -1446,6 +1458,12 @@ public final class ArcaneBeamConfig {
         public float rotationX = 0.0F;
         public float rotationY = 0.0F;
         public float rotationZ = 0.0F;
+        public float previewZoom = 1.0F;
+        public float previewOffsetX = 0.0F;
+        public float previewOffsetY = 0.0F;
+        public float previewPitch = 8.0F;
+        public float previewYaw = 90.0F;
+        public float previewRoll = -12.0F;
     }
 
     private static DarksaberSettings defaultDarksaberSettings() {
