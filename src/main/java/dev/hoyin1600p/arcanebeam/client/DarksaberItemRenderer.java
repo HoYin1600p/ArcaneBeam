@@ -63,7 +63,7 @@ public class DarksaberItemRenderer extends RenderType {
     private static final float BLADE_BASE_Z = 7.15F;
     private static final float BLADE_TIP_Z = -22.85F;
     private static final float EFFECT_START_T_EDGE = 0.075F;
-    private static final float EFFECT_START_T_INNER = 0.045F;
+    private static final float EFFECT_START_T_INNER = 0.040F;
     private static final float SHADER_EDGE_INTENSITY = 0.62F;
     private static final float EDGE_HIGHLIGHT_INTENSITY = 0.38F;
     private static final float SHADER_GLOW_INTENSITY = 0.24F;
