@@ -45,6 +45,7 @@ public class DarksaberItemRenderer extends RenderType {
     private static final RenderType HILT = RenderType.entityCutoutNoCull(TEXTURE);
     private static final RenderType BLADE = createBladeRenderType();
     private static final RenderType BLADE_TRIANGLES = createBladeTriangleRenderType();
+    private static final RenderType SHADER_BLADE_TRIANGLES = createShaderBladeTriangleRenderType();
     private static final RenderType GLOW = createGlowRenderType();
     private static final RenderType SHADER_BLADE = createShaderBladeRenderType();
     private static final RenderType SHADER_GLOW = createShaderGlowRenderType();
@@ -238,12 +239,13 @@ public class DarksaberItemRenderer extends RenderType {
     }
 
     private static void renderImportedBlade(PoseStack poseStack, MultiBufferSource buffer, BladeMesh bladeMesh, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer, boolean shaderPackActive, boolean firstPerson) {
-        VertexConsumer mesh = buffer.getBuffer(BLADE_TRIANGLES);
+        VertexConsumer mesh = buffer.getBuffer(shaderPackActive ? SHADER_BLADE_TRIANGLES : BLADE_TRIANGLES);
         int coreColor = shaderPackActive ? scaleColor(settings.coreColor, SHADER_CORE_INTENSITY) : settings.coreColor;
+        float coreAlpha = shaderPackActive ? 1.0F : settings.coreOpacity;
         for (Triangle triangle : bladeMesh.triangles) {
-            addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.a), coreColor, settings.coreOpacity);
-            addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.b), coreColor, settings.coreOpacity);
-            addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.c), coreColor, settings.coreOpacity);
+            addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.a), coreColor, coreAlpha);
+            addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.b), coreColor, coreAlpha);
+            addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.c), coreColor, coreAlpha);
         }
         renderBladeEffects(poseStack, buffer, bladeMesh::slice, settings, partialTick, shimmer, shaderPackActive, firstPerson);
     }
@@ -577,6 +579,17 @@ public class DarksaberItemRenderer extends RenderType {
                 .setWriteMaskState(COLOR_WRITE)
                 .createCompositeState(false);
         return RenderType.create("arcanebeam_darksaber_blade_mesh", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.TRIANGLES, 512, false, false, state);
+    }
+
+    private static RenderType createShaderBladeTriangleRenderType() {
+        CompositeState state = CompositeState.builder()
+                .setShaderState(POSITION_COLOR_TEX_SHADER)
+                .setTextureState(new TextureStateShard(WHITE_TEXTURE, false, false))
+                .setTransparencyState(NO_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setWriteMaskState(COLOR_DEPTH_WRITE)
+                .createCompositeState(false);
+        return RenderType.create("arcanebeam_darksaber_shader_blade_mesh", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.TRIANGLES, 512, false, false, state);
     }
 
     private static RenderType createGlowRenderType() {
