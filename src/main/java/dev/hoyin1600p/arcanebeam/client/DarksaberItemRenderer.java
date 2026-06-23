@@ -44,7 +44,7 @@ public class DarksaberItemRenderer extends RenderType {
     private static final ResourceLocation VAULT_SWORD = new ResourceLocation("the_vault", "sword");
     private static final String GEAR_MODEL_TAG = "the_vault:gear_model";
     private static final RenderType HILT = RenderType.entityCutoutNoCull(TEXTURE);
-    private static final RenderType CUSTOM_HILT = RenderType.entityCutoutNoCull(WHITE_TEXTURE);
+    private static final RenderType CUSTOM_HILT = createHiltMeshRenderType();
     private static final RenderType BLADE = createBladeRenderType();
     private static final RenderType BLADE_TRIANGLES = createBladeTriangleRenderType();
     private static final RenderType SHADER_BLADE_TRIANGLES = createShaderBladeTriangleRenderType();
@@ -243,10 +243,9 @@ public class DarksaberItemRenderer extends RenderType {
             MeshVertex a = hiltMesh.vertices.get(triangle.a);
             MeshVertex b = hiltMesh.vertices.get(triangle.b);
             MeshVertex c = hiltMesh.vertices.get(triangle.c);
-            Vec3 normal = triangleNormal(a, b, c);
-            addHiltMeshVertex(poseStack, builder, a, triangle.color, packedLight, packedOverlay, normal);
-            addHiltMeshVertex(poseStack, builder, b, triangle.color, packedLight, packedOverlay, normal);
-            addHiltMeshVertex(poseStack, builder, c, triangle.color, packedLight, packedOverlay, normal);
+            addHiltMeshVertex(poseStack, builder, a, triangle.color);
+            addHiltMeshVertex(poseStack, builder, b, triangle.color);
+            addHiltMeshVertex(poseStack, builder, c, triangle.color);
         }
     }
 
@@ -446,34 +445,11 @@ public class DarksaberItemRenderer extends RenderType {
                 .endVertex();
     }
 
-    private static void addHiltMeshVertex(PoseStack poseStack, VertexConsumer builder, MeshVertex vertex, int color, int packedLight, int packedOverlay, Vec3 normalVector) {
-        PoseStack.Pose pose = poseStack.last();
-        Matrix4f matrix = pose.pose();
-        Matrix3f normal = pose.normal();
+    private static void addHiltMeshVertex(PoseStack poseStack, VertexConsumer builder, MeshVertex vertex, int color) {
+        Matrix4f matrix = poseStack.last().pose();
         builder.vertex(matrix, vertex.x / 16.0F, vertex.y / 16.0F, vertex.z / 16.0F)
                 .color(red(color), green(color), blue(color), 1.0F)
-                .uv(0.0F, 0.0F)
-                .overlayCoords(packedOverlay)
-                .uv2(packedLight)
-                .normal(normal, (float) normalVector.x, (float) normalVector.y, (float) normalVector.z)
                 .endVertex();
-    }
-
-    private static Vec3 triangleNormal(MeshVertex a, MeshVertex b, MeshVertex c) {
-        double abX = b.x - a.x;
-        double abY = b.y - a.y;
-        double abZ = b.z - a.z;
-        double acX = c.x - a.x;
-        double acY = c.y - a.y;
-        double acZ = c.z - a.z;
-        double nx = abY * acZ - abZ * acY;
-        double ny = abZ * acX - abX * acZ;
-        double nz = abX * acY - abY * acX;
-        double length = Math.sqrt(nx * nx + ny * ny + nz * nz);
-        if (length <= 0.00001D) {
-            return new Vec3(0.0D, 1.0D, 0.0D);
-        }
-        return new Vec3(nx / length, ny / length, nz / length);
     }
 
     private static float smoothstep(float value) {
@@ -662,6 +638,17 @@ public class DarksaberItemRenderer extends RenderType {
         } catch (Exception ignored) {
             return HiltMesh.EMPTY;
         }
+    }
+
+    private static RenderType createHiltMeshRenderType() {
+        CompositeState state = CompositeState.builder()
+                .setShaderState(POSITION_COLOR_SHADER)
+                .setTransparencyState(NO_TRANSPARENCY)
+                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                .setCullState(NO_CULL)
+                .setWriteMaskState(COLOR_DEPTH_WRITE)
+                .createCompositeState(false);
+        return RenderType.create("arcanebeam_darksaber_hilt_mesh", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 1536, false, false, state);
     }
 
     private static RenderType createBladeRenderType() {
