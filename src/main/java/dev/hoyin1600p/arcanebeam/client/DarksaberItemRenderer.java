@@ -40,6 +40,7 @@ public class DarksaberItemRenderer extends RenderType {
     private static final ResourceLocation BLADE_MESH = new ResourceLocation(ArcaneBeam.MOD_ID, "models/darksaber/darksaber_blade_mesh.json");
     private static final ResourceLocation HILT_MESH = new ResourceLocation(ArcaneBeam.MOD_ID, "models/darksaber/darksaber_hilt_mesh.json");
     private static final ResourceLocation TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/item/darksaber/darksaber2.png");
+    private static final ResourceLocation HILT_DETAIL_TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/item/darksaber/hilt_detail.png");
     private static final ResourceLocation WHITE_TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/entity/white.png");
     private static final ResourceLocation VAULT_SWORD = new ResourceLocation("the_vault", "sword");
     private static final String GEAR_MODEL_TAG = "the_vault:gear_model";
@@ -449,7 +450,16 @@ public class DarksaberItemRenderer extends RenderType {
         Matrix4f matrix = poseStack.last().pose();
         builder.vertex(matrix, vertex.x / 16.0F, vertex.y / 16.0F, vertex.z / 16.0F)
                 .color(red(color), green(color), blue(color), 1.0F)
+                .uv(hiltU(vertex), hiltV(vertex))
                 .endVertex();
+    }
+
+    private static float hiltU(MeshVertex vertex) {
+        return vertex.z * 0.18F + vertex.x * 0.05F;
+    }
+
+    private static float hiltV(MeshVertex vertex) {
+        return vertex.y * 0.16F + vertex.x * 0.03F;
     }
 
     private static int texturedHiltColor(int color, MeshVertex vertex) {
@@ -649,13 +659,14 @@ public class DarksaberItemRenderer extends RenderType {
 
     private static RenderType createHiltMeshRenderType() {
         CompositeState state = CompositeState.builder()
-                .setShaderState(POSITION_COLOR_SHADER)
+                .setShaderState(POSITION_COLOR_TEX_SHADER)
+                .setTextureState(new TextureStateShard(HILT_DETAIL_TEXTURE, false, false))
                 .setTransparencyState(NO_TRANSPARENCY)
                 .setDepthTestState(LEQUAL_DEPTH_TEST)
                 .setCullState(NO_CULL)
                 .setWriteMaskState(COLOR_DEPTH_WRITE)
                 .createCompositeState(false);
-        return RenderType.create("arcanebeam_darksaber_hilt_mesh", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 1536, false, false, state);
+        return RenderType.create("arcanebeam_darksaber_hilt_mesh", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.TRIANGLES, 1536, false, false, state);
     }
 
     private static RenderType createBladeRenderType() {
