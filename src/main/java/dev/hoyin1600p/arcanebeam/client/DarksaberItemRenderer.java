@@ -69,6 +69,7 @@ public class DarksaberItemRenderer extends RenderType {
     private static boolean shaderApiInitialized;
     private static Method irisGetInstanceMethod;
     private static Method irisShaderPackInUseMethod;
+    private static Method oculusGetCurrentPackMethod;
 
     private DarksaberItemRenderer(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize, boolean affectsCrumbling, boolean sortOnUpload, Runnable setupState, Runnable clearState) {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
@@ -247,7 +248,9 @@ public class DarksaberItemRenderer extends RenderType {
             addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.b), coreColor, coreAlpha);
             addMeshVertex(poseStack, mesh, bladeMesh.vertices.get(triangle.c), coreColor, coreAlpha);
         }
+        flushDarksaberCore(buffer, shaderPackActive);
         renderBladeEffects(poseStack, buffer, bladeMesh::slice, settings, partialTick, shimmer, shaderPackActive, firstPerson);
+        flushDarksaberEffects(buffer, shaderPackActive);
     }
 
     private static void renderProceduralBlade(PoseStack poseStack, MultiBufferSource buffer, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer, boolean shaderPackActive, boolean firstPerson) {
@@ -268,7 +271,9 @@ public class DarksaberItemRenderer extends RenderType {
                 renderBladeCap(poseStack, blade, b, settings.edgeColor, settings.edgeOpacity * 0.62F);
             }
         }
+        flushDarksaberCore(buffer, false);
         renderBladeEffects(poseStack, buffer, DarksaberItemRenderer::bladeSlice, settings, partialTick, shimmer, shaderPackActive, firstPerson);
+        flushDarksaberEffects(buffer, shaderPackActive);
     }
 
     private static void renderBladeEffects(PoseStack poseStack, MultiBufferSource buffer, BladeProfile profile, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer, boolean shaderPackActive, boolean firstPerson) {
@@ -482,16 +487,48 @@ public class DarksaberItemRenderer extends RenderType {
                 irisGetInstanceMethod = null;
                 irisShaderPackInUseMethod = null;
             }
+            try {
+                Class<?> oculusIris = Class.forName("net.coderbot.iris.Iris");
+                oculusGetCurrentPackMethod = oculusIris.getMethod("getCurrentPack");
+            } catch (ReflectiveOperationException | LinkageError ignored) {
+                oculusGetCurrentPackMethod = null;
+            }
         }
-        if (irisGetInstanceMethod == null || irisShaderPackInUseMethod == null) {
-            return false;
+        if (irisGetInstanceMethod != null && irisShaderPackInUseMethod != null) {
+            try {
+                Object api = irisGetInstanceMethod.invoke(null);
+                Object result = irisShaderPackInUseMethod.invoke(api);
+                if (result instanceof Boolean active && active) {
+                    return true;
+                }
+            } catch (ReflectiveOperationException | LinkageError ignored) {
+                // Fall through to the older Oculus API shape.
+            }
         }
-        try {
-            Object api = irisGetInstanceMethod.invoke(null);
-            Object result = irisShaderPackInUseMethod.invoke(api);
-            return result instanceof Boolean active && active;
-        } catch (ReflectiveOperationException | LinkageError ignored) {
-            return false;
+        if (oculusGetCurrentPackMethod != null) {
+            try {
+                Object result = oculusGetCurrentPackMethod.invoke(null);
+                if (result instanceof Optional<?> optional) {
+                    return optional.isPresent();
+                }
+                return result != null;
+            } catch (ReflectiveOperationException | LinkageError ignored) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private static void flushDarksaberCore(MultiBufferSource buffer, boolean shaderPackActive) {
+        if (buffer instanceof MultiBufferSource.BufferSource source) {
+            source.endBatch(shaderPackActive ? SHADER_BLADE_TRIANGLES : BLADE_TRIANGLES);
+        }
+    }
+
+    private static void flushDarksaberEffects(MultiBufferSource buffer, boolean shaderPackActive) {
+        if (buffer instanceof MultiBufferSource.BufferSource source) {
+            source.endBatch(shaderPackActive ? SHADER_BLADE : BLADE);
+            source.endBatch(shaderPackActive ? SHADER_GLOW : GLOW);
         }
     }
 
@@ -563,7 +600,7 @@ public class DarksaberItemRenderer extends RenderType {
     private static RenderType createBladeRenderType() {
         CompositeState state = CompositeState.builder()
                 .setShaderState(POSITION_COLOR_SHADER)
-                .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                 .setDepthTestState(NO_DEPTH_TEST)
                 .setCullState(NO_CULL)
                 .setWriteMaskState(COLOR_WRITE)
@@ -596,7 +633,7 @@ public class DarksaberItemRenderer extends RenderType {
     private static RenderType createGlowRenderType() {
         CompositeState state = CompositeState.builder()
                 .setShaderState(POSITION_COLOR_SHADER)
-                .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                 .setDepthTestState(NO_DEPTH_TEST)
                 .setCullState(NO_CULL)
                 .setWriteMaskState(COLOR_WRITE)
