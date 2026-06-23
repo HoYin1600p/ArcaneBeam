@@ -62,8 +62,8 @@ public class DarksaberItemRenderer extends RenderType {
     private static final float FIRST_PERSON_SURFACE_OFFSET = 0.052F;
     private static final float BLADE_BASE_Z = 7.15F;
     private static final float BLADE_TIP_Z = -22.85F;
-    private static final float EFFECT_START_T = 0.065F;
-    private static final float ROOT_EFFECT_FADE_T = 0.045F;
+    private static final float EFFECT_START_T_EDGE = 0.065F;
+    private static final float EFFECT_START_T_INNER = 0.03F;
     private static final float SHADER_EDGE_INTENSITY = 0.62F;
     private static final float EDGE_HIGHLIGHT_INTENSITY = 0.38F;
     private static final float SHADER_GLOW_INTENSITY = 0.24F;
@@ -302,29 +302,26 @@ public class DarksaberItemRenderer extends RenderType {
         float surfaceOffset = firstPerson ? FIRST_PERSON_SURFACE_OFFSET : BLADE_SURFACE_OFFSET;
         int segments = 32;
         for (int i = 0; i < segments; i++) {
-            float t0 = EFFECT_START_T + (1.0F - EFFECT_START_T) * i / (float) segments;
-            float t1 = EFFECT_START_T + (1.0F - EFFECT_START_T) * (i + 1) / (float) segments;
-            BladeSlice a = profile.slice(t0);
-            BladeSlice b = profile.slice(t1);
+            float edgeT0 = EFFECT_START_T_EDGE + (1.0F - EFFECT_START_T_EDGE) * i / (float) segments;
+            float edgeT1 = EFFECT_START_T_EDGE + (1.0F - EFFECT_START_T_EDGE) * (i + 1) / (float) segments;
+            float innerT0 = EFFECT_START_T_INNER + (1.0F - EFFECT_START_T_INNER) * i / (float) segments;
+            float innerT1 = EFFECT_START_T_INNER + (1.0F - EFFECT_START_T_INNER) * (i + 1) / (float) segments;
+            BladeSlice edgeA = profile.slice(edgeT0);
+            BladeSlice edgeB = profile.slice(edgeT1);
+            BladeSlice innerA = profile.slice(innerT0);
+            BladeSlice innerB = profile.slice(innerT1);
 
-            float rootFade = rootEffectFade(t0, t1);
-            float leadingAlpha = settings.edgeOpacity * edgeIntensity * rootFade * (0.72F + 0.28F * shimmer);
-            renderLeadingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset, a, b, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
-            renderLeadingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset, b, a, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
-            renderLeadingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset * 1.35F, a, b, settings.glowColor, settings.glowOpacity * glowIntensity * rootFade * shimmer, 0.0F, 0.54F);
-            renderLeadingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset * 1.35F, b, a, settings.glowColor, settings.glowOpacity * glowIntensity * rootFade * shimmer, 0.0F, 0.54F);
+            float leadingAlpha = settings.edgeOpacity * edgeIntensity * (0.72F + 0.28F * shimmer);
+            renderLeadingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset, edgeA, edgeB, innerA, innerB, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
+            renderLeadingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset, edgeB, edgeA, innerB, innerA, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
+            renderLeadingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset * 1.35F, edgeA, edgeB, innerA, innerB, settings.glowColor, settings.glowOpacity * glowIntensity * shimmer, 0.0F, 0.54F);
+            renderLeadingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset * 1.35F, edgeB, edgeA, innerB, innerA, settings.glowColor, settings.glowOpacity * glowIntensity * shimmer, 0.0F, 0.54F);
 
-            float trailingAlpha = settings.edgeOpacity * edgeIntensity * rootFade * 0.22F * (0.65F + 0.35F * shimmer);
-            renderTrailingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset, a, b, settings.edgeColor, trailingAlpha);
-            renderTrailingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset, b, a, settings.edgeColor, trailingAlpha);
+            float trailingAlpha = settings.edgeOpacity * edgeIntensity * 0.22F * (0.65F + 0.35F * shimmer);
+            renderTrailingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset, edgeA, edgeB, innerA, innerB, settings.edgeColor, trailingAlpha);
+            renderTrailingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset, edgeB, edgeA, innerB, innerA, settings.edgeColor, trailingAlpha);
         }
         renderBladeArcs(poseStack, blade, profile, settings, partialTick, shimmer, shaderPackActive, surfaceOffset);
-    }
-
-    private static float rootEffectFade(float t0, float t1) {
-        // The hidden tang sits inside the hilt. Do not render glow there because
-        // shader-safe blade effects intentionally draw without depth testing.
-        return smoothstep((((t0 + t1) * 0.5F) - EFFECT_START_T) / ROOT_EFFECT_FADE_T);
     }
 
     private static void renderBladeFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice a, BladeSlice b, int color, float alphaA, float alphaB) {
@@ -348,18 +345,18 @@ public class DarksaberItemRenderer extends RenderType {
         addBladeVertex(poseStack, builder, BLADE_X_BACK, slice.leadingY, slice.z, color, alpha);
     }
 
-    private static void renderLeadingGlowFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice a, BladeSlice b, int color, float alpha, float outerOffset, float innerFactor) {
-        addBladeVertex(poseStack, builder, x, a.leadingY + outerOffset, a.z, color, alpha);
-        addBladeVertex(poseStack, builder, x, b.leadingY + outerOffset, b.z, color, alpha);
-        addBladeVertex(poseStack, builder, x, b.blendY(innerFactor), b.z, color, 0.0F);
-        addBladeVertex(poseStack, builder, x, a.blendY(innerFactor), a.z, color, 0.0F);
+    private static void renderLeadingGlowFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice edgeA, BladeSlice edgeB, BladeSlice innerA, BladeSlice innerB, int color, float alpha, float outerOffset, float innerFactor) {
+        addBladeVertex(poseStack, builder, x, edgeA.leadingY + outerOffset, edgeA.z, color, alpha);
+        addBladeVertex(poseStack, builder, x, edgeB.leadingY + outerOffset, edgeB.z, color, alpha);
+        addBladeVertex(poseStack, builder, x, innerB.blendY(innerFactor), innerB.z, color, 0.0F);
+        addBladeVertex(poseStack, builder, x, innerA.blendY(innerFactor), innerA.z, color, 0.0F);
     }
 
-    private static void renderTrailingGlowFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice a, BladeSlice b, int color, float alpha) {
-        addBladeVertex(poseStack, builder, x, a.trailingY, a.z, color, alpha);
-        addBladeVertex(poseStack, builder, x, b.trailingY, b.z, color, alpha);
-        addBladeVertex(poseStack, builder, x, b.blendY(0.14F), b.z, color, 0.0F);
-        addBladeVertex(poseStack, builder, x, a.blendY(0.14F), a.z, color, 0.0F);
+    private static void renderTrailingGlowFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice edgeA, BladeSlice edgeB, BladeSlice innerA, BladeSlice innerB, int color, float alpha) {
+        addBladeVertex(poseStack, builder, x, edgeA.trailingY, edgeA.z, color, alpha);
+        addBladeVertex(poseStack, builder, x, edgeB.trailingY, edgeB.z, color, alpha);
+        addBladeVertex(poseStack, builder, x, innerB.blendY(0.14F), innerB.z, color, 0.0F);
+        addBladeVertex(poseStack, builder, x, innerA.blendY(0.14F), innerA.z, color, 0.0F);
     }
 
     private static void renderBladeArcs(PoseStack poseStack, VertexConsumer builder, BladeProfile profile, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer, boolean shaderPackActive, float surfaceOffset) {
@@ -375,7 +372,7 @@ public class DarksaberItemRenderer extends RenderType {
             float fade = smoothstep(phase / 0.22F) * smoothstep((1.0F - phase) / 0.28F);
             float start = hash(cycle * 37 + i * 19);
             float end = hash((cycle + 1) * 37 + i * 19);
-            float t = EFFECT_START_T + (0.96F - EFFECT_START_T) * lerp(start, end, motion);
+            float t = EFFECT_START_T_EDGE + (0.96F - EFFECT_START_T_EDGE) * lerp(start, end, motion);
             float inwardStart = hash(cycle * 53 + i * 23);
             float inwardEnd = hash((cycle + 1) * 53 + i * 23);
             float inward = 0.18F + 0.34F * lerp(inwardStart, inwardEnd, motion);
