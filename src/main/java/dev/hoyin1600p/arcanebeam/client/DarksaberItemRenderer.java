@@ -243,9 +243,9 @@ public class DarksaberItemRenderer extends RenderType {
             MeshVertex a = hiltMesh.vertices.get(triangle.a);
             MeshVertex b = hiltMesh.vertices.get(triangle.b);
             MeshVertex c = hiltMesh.vertices.get(triangle.c);
-            addHiltMeshVertex(poseStack, builder, a, triangle.color);
-            addHiltMeshVertex(poseStack, builder, b, triangle.color);
-            addHiltMeshVertex(poseStack, builder, c, triangle.color);
+            addHiltMeshVertex(poseStack, builder, a, texturedHiltColor(triangle.color, a), packedLight);
+            addHiltMeshVertex(poseStack, builder, b, texturedHiltColor(triangle.color, b), packedLight);
+            addHiltMeshVertex(poseStack, builder, c, texturedHiltColor(triangle.color, c), packedLight);
         }
     }
 
@@ -445,11 +445,19 @@ public class DarksaberItemRenderer extends RenderType {
                 .endVertex();
     }
 
-    private static void addHiltMeshVertex(PoseStack poseStack, VertexConsumer builder, MeshVertex vertex, int color) {
+    private static void addHiltMeshVertex(PoseStack poseStack, VertexConsumer builder, MeshVertex vertex, int color, int packedLight) {
         Matrix4f matrix = poseStack.last().pose();
         builder.vertex(matrix, vertex.x / 16.0F, vertex.y / 16.0F, vertex.z / 16.0F)
                 .color(red(color), green(color), blue(color), 1.0F)
+                .uv2(packedLight)
                 .endVertex();
+    }
+
+    private static int texturedHiltColor(int color, MeshVertex vertex) {
+        int seed = Math.round(vertex.x * 57.0F) * 31 + Math.round(vertex.y * 41.0F) * 17 + Math.round(vertex.z * 23.0F);
+        float fine = 0.90F + hash(seed) * 0.11F;
+        float lengthGrain = 0.94F + 0.06F * (float) Math.sin(vertex.z * 1.75F + vertex.y * 0.45F);
+        return scaleColor(color, fine * lengthGrain);
     }
 
     private static float smoothstep(float value) {
@@ -642,13 +650,13 @@ public class DarksaberItemRenderer extends RenderType {
 
     private static RenderType createHiltMeshRenderType() {
         CompositeState state = CompositeState.builder()
-                .setShaderState(POSITION_COLOR_SHADER)
+                .setShaderState(POSITION_COLOR_LIGHTMAP_SHADER)
                 .setTransparencyState(NO_TRANSPARENCY)
                 .setDepthTestState(LEQUAL_DEPTH_TEST)
                 .setCullState(NO_CULL)
                 .setWriteMaskState(COLOR_DEPTH_WRITE)
                 .createCompositeState(false);
-        return RenderType.create("arcanebeam_darksaber_hilt_mesh", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 1536, false, false, state);
+        return RenderType.create("arcanebeam_darksaber_hilt_mesh", DefaultVertexFormat.POSITION_COLOR_LIGHTMAP, VertexFormat.Mode.TRIANGLES, 1536, false, false, state);
     }
 
     private static RenderType createBladeRenderType() {
