@@ -61,9 +61,9 @@ public class DarksaberItemRenderer extends RenderType {
     private static final float BLADE_BASE_Z = 7.15F;
     private static final float BLADE_TIP_Z = -22.85F;
     private static final float EFFECT_START_T = 0.0F;
-    private static final float SHADER_EDGE_INTENSITY = 1.0F;
-    private static final float SHADER_GLOW_INTENSITY = 0.72F;
-    private static final float SHADER_ARC_INTENSITY = 1.0F;
+    private static final float SHADER_EDGE_INTENSITY = 0.62F;
+    private static final float SHADER_GLOW_INTENSITY = 0.0F;
+    private static final float SHADER_ARC_INTENSITY = 0.62F;
     private static final float SHADER_CORE_INTENSITY = 0.0F;
     private static DarksaberModel cachedModel;
     private static boolean shaderApiInitialized;
@@ -564,6 +564,7 @@ public class DarksaberItemRenderer extends RenderType {
         CompositeState state = CompositeState.builder()
                 .setShaderState(POSITION_COLOR_SHADER)
                 .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                .setDepthTestState(NO_DEPTH_TEST)
                 .setCullState(NO_CULL)
                 .setWriteMaskState(COLOR_WRITE)
                 .createCompositeState(false);
@@ -596,6 +597,7 @@ public class DarksaberItemRenderer extends RenderType {
         CompositeState state = CompositeState.builder()
                 .setShaderState(POSITION_COLOR_SHADER)
                 .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                .setDepthTestState(NO_DEPTH_TEST)
                 .setCullState(NO_CULL)
                 .setWriteMaskState(COLOR_WRITE)
                 .createCompositeState(false);
