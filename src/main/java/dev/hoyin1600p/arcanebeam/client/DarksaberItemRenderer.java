@@ -62,8 +62,8 @@ public class DarksaberItemRenderer extends RenderType {
     private static final float FIRST_PERSON_SURFACE_OFFSET = 0.052F;
     private static final float BLADE_BASE_Z = 7.15F;
     private static final float BLADE_TIP_Z = -22.85F;
-    private static final float EFFECT_START_T_EDGE = 0.065F;
-    private static final float EFFECT_START_T_INNER = 0.03F;
+    private static final float EFFECT_START_T_EDGE = 0.075F;
+    private static final float EFFECT_START_T_INNER = 0.025F;
     private static final float SHADER_EDGE_INTENSITY = 0.62F;
     private static final float EDGE_HIGHLIGHT_INTENSITY = 0.38F;
     private static final float SHADER_GLOW_INTENSITY = 0.24F;
@@ -312,14 +312,15 @@ public class DarksaberItemRenderer extends RenderType {
             BladeSlice innerB = profile.slice(innerT1);
 
             float leadingAlpha = settings.edgeOpacity * edgeIntensity * (0.72F + 0.28F * shimmer);
-            renderLeadingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset, edgeA, edgeB, innerA, innerB, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
-            renderLeadingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset, edgeB, edgeA, innerB, innerA, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
-            renderLeadingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset * 1.35F, edgeA, edgeB, innerA, innerB, settings.glowColor, settings.glowOpacity * glowIntensity * shimmer, 0.0F, 0.54F);
-            renderLeadingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset * 1.35F, edgeB, edgeA, innerB, innerA, settings.glowColor, settings.glowOpacity * glowIntensity * shimmer, 0.0F, 0.54F);
+            boolean rootSegment = i == 0;
+            renderLeadingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset, edgeA, edgeB, innerA, innerB, settings.edgeColor, leadingAlpha, 0.04F, 0.38F, rootSegment, true);
+            renderLeadingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset, edgeB, edgeA, innerB, innerA, settings.edgeColor, leadingAlpha, 0.04F, 0.38F, rootSegment, false);
+            renderLeadingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset * 1.35F, edgeA, edgeB, innerA, innerB, settings.glowColor, settings.glowOpacity * glowIntensity * shimmer, 0.0F, 0.54F, rootSegment, true);
+            renderLeadingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset * 1.35F, edgeB, edgeA, innerB, innerA, settings.glowColor, settings.glowOpacity * glowIntensity * shimmer, 0.0F, 0.54F, rootSegment, false);
 
             float trailingAlpha = settings.edgeOpacity * edgeIntensity * 0.22F * (0.65F + 0.35F * shimmer);
-            renderTrailingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset, edgeA, edgeB, innerA, innerB, settings.edgeColor, trailingAlpha);
-            renderTrailingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset, edgeB, edgeA, innerB, innerA, settings.edgeColor, trailingAlpha);
+            renderTrailingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset, edgeA, edgeB, innerA, innerB, settings.edgeColor, trailingAlpha, rootSegment, true);
+            renderTrailingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset, edgeB, edgeA, innerB, innerA, settings.edgeColor, trailingAlpha, rootSegment, false);
         }
         renderBladeArcs(poseStack, blade, profile, settings, partialTick, shimmer, shaderPackActive, surfaceOffset);
     }
@@ -345,18 +346,22 @@ public class DarksaberItemRenderer extends RenderType {
         addBladeVertex(poseStack, builder, BLADE_X_BACK, slice.leadingY, slice.z, color, alpha);
     }
 
-    private static void renderLeadingGlowFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice edgeA, BladeSlice edgeB, BladeSlice innerA, BladeSlice innerB, int color, float alpha, float outerOffset, float innerFactor) {
+    private static void renderLeadingGlowFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice edgeA, BladeSlice edgeB, BladeSlice innerA, BladeSlice innerB, int color, float alpha, float outerOffset, float innerFactor, boolean rootSegment, boolean rootAtA) {
         addBladeVertex(poseStack, builder, x, edgeA.leadingY + outerOffset, edgeA.z, color, alpha);
         addBladeVertex(poseStack, builder, x, edgeB.leadingY + outerOffset, edgeB.z, color, alpha);
-        addBladeVertex(poseStack, builder, x, innerB.blendY(innerFactor), innerB.z, color, 0.0F);
-        addBladeVertex(poseStack, builder, x, innerA.blendY(innerFactor), innerA.z, color, 0.0F);
+        addBladeVertex(poseStack, builder, x, rootInnerY(innerB, innerFactor, rootSegment && !rootAtA), innerB.z, color, 0.0F);
+        addBladeVertex(poseStack, builder, x, rootInnerY(innerA, innerFactor, rootSegment && rootAtA), innerA.z, color, 0.0F);
     }
 
-    private static void renderTrailingGlowFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice edgeA, BladeSlice edgeB, BladeSlice innerA, BladeSlice innerB, int color, float alpha) {
+    private static void renderTrailingGlowFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice edgeA, BladeSlice edgeB, BladeSlice innerA, BladeSlice innerB, int color, float alpha, boolean rootSegment, boolean rootAtA) {
         addBladeVertex(poseStack, builder, x, edgeA.trailingY, edgeA.z, color, alpha);
         addBladeVertex(poseStack, builder, x, edgeB.trailingY, edgeB.z, color, alpha);
-        addBladeVertex(poseStack, builder, x, innerB.blendY(0.14F), innerB.z, color, 0.0F);
-        addBladeVertex(poseStack, builder, x, innerA.blendY(0.14F), innerA.z, color, 0.0F);
+        addBladeVertex(poseStack, builder, x, rootInnerY(innerB, 0.14F, rootSegment && !rootAtA), innerB.z, color, 0.0F);
+        addBladeVertex(poseStack, builder, x, rootInnerY(innerA, 0.14F, rootSegment && rootAtA), innerA.z, color, 0.0F);
+    }
+
+    private static float rootInnerY(BladeSlice slice, float innerFactor, boolean alignToSpine) {
+        return alignToSpine ? slice.trailingY : slice.blendY(innerFactor);
     }
 
     private static void renderBladeArcs(PoseStack poseStack, VertexConsumer builder, BladeProfile profile, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer, boolean shaderPackActive, float surfaceOffset) {
