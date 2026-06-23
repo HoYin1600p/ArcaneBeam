@@ -62,8 +62,8 @@ public class DarksaberItemRenderer extends RenderType {
     private static final float FIRST_PERSON_SURFACE_OFFSET = 0.052F;
     private static final float BLADE_BASE_Z = 7.15F;
     private static final float BLADE_TIP_Z = -22.85F;
-    private static final float EFFECT_START_T = 0.0F;
-    private static final float ROOT_EFFECT_FADE_T = 0.075F;
+    private static final float EFFECT_START_T = 0.065F;
+    private static final float ROOT_EFFECT_FADE_T = 0.045F;
     private static final float SHADER_EDGE_INTENSITY = 0.62F;
     private static final float EDGE_HIGHLIGHT_INTENSITY = 0.38F;
     private static final float SHADER_GLOW_INTENSITY = 0.24F;
@@ -322,7 +322,9 @@ public class DarksaberItemRenderer extends RenderType {
     }
 
     private static float rootEffectFade(float t0, float t1) {
-        return smoothstep(((t0 + t1) * 0.5F) / ROOT_EFFECT_FADE_T);
+        // The hidden tang sits inside the hilt. Do not render glow there because
+        // shader-safe blade effects intentionally draw without depth testing.
+        return smoothstep((((t0 + t1) * 0.5F) - EFFECT_START_T) / ROOT_EFFECT_FADE_T);
     }
 
     private static void renderBladeFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice a, BladeSlice b, int color, float alphaA, float alphaB) {
@@ -373,7 +375,7 @@ public class DarksaberItemRenderer extends RenderType {
             float fade = smoothstep(phase / 0.22F) * smoothstep((1.0F - phase) / 0.28F);
             float start = hash(cycle * 37 + i * 19);
             float end = hash((cycle + 1) * 37 + i * 19);
-            float t = EFFECT_START_T + 0.96F * lerp(start, end, motion);
+            float t = EFFECT_START_T + (0.96F - EFFECT_START_T) * lerp(start, end, motion);
             float inwardStart = hash(cycle * 53 + i * 23);
             float inwardEnd = hash((cycle + 1) * 53 + i * 23);
             float inward = 0.18F + 0.34F * lerp(inwardStart, inwardEnd, motion);
