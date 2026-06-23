@@ -62,7 +62,8 @@ public class DarksaberItemRenderer extends RenderType {
     private static final float FIRST_PERSON_SURFACE_OFFSET = 0.052F;
     private static final float BLADE_BASE_Z = 7.15F;
     private static final float BLADE_TIP_Z = -22.85F;
-    private static final float EFFECT_START_T = 0.055F;
+    private static final float EFFECT_START_T = 0.0F;
+    private static final float ROOT_EFFECT_FADE_T = 0.075F;
     private static final float SHADER_EDGE_INTENSITY = 0.62F;
     private static final float EDGE_HIGHLIGHT_INTENSITY = 0.38F;
     private static final float SHADER_GLOW_INTENSITY = 0.24F;
@@ -306,17 +307,22 @@ public class DarksaberItemRenderer extends RenderType {
             BladeSlice a = profile.slice(t0);
             BladeSlice b = profile.slice(t1);
 
-            float leadingAlpha = settings.edgeOpacity * edgeIntensity * (0.72F + 0.28F * shimmer);
+            float rootFade = rootEffectFade(t0, t1);
+            float leadingAlpha = settings.edgeOpacity * edgeIntensity * rootFade * (0.72F + 0.28F * shimmer);
             renderLeadingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset, a, b, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
             renderLeadingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset, b, a, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
-            renderLeadingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset * 1.35F, a, b, settings.glowColor, settings.glowOpacity * glowIntensity * shimmer, 0.0F, 0.54F);
-            renderLeadingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset * 1.35F, b, a, settings.glowColor, settings.glowOpacity * glowIntensity * shimmer, 0.0F, 0.54F);
+            renderLeadingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset * 1.35F, a, b, settings.glowColor, settings.glowOpacity * glowIntensity * rootFade * shimmer, 0.0F, 0.54F);
+            renderLeadingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset * 1.35F, b, a, settings.glowColor, settings.glowOpacity * glowIntensity * rootFade * shimmer, 0.0F, 0.54F);
 
-            float trailingAlpha = settings.edgeOpacity * edgeIntensity * 0.22F * (0.65F + 0.35F * shimmer);
+            float trailingAlpha = settings.edgeOpacity * edgeIntensity * rootFade * 0.22F * (0.65F + 0.35F * shimmer);
             renderTrailingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset, a, b, settings.edgeColor, trailingAlpha);
             renderTrailingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset, b, a, settings.edgeColor, trailingAlpha);
         }
         renderBladeArcs(poseStack, blade, profile, settings, partialTick, shimmer, shaderPackActive, surfaceOffset);
+    }
+
+    private static float rootEffectFade(float t0, float t1) {
+        return smoothstep(((t0 + t1) * 0.5F) / ROOT_EFFECT_FADE_T);
     }
 
     private static void renderBladeFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice a, BladeSlice b, int color, float alphaA, float alphaB) {
