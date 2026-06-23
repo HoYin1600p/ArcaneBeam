@@ -60,9 +60,10 @@ public class DarksaberItemRenderer extends RenderType {
     private static final float FIRST_PERSON_SURFACE_OFFSET = 0.052F;
     private static final float BLADE_BASE_Z = 7.15F;
     private static final float BLADE_TIP_Z = -22.85F;
-    private static final float EFFECT_START_T = 0.0F;
+    private static final float EFFECT_START_T = 0.055F;
     private static final float SHADER_EDGE_INTENSITY = 0.62F;
-    private static final float SHADER_GLOW_INTENSITY = 0.0F;
+    private static final float EDGE_HIGHLIGHT_INTENSITY = 0.38F;
+    private static final float SHADER_GLOW_INTENSITY = 0.24F;
     private static final float SHADER_ARC_INTENSITY = 0.62F;
     private static final float SHADER_CORE_INTENSITY = 0.0F;
     private static DarksaberModel cachedModel;
@@ -278,9 +279,8 @@ public class DarksaberItemRenderer extends RenderType {
 
     private static void renderBladeEffects(PoseStack poseStack, MultiBufferSource buffer, BladeProfile profile, ArcaneBeamConfig.DarksaberSettings settings, float partialTick, float shimmer, boolean shaderPackActive, boolean firstPerson) {
         VertexConsumer blade = buffer.getBuffer(shaderPackActive ? SHADER_BLADE : BLADE);
-        VertexConsumer glow = buffer.getBuffer(shaderPackActive ? SHADER_GLOW : GLOW);
         float edgeIntensity = shaderPackActive ? SHADER_EDGE_INTENSITY : 1.0F;
-        float glowIntensity = shaderPackActive ? SHADER_GLOW_INTENSITY : 1.0F;
+        float glowIntensity = shaderPackActive ? SHADER_GLOW_INTENSITY : EDGE_HIGHLIGHT_INTENSITY;
         float surfaceOffset = firstPerson ? FIRST_PERSON_SURFACE_OFFSET : BLADE_SURFACE_OFFSET;
         int segments = 32;
         for (int i = 0; i < segments; i++) {
@@ -292,14 +292,14 @@ public class DarksaberItemRenderer extends RenderType {
             float leadingAlpha = settings.edgeOpacity * edgeIntensity * (0.72F + 0.28F * shimmer);
             renderLeadingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset, a, b, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
             renderLeadingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset, b, a, settings.edgeColor, leadingAlpha, 0.04F, 0.38F);
-            renderLeadingGlowFace(poseStack, glow, BLADE_X_FRONT + surfaceOffset * 1.65F, a, b, settings.glowColor, settings.glowOpacity * glowIntensity * shimmer, -0.12F, 0.58F);
-            renderLeadingGlowFace(poseStack, glow, BLADE_X_BACK - surfaceOffset * 1.65F, b, a, settings.glowColor, settings.glowOpacity * glowIntensity * shimmer, -0.12F, 0.58F);
+            renderLeadingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset * 1.35F, a, b, settings.glowColor, settings.glowOpacity * glowIntensity * shimmer, 0.0F, 0.54F);
+            renderLeadingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset * 1.35F, b, a, settings.glowColor, settings.glowOpacity * glowIntensity * shimmer, 0.0F, 0.54F);
 
             float trailingAlpha = settings.edgeOpacity * edgeIntensity * 0.22F * (0.65F + 0.35F * shimmer);
             renderTrailingGlowFace(poseStack, blade, BLADE_X_FRONT + surfaceOffset, a, b, settings.edgeColor, trailingAlpha);
             renderTrailingGlowFace(poseStack, blade, BLADE_X_BACK - surfaceOffset, b, a, settings.edgeColor, trailingAlpha);
         }
-        renderBladeArcs(poseStack, glow, profile, settings, partialTick, shimmer, shaderPackActive, surfaceOffset);
+        renderBladeArcs(poseStack, blade, profile, settings, partialTick, shimmer, shaderPackActive, surfaceOffset);
     }
 
     private static void renderBladeFace(PoseStack poseStack, VertexConsumer builder, float x, BladeSlice a, BladeSlice b, int color, float alphaA, float alphaB) {
