@@ -5,6 +5,7 @@ import com.mojang.logging.LogUtils;
 import com.mojang.math.Transformation;
 import com.mojang.math.Vector3f;
 import dev.hoyin1600p.arcanebeam.compat.CompressiumDisplayCompat;
+import dev.hoyin1600p.arcanebeam.compat.FlatBarrelFaceDisplayCompat;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,7 +78,7 @@ public abstract class SophisticatedStorageBarrelBakedModelBaseMixin {
             cancellable = true,
             remap = false
     )
-    private void arcanebeam$addCompressiumBakedDisplayQuads(
+    private void arcanebeam$addSpecialBakedDisplayQuads(
             BlockState state,
             Random rand,
             List<BakedQuad> ret,
@@ -89,20 +90,27 @@ public abstract class SophisticatedStorageBarrelBakedModelBaseMixin {
             int displayItemCount,
             CallbackInfo ci
     ) {
-        if (!(displayItem.getItem() instanceof BlockItem) || !CompressiumDisplayCompat.isCompressiumItem(displayItem)) {
+        if (!(displayItem.getItem() instanceof BlockItem)) {
+            return;
+        }
+
+        boolean compressium = CompressiumDisplayCompat.isCompressiumItem(displayItem);
+        if (!compressium && !FlatBarrelFaceDisplayCompat.shouldRenderAsFlatSprite(displayItem, model)) {
             return;
         }
 
         ResourceLocation itemKey = Registry.ITEM.getKey(displayItem.getItem());
         if (itemKey != null && LOGGED_BAKED_ITEMS.add(itemKey)) {
-            LOGGER.debug("ArcaneBeam baking Sophisticated Storage Compressium display fallback for {}", itemKey);
+            LOGGER.debug("ArcaneBeam baking Sophisticated Storage flat display fallback for {}", itemKey);
         }
 
         if (dir != null) {
-            List<BakedQuad> quads = createCompressiumFaceQuads(model, displayItem, dir);
+            List<BakedQuad> quads = compressium ? createCompressiumFaceQuads(model, displayItem, dir) : List.of(bakeFaceQuad(model.getParticleIcon(), dir));
             quads = MOVE_TO_CORNER.processMany(quads);
-            quads = new QuadTransformer(TransformationHelper.toTransformation(model.getTransforms().getTransform(ItemTransforms.TransformType.FIXED))).processMany(quads);
-            quads = SCALE_COMPRESSIUM_FIXED_DISPLAY.processMany(quads);
+            if (compressium) {
+                quads = new QuadTransformer(TransformationHelper.toTransformation(model.getTransforms().getTransform(ItemTransforms.TransformType.FIXED))).processMany(quads);
+                quads = SCALE_COMPRESSIUM_FIXED_DISPLAY.processMany(quads);
+            }
             if (displayItemCount > 1) {
                 quads = SCALE_SMALL_BLOCK_ITEM.processMany(quads);
             }
@@ -112,7 +120,8 @@ public abstract class SophisticatedStorageBarrelBakedModelBaseMixin {
 
             Direction facing = state.getBlock() instanceof net.p3pp3rf1y.sophisticatedstorage.block.BarrelBlock barrelBlock ? barrelBlock.getFacing(state) : Direction.NORTH;
             quads = rotateDisplayItemQuads(quads, state);
-            quads = getDirectionMove(displayItem, model, state, facing, displayItemIndex, displayItemCount, (displayItemCount == 1 ? 1.0F : DisplayItemRenderer.SMALL_3D_ITEM_SCALE) * CompressiumDisplayCompat.FIXED_DISPLAY_SCALE).processMany(quads);
+            float itemScale = (displayItemCount == 1 ? 1.0F : DisplayItemRenderer.SMALL_3D_ITEM_SCALE) * (compressium ? CompressiumDisplayCompat.FIXED_DISPLAY_SCALE : 1.0F);
+            quads = getDirectionMove(displayItem, model, state, facing, displayItemIndex, displayItemCount, itemScale).processMany(quads);
             quads = pushOutFromBarrelFace(quads, facing);
             recalculateDirections(quads);
             updateTintIndexes(quads, displayItemIndex);
