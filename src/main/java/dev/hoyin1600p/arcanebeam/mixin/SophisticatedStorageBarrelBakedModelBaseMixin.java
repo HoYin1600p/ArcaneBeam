@@ -95,7 +95,8 @@ public abstract class SophisticatedStorageBarrelBakedModelBaseMixin {
         }
 
         boolean compressium = CompressiumDisplayCompat.isCompressiumItem(displayItem);
-        if (!compressium && !FlatBarrelFaceDisplayCompat.shouldRenderAsFlatSprite(displayItem, model)) {
+        boolean flatSprite = !compressium && FlatBarrelFaceDisplayCompat.shouldRenderAsFlatSprite(displayItem, model);
+        if (!compressium && !flatSprite) {
             return;
         }
 
@@ -105,7 +106,12 @@ public abstract class SophisticatedStorageBarrelBakedModelBaseMixin {
         }
 
         if (dir != null) {
-            List<BakedQuad> quads = compressium ? createCompressiumFaceQuads(model, displayItem, dir) : List.of(bakeFaceQuad(model.getParticleIcon(), dir));
+            if (flatSprite && dir != Direction.NORTH) {
+                ci.cancel();
+                return;
+            }
+
+            List<BakedQuad> quads = compressium ? createCompressiumFaceQuads(model, displayItem, dir) : List.of(bakeFaceQuad(FlatBarrelFaceDisplayCompat.sprite(displayItem, model), Direction.NORTH));
             quads = MOVE_TO_CORNER.processMany(quads);
             if (compressium) {
                 quads = new QuadTransformer(TransformationHelper.toTransformation(model.getTransforms().getTransform(ItemTransforms.TransformType.FIXED))).processMany(quads);
