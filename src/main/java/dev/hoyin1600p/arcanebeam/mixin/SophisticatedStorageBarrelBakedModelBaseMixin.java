@@ -110,10 +110,7 @@ public abstract class SophisticatedStorageBarrelBakedModelBaseMixin {
             if (flatSprite) {
                 if (dir == Direction.NORTH) {
                     Direction facing = state.getBlock() instanceof net.p3pp3rf1y.sophisticatedstorage.block.BarrelBlock barrelBlock ? barrelBlock.getFacing(state) : Direction.NORTH;
-                    List<BakedQuad> quads = FlatBarrelFaceDisplayCompat.isSporeBlossom(displayItem)
-                            ? createGuiProjectedDisplayQuads(model, displayItemIndex, displayItemCount, rotation)
-                            : createFlatDisplayQuads(FlatBarrelFaceDisplayCompat.spriteLayers(displayItem, model), facing, displayItemIndex, displayItemCount, rotation);
-                    quads = rotateDisplayItemQuads(quads, state);
+                    List<BakedQuad> quads = createFlatDisplayQuads(FlatBarrelFaceDisplayCompat.spriteLayers(displayItem, model), facing, displayItemIndex, displayItemCount, rotation);
                     quads = pushOutFromBarrelFace(quads, facing);
                     recalculateDirections(quads);
                     updateTintIndexes(quads, displayItemIndex);
@@ -147,50 +144,6 @@ public abstract class SophisticatedStorageBarrelBakedModelBaseMixin {
         }
 
         ci.cancel();
-    }
-
-    private List<BakedQuad> createGuiProjectedDisplayQuads(BakedModel model, int displayItemIndex, int displayItemCount, int rotation) {
-        List<BakedQuad> quads = collectModelQuads(model);
-        quads = MOVE_TO_CORNER.processMany(quads);
-        quads = new QuadTransformer(TransformationHelper.toTransformation(model.getTransforms().getTransform(ItemTransforms.TransformType.GUI))).processMany(quads);
-        if (rotation != 0) {
-            quads = getDisplayRotation(rotation).processMany(quads);
-        }
-
-        Bounds bounds = Bounds.from(quads);
-        Vector3f frontOffset = displayItemIndexFrontOffset(displayItemIndex, displayItemCount);
-        float targetSize = displayItemCount == 1 ? 0.75F : 0.375F;
-        float maxAxis = Math.max(bounds.width(), bounds.height());
-        float scale = maxAxis <= 0.0F ? 1.0F : targetSize / maxAxis;
-        List<BakedQuad> projected = new ArrayList<>(quads.size());
-        for (BakedQuad quad : quads) {
-            projected.add(projectToNorthFace(quad, bounds, scale, frontOffset));
-        }
-        return projected;
-    }
-
-    private static List<BakedQuad> collectModelQuads(BakedModel model) {
-        Random random = new Random(42L);
-        List<BakedQuad> quads = new ArrayList<>(model.getQuads(null, null, random));
-        for (Direction direction : Direction.values()) {
-            quads.addAll(model.getQuads(null, direction, random));
-        }
-        return quads;
-    }
-
-    private static BakedQuad projectToNorthFace(BakedQuad quad, Bounds bounds, float scale, Vector3f frontOffset) {
-        int[] vertices = quad.getVertices().clone();
-        for (int vertex = 0; vertex < 4; vertex++) {
-            int offset = vertex * 8;
-            float x = Float.intBitsToFloat(vertices[offset]);
-            float y = Float.intBitsToFloat(vertices[offset + 1]);
-            float projectedX = (x - bounds.centerX()) * scale + frontOffset.x();
-            float projectedY = (y - bounds.centerY()) * scale + frontOffset.y();
-            vertices[offset] = Float.floatToRawIntBits(projectedX);
-            vertices[offset + 1] = Float.floatToRawIntBits(projectedY);
-            vertices[offset + 2] = Float.floatToRawIntBits(0.0F);
-        }
-        return new BakedQuad(vertices, quad.getTintIndex(), Direction.NORTH, quad.getSprite(), quad.isShade());
     }
 
     private static List<BakedQuad> createFlatDisplayQuads(Iterable<FlatBarrelFaceDisplayCompat.SpriteLayer> layers, Direction facing, int displayItemIndex, int displayItemCount, int rotation) {
@@ -366,44 +319,6 @@ public abstract class SophisticatedStorageBarrelBakedModelBaseMixin {
     private record AlphaMask(int width, int height, int[] alpha) {
         int alpha(int x, int y) {
             return alpha[y * width + x];
-        }
-    }
-
-    private record Bounds(float minX, float minY, float maxX, float maxY) {
-        static Bounds from(List<BakedQuad> quads) {
-            float minX = Float.POSITIVE_INFINITY;
-            float minY = Float.POSITIVE_INFINITY;
-            float maxX = Float.NEGATIVE_INFINITY;
-            float maxY = Float.NEGATIVE_INFINITY;
-            for (BakedQuad quad : quads) {
-                int[] vertices = quad.getVertices();
-                for (int vertex = 0; vertex < 4; vertex++) {
-                    int offset = vertex * 8;
-                    float x = Float.intBitsToFloat(vertices[offset]);
-                    float y = Float.intBitsToFloat(vertices[offset + 1]);
-                    minX = Math.min(minX, x);
-                    minY = Math.min(minY, y);
-                    maxX = Math.max(maxX, x);
-                    maxY = Math.max(maxY, y);
-                }
-            }
-            return new Bounds(minX, minY, maxX, maxY);
-        }
-
-        float width() {
-            return maxX - minX;
-        }
-
-        float height() {
-            return maxY - minY;
-        }
-
-        float centerX() {
-            return (minX + maxX) * 0.5F;
-        }
-
-        float centerY() {
-            return (minY + maxY) * 0.5F;
         }
     }
 }

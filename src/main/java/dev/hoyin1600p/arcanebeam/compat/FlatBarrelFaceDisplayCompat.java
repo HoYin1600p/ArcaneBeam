@@ -75,7 +75,7 @@ public final class FlatBarrelFaceDisplayCompat {
         return Collections.singletonList(new SpriteLayer(sprite(stack, model), 1.0F, 0.0F, 0.0F));
     }
 
-    public static boolean isSporeBlossom(ItemStack stack) {
+    private static boolean isSporeBlossom(ItemStack stack) {
         ResourceLocation itemKey = Registry.ITEM.getKey(stack.getItem());
         return SPORE_BLOSSOM.equals(itemKey);
     }
