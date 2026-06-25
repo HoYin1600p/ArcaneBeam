@@ -42,7 +42,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class SophisticatedStorageBarrelBakedModelBaseMixin {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final ResourceLocation COMPRESSIUM_BARREL_FACE = new ResourceLocation("arcanebeam", "compressium_barrel_face");
-    private static final ResourceLocation FLAT_DISPLAY_BARREL_FACE = new ResourceLocation("arcanebeam", "flat_display_barrel_face");
     private static final FaceBakery FACE_BAKERY = new FaceBakery();
     private static final QuadTransformer MOVE_TO_CORNER = new QuadTransformer(new Transformation(new Vector3f(-0.5F, -0.5F, -0.5F), null, null, null));
     private static final QuadTransformer SCALE_SMALL_BLOCK_ITEM = new QuadTransformer(new Transformation(null, null, new Vector3f(DisplayItemRenderer.SMALL_3D_ITEM_SCALE, DisplayItemRenderer.SMALL_3D_ITEM_SCALE, DisplayItemRenderer.SMALL_3D_ITEM_SCALE), null));
@@ -107,20 +106,12 @@ public abstract class SophisticatedStorageBarrelBakedModelBaseMixin {
         }
 
         if (dir != null) {
-            if (flatSprite) {
-                if (dir == Direction.NORTH) {
-                    Direction facing = state.getBlock() instanceof net.p3pp3rf1y.sophisticatedstorage.block.BarrelBlock barrelBlock ? barrelBlock.getFacing(state) : Direction.NORTH;
-                    List<BakedQuad> quads = List.of(createFlatDisplayQuad(FlatBarrelFaceDisplayCompat.sprite(displayItem, model), facing, displayItemIndex, displayItemCount, rotation));
-                    quads = pushOutFromBarrelFace(quads, facing);
-                    recalculateDirections(quads);
-                    updateTintIndexes(quads, displayItemIndex);
-                    ret.addAll(quads);
-                }
+            if (flatSprite && dir != Direction.NORTH) {
                 ci.cancel();
                 return;
             }
 
-            List<BakedQuad> quads = createCompressiumFaceQuads(model, displayItem, dir);
+            List<BakedQuad> quads = compressium ? createCompressiumFaceQuads(model, displayItem, dir) : List.of(bakeFaceQuad(FlatBarrelFaceDisplayCompat.sprite(displayItem, model), Direction.NORTH));
             quads = MOVE_TO_CORNER.processMany(quads);
             if (compressium) {
                 quads = new QuadTransformer(TransformationHelper.toTransformation(model.getTransforms().getTransform(ItemTransforms.TransformType.FIXED))).processMany(quads);
@@ -144,19 +135,6 @@ public abstract class SophisticatedStorageBarrelBakedModelBaseMixin {
         }
 
         ci.cancel();
-    }
-
-    private static BakedQuad createFlatDisplayQuad(TextureAtlasSprite sprite, Direction facing, int displayItemIndex, int displayItemCount, int rotation) {
-        Vector3f frontOffset = displayItemIndexFrontOffset(displayItemIndex, displayItemCount);
-        float size = displayItemCount == 1 ? 12.0F : 6.0F;
-        float centerX = frontOffset.x() * 16.0F;
-        float centerY = frontOffset.y() * 16.0F;
-        float x0 = centerX - size * 0.5F;
-        float x1 = centerX + size * 0.5F;
-        float y0 = centerY - size * 0.5F;
-        float y1 = centerY + size * 0.5F;
-
-        return bakeFaceQuad(sprite, facing, x0, y0, x1, y1, 0.0F, 0.0F, 16.0F, 16.0F, normalizeUvRotation(rotation), FLAT_DISPLAY_BARREL_FACE);
     }
 
     private static List<BakedQuad> createCompressiumFaceQuads(BakedModel model, ItemStack displayItem, Direction direction) {
@@ -212,10 +190,6 @@ public abstract class SophisticatedStorageBarrelBakedModelBaseMixin {
     }
 
     private static BakedQuad bakeFaceQuad(TextureAtlasSprite sprite, Direction direction, float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1) {
-        return bakeFaceQuad(sprite, direction, x0, y0, x1, y1, u0, v0, u1, v1, 0, COMPRESSIUM_BARREL_FACE);
-    }
-
-    private static BakedQuad bakeFaceQuad(TextureAtlasSprite sprite, Direction direction, float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1, int uvRotation, ResourceLocation modelLocation) {
         Vector3f from;
         Vector3f to;
         if (direction == Direction.UP || direction == Direction.DOWN) {
@@ -231,45 +205,13 @@ public abstract class SophisticatedStorageBarrelBakedModelBaseMixin {
         return FACE_BAKERY.bakeQuad(
                 from,
                 to,
-                new BlockElementFace(null, -1, "", new BlockFaceUV(new float[] {u0, v0, u1, v1}, uvRotation)),
+                new BlockElementFace(null, -1, "", new BlockFaceUV(new float[] {u0, v0, u1, v1}, 0)),
                 sprite,
                 direction,
                 BlockModelRotation.X0_Y0,
                 null,
                 true,
-                modelLocation
-        );
-    }
-
-    private static int normalizeUvRotation(int rotation) {
-        int normalized = rotation % 360;
-        if (normalized < 0) {
-            normalized += 360;
-        }
-        return normalized == 90 || normalized == 180 || normalized == 270 ? normalized : 0;
-    }
-
-    private static Vector3f displayItemIndexFrontOffset(int displayItemIndex, int displayItemCount) {
-        if (displayItemCount <= 0 || displayItemCount > 4) {
-            return new Vector3f(0.5F, 0.5F, 0.5F);
-        }
-        if (displayItemCount == 1) {
-            return new Vector3f(0.5F, 0.5F, 0.5F);
-        }
-
-        float halfCenter = 0.25F;
-        if (displayItemCount == 2) {
-            return new Vector3f(0.5F, displayItemIndex == 0 ? 0.75F : halfCenter, 0.5F);
-        }
-        if (displayItemCount == 3) {
-            float xOffset = displayItemIndex > 0 ? 0.75F - (displayItemIndex - 1) * 0.5F : 0.5F;
-            return new Vector3f(xOffset, displayItemIndex == 0 ? 0.75F : halfCenter, 0.5F);
-        }
-
-        return new Vector3f(
-                displayItemIndex == 0 || displayItemIndex == 2 ? 0.75F : halfCenter,
-                displayItemIndex == 0 || displayItemIndex == 1 ? 0.75F : halfCenter,
-                0.5F
+                COMPRESSIUM_BARREL_FACE
         );
     }
 
