@@ -80,7 +80,7 @@ public abstract class SophisticatedStorageDisplayItemRendererMixin {
         if (compressium) {
             renderCompressiumFace(poseStack, bufferSource, packedLight, packedOverlay, itemModel.getParticleIcon(), CompressiumDisplayCompat.layerTexture(stack));
         } else {
-            renderFlatSpriteFace(poseStack, bufferSource, packedLight, packedOverlay, FlatBarrelFaceDisplayCompat.sprite(stack, itemModel));
+            renderFlatSpriteFaces(poseStack, bufferSource, packedLight, packedOverlay, FlatBarrelFaceDisplayCompat.spriteLayers(stack, itemModel));
         }
         poseStack.popPose();
         ci.cancel();
@@ -104,15 +104,23 @@ public abstract class SophisticatedStorageDisplayItemRendererMixin {
         }
     }
 
-    private static void renderFlatSpriteFace(
+    private static void renderFlatSpriteFaces(
             PoseStack poseStack,
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay,
-            TextureAtlasSprite sprite
+            Iterable<FlatBarrelFaceDisplayCompat.SpriteLayer> layers
     ) {
-        VertexConsumer consumer = sprite.wrap(bufferSource.getBuffer(RenderType.entityCutoutNoCull(InventoryMenu.BLOCK_ATLAS)));
-        renderFaceQuad(poseStack, consumer, packedLight, packedOverlay, 0.501F);
+        int layerIndex = 0;
+        for (FlatBarrelFaceDisplayCompat.SpriteLayer layer : layers) {
+            VertexConsumer consumer = layer.sprite().wrap(bufferSource.getBuffer(RenderType.entityCutoutNoCull(InventoryMenu.BLOCK_ATLAS)));
+            poseStack.pushPose();
+            poseStack.translate(layer.xOffset(), layer.yOffset(), 0.0F);
+            poseStack.scale(layer.scale(), layer.scale(), 1.0F);
+            renderFaceQuad(poseStack, consumer, packedLight, packedOverlay, 0.501F + layerIndex * 0.002F);
+            poseStack.popPose();
+            layerIndex++;
+        }
     }
 
     private static void renderCompressiumFace(
