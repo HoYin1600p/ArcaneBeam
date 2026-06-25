@@ -2,7 +2,6 @@ package dev.hoyin1600p.arcanebeam.compat;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.Random;
@@ -21,9 +20,6 @@ import net.minecraft.world.item.ItemStack;
 public final class FlatBarrelFaceDisplayCompat {
     private static final float MIN_WIDE_AXIS = 0.45F;
     private static final float MAX_THIN_AXIS = 0.08F;
-    private static final ResourceLocation SPORE_BLOSSOM = new ResourceLocation("minecraft", "spore_blossom");
-    private static final ResourceLocation SPORE_BLOSSOM_FLOWER = new ResourceLocation("minecraft", "block/spore_blossom");
-    private static final ResourceLocation SPORE_BLOSSOM_BASE = new ResourceLocation("minecraft", "block/spore_blossom_base");
     private static final Set<ResourceLocation> EXISTING_BLOCK_TEXTURES = ConcurrentHashMap.newKeySet();
     private static final Set<ResourceLocation> MISSING_BLOCK_TEXTURES = ConcurrentHashMap.newKeySet();
 
@@ -65,25 +61,6 @@ public final class FlatBarrelFaceDisplayCompat {
         return model.getParticleIcon();
     }
 
-    public static List<SpriteLayer> spriteLayers(ItemStack stack, BakedModel model) {
-        if (isSporeBlossom(stack)) {
-            return List.of(
-                    new SpriteLayer(textureSprite(SPORE_BLOSSOM_FLOWER), 1.0F, 0.0F, -0.08F),
-                    new SpriteLayer(textureSprite(SPORE_BLOSSOM_BASE), 0.55F, 0.0F, 0.28F)
-            );
-        }
-        return Collections.singletonList(new SpriteLayer(sprite(stack, model), 1.0F, 0.0F, 0.0F));
-    }
-
-    private static boolean isSporeBlossom(ItemStack stack) {
-        ResourceLocation itemKey = Registry.ITEM.getKey(stack.getItem());
-        return SPORE_BLOSSOM.equals(itemKey);
-    }
-
-    private static TextureAtlasSprite textureSprite(ResourceLocation texture) {
-        return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(texture);
-    }
-
     private static ResourceLocation blockTexture(ItemStack stack) {
         if (!(stack.getItem() instanceof BlockItem blockItem)) {
             return null;
@@ -110,9 +87,6 @@ public final class FlatBarrelFaceDisplayCompat {
 
         MISSING_BLOCK_TEXTURES.add(texture);
         return null;
-    }
-
-    public record SpriteLayer(TextureAtlasSprite sprite, float scale, float xOffset, float yOffset) {
     }
 
     private static List<BakedQuad> collectQuads(BakedModel model) {

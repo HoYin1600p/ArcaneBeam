@@ -110,7 +110,7 @@ public abstract class SophisticatedStorageBarrelBakedModelBaseMixin {
             if (flatSprite) {
                 if (dir == Direction.NORTH) {
                     Direction facing = state.getBlock() instanceof net.p3pp3rf1y.sophisticatedstorage.block.BarrelBlock barrelBlock ? barrelBlock.getFacing(state) : Direction.NORTH;
-                    List<BakedQuad> quads = createFlatDisplayQuads(FlatBarrelFaceDisplayCompat.spriteLayers(displayItem, model), facing, displayItemIndex, displayItemCount, rotation);
+                    List<BakedQuad> quads = List.of(createFlatDisplayQuad(FlatBarrelFaceDisplayCompat.sprite(displayItem, model), facing, displayItemIndex, displayItemCount, rotation));
                     quads = pushOutFromBarrelFace(quads, facing);
                     recalculateDirections(quads);
                     updateTintIndexes(quads, displayItemIndex);
@@ -146,21 +146,17 @@ public abstract class SophisticatedStorageBarrelBakedModelBaseMixin {
         ci.cancel();
     }
 
-    private static List<BakedQuad> createFlatDisplayQuads(Iterable<FlatBarrelFaceDisplayCompat.SpriteLayer> layers, Direction facing, int displayItemIndex, int displayItemCount, int rotation) {
-        List<BakedQuad> quads = new ArrayList<>();
+    private static BakedQuad createFlatDisplayQuad(TextureAtlasSprite sprite, Direction facing, int displayItemIndex, int displayItemCount, int rotation) {
         Vector3f frontOffset = displayItemIndexFrontOffset(displayItemIndex, displayItemCount);
         float size = displayItemCount == 1 ? 12.0F : 6.0F;
-        for (FlatBarrelFaceDisplayCompat.SpriteLayer layer : layers) {
-            float layerSize = size * layer.scale();
-            float centerX = frontOffset.x() * 16.0F + layer.xOffset() * size;
-            float centerY = frontOffset.y() * 16.0F + layer.yOffset() * size;
-            float x0 = centerX - layerSize * 0.5F;
-            float x1 = centerX + layerSize * 0.5F;
-            float y0 = centerY - layerSize * 0.5F;
-            float y1 = centerY + layerSize * 0.5F;
-            quads.add(bakeFaceQuad(layer.sprite(), facing, x0, y0, x1, y1, 0.0F, 0.0F, 16.0F, 16.0F, normalizeUvRotation(rotation), FLAT_DISPLAY_BARREL_FACE));
-        }
-        return quads;
+        float centerX = frontOffset.x() * 16.0F;
+        float centerY = frontOffset.y() * 16.0F;
+        float x0 = centerX - size * 0.5F;
+        float x1 = centerX + size * 0.5F;
+        float y0 = centerY - size * 0.5F;
+        float y1 = centerY + size * 0.5F;
+
+        return bakeFaceQuad(sprite, facing, x0, y0, x1, y1, 0.0F, 0.0F, 16.0F, 16.0F, normalizeUvRotation(rotation), FLAT_DISPLAY_BARREL_FACE);
     }
 
     private static List<BakedQuad> createCompressiumFaceQuads(BakedModel model, ItemStack displayItem, Direction direction) {
