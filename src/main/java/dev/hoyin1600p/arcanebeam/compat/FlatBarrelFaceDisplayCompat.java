@@ -3,25 +3,16 @@ package dev.hoyin1600p.arcanebeam.compat;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Registry;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 
 public final class FlatBarrelFaceDisplayCompat {
     private static final float MIN_WIDE_AXIS = 0.45F;
     private static final float MAX_THIN_AXIS = 0.08F;
-    private static final Set<ResourceLocation> EXISTING_BLOCK_TEXTURES = ConcurrentHashMap.newKeySet();
-    private static final Set<ResourceLocation> MISSING_BLOCK_TEXTURES = ConcurrentHashMap.newKeySet();
 
     private FlatBarrelFaceDisplayCompat() {
     }
@@ -51,42 +42,6 @@ public final class FlatBarrelFaceDisplayCompat {
 
     public static double flatSpriteDisplayItemOffset() {
         return -CompressiumDisplayCompat.BARREL_FACE_OUTSET;
-    }
-
-    public static TextureAtlasSprite sprite(ItemStack stack, BakedModel model) {
-        ResourceLocation texture = blockTexture(stack);
-        if (texture != null) {
-            return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(texture);
-        }
-        return model.getParticleIcon();
-    }
-
-    private static ResourceLocation blockTexture(ItemStack stack) {
-        if (!(stack.getItem() instanceof BlockItem blockItem)) {
-            return null;
-        }
-
-        ResourceLocation blockKey = Registry.BLOCK.getKey(blockItem.getBlock());
-        if (blockKey == null) {
-            return null;
-        }
-
-        ResourceLocation texture = new ResourceLocation(blockKey.getNamespace(), "block/" + blockKey.getPath());
-        if (EXISTING_BLOCK_TEXTURES.contains(texture)) {
-            return texture;
-        }
-        if (MISSING_BLOCK_TEXTURES.contains(texture)) {
-            return null;
-        }
-
-        ResourceLocation textureFile = new ResourceLocation(texture.getNamespace(), "textures/" + texture.getPath() + ".png");
-        if (Minecraft.getInstance().getResourceManager().hasResource(textureFile)) {
-            EXISTING_BLOCK_TEXTURES.add(texture);
-            return texture;
-        }
-
-        MISSING_BLOCK_TEXTURES.add(texture);
-        return null;
     }
 
     private static List<BakedQuad> collectQuads(BakedModel model) {

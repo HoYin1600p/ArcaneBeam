@@ -80,7 +80,7 @@ public abstract class SophisticatedStorageDisplayItemRendererMixin {
         if (compressium) {
             renderCompressiumFace(poseStack, bufferSource, packedLight, packedOverlay, itemModel.getParticleIcon(), CompressiumDisplayCompat.layerTexture(stack));
         } else {
-            renderFlatSpriteFace(poseStack, bufferSource, packedLight, packedOverlay, FlatBarrelFaceDisplayCompat.sprite(stack, itemModel));
+            renderFlatSpriteFace(poseStack, bufferSource, packedLight, packedOverlay, itemModel.getParticleIcon());
         }
         poseStack.popPose();
         ci.cancel();
