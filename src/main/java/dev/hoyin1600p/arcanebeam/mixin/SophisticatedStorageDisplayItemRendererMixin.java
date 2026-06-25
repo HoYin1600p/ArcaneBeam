@@ -7,7 +7,6 @@ import com.mojang.math.Matrix4f;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Vector3f;
 import dev.hoyin1600p.arcanebeam.compat.CompressiumDisplayCompat;
-import dev.hoyin1600p.arcanebeam.compat.FlatBarrelFaceDisplayCompat;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.Minecraft;
@@ -39,7 +38,7 @@ public abstract class SophisticatedStorageDisplayItemRendererMixin {
             cancellable = true,
             remap = false
     )
-    private void arcanebeam$renderSpecialBlockDisplay(
+    private void arcanebeam$renderCompressiumBlock(
             PoseStack poseStack,
             MultiBufferSource bufferSource,
             int packedLight,
@@ -52,36 +51,25 @@ public abstract class SophisticatedStorageDisplayItemRendererMixin {
             int rotation,
             CallbackInfo ci
     ) {
-        if (!(stack.getItem() instanceof BlockItem)) {
+        if (!(stack.getItem() instanceof BlockItem) || !CompressiumDisplayCompat.isCompressiumItem(stack)) {
             return;
         }
 
         BakedModel itemModel = minecraft.getItemRenderer().getModel(stack, null, minecraft.player, 0);
-        if (!CompressiumDisplayCompat.isCompressiumItem(stack) && !FlatBarrelFaceDisplayCompat.shouldRenderAsFlatSprite(stack, itemModel)) {
-            return;
-        }
-
         float displayScale = displayItemCount == 1 ? 1.0F : 0.5F;
-        boolean compressium = CompressiumDisplayCompat.isCompressiumItem(stack);
-        float itemOffset = compressium
-                ? (float) CompressiumDisplayCompat.outwardDynamicDisplayItemOffset(displayScale)
-                : (float) FlatBarrelFaceDisplayCompat.flatSpriteDisplayItemOffset();
-        float itemScale = compressium ? displayScale * CompressiumDisplayCompat.FIXED_DISPLAY_SCALE : displayScale;
+        float itemOffset = (float) CompressiumDisplayCompat.outwardDynamicDisplayItemOffset(displayScale);
+        float itemScale = displayScale * CompressiumDisplayCompat.FIXED_DISPLAY_SCALE;
         Vector3f frontOffset = displayItemIndexFrontOffset(displayItemIndex, displayItemCount);
         ResourceLocation itemKey = Registry.ITEM.getKey(stack.getItem());
         if (itemKey != null && LOGGED_RENDERED_ITEMS.add(itemKey)) {
-            LOGGER.debug("ArcaneBeam rendering Sophisticated Storage flat display fallback for {}", itemKey);
+            LOGGER.debug("ArcaneBeam rendering Sophisticated Storage Compressium display fallback for {}", itemKey);
         }
 
         poseStack.pushPose();
         poseStack.translate(frontOffset.x(), frontOffset.y(), -itemOffset);
         poseStack.mulPose(Vector3f.ZP.rotationDegrees(rotation));
         poseStack.scale(itemScale, itemScale, itemScale);
-        if (compressium) {
-            renderCompressiumFace(poseStack, bufferSource, packedLight, packedOverlay, itemModel.getParticleIcon(), CompressiumDisplayCompat.layerTexture(stack));
-        } else {
-            renderFlatSpriteFace(poseStack, bufferSource, packedLight, packedOverlay, itemModel.getParticleIcon());
-        }
+        renderCompressiumFace(poseStack, bufferSource, packedLight, packedOverlay, itemModel.getParticleIcon(), CompressiumDisplayCompat.layerTexture(stack));
         poseStack.popPose();
         ci.cancel();
     }
@@ -93,26 +81,11 @@ public abstract class SophisticatedStorageDisplayItemRendererMixin {
             remap = false
     )
     private static void arcanebeam$useFullCubeOffsetForCompressium(ItemStack item, BakedModel itemModel, float additionalScale, CallbackInfoReturnable<Double> cir) {
-        if (!(item.getItem() instanceof BlockItem)) {
+        if (!(item.getItem() instanceof BlockItem) || !CompressiumDisplayCompat.isCompressiumItem(item)) {
             return;
         }
 
-        if (CompressiumDisplayCompat.isCompressiumItem(item)) {
-            cir.setReturnValue(CompressiumDisplayCompat.fullCubeDisplayItemOffset(additionalScale));
-        } else if (FlatBarrelFaceDisplayCompat.shouldRenderAsFlatSprite(item, itemModel)) {
-            cir.setReturnValue(FlatBarrelFaceDisplayCompat.flatSpriteDisplayItemOffset());
-        }
-    }
-
-    private static void renderFlatSpriteFace(
-            PoseStack poseStack,
-            MultiBufferSource bufferSource,
-            int packedLight,
-            int packedOverlay,
-            TextureAtlasSprite sprite
-    ) {
-        VertexConsumer consumer = sprite.wrap(bufferSource.getBuffer(RenderType.entityCutoutNoCull(InventoryMenu.BLOCK_ATLAS)));
-        renderFaceQuad(poseStack, consumer, packedLight, packedOverlay, 0.501F);
+        cir.setReturnValue(CompressiumDisplayCompat.fullCubeDisplayItemOffset(additionalScale));
     }
 
     private static void renderCompressiumFace(
