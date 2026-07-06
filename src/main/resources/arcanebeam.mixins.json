@@ -2,7 +2,6 @@
   "required": true,
   "package": "dev.hoyin1600p.arcanebeam.mixin",
   "compatibilityLevel": "JAVA_17",
-  "plugin": "dev.hoyin1600p.arcanebeam.mixin.ArcaneBeamMixinPlugin",
   "refmap": "arcanebeam.refmap.json",
   "client": [
     "AbilityActivityMessageMixin",
@@ -15,9 +14,6 @@
     "SoundManagerMixin",
     "StormArrowRendererMixin",
     "StormSmiteBoltRendererMixin",
-    "SophisticatedStorageBarrelBakedModelBaseMixin",
-    "SophisticatedStorageDisplayItemRendererMixin",
-    "SophisticatedStorageLimitedBarrelClientInteractionMixin",
     "VaultStormArrowMixin",
     "VaultStormEntityAccessor",
     "VaultStormEntityMixin"

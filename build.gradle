@@ -31,8 +31,6 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     compileOnly fg.deobf("curse.maven:vault-hunters-official-mod-458203:${vault_hunters_version}")
-    compileOnly fg.deobf("curse.maven:sophisticated-core-618298:5296312")
-    compileOnly fg.deobf("curse.maven:sophisticated-storage-619320:5809745")
     annotationProcessor "org.spongepowered:mixin:${mixin_version}:processor"
 }
 
