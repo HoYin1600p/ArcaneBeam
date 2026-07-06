@@ -7,7 +7,6 @@
     "AbilityActivityMessageMixin",
     "ChainLightningProjectileMixin",
     "ClientLevelMixin",
-    "DarksaberItemRendererMixin",
     "LightningArrowRendererMixin",
     "SmiteBoltAccessor",
     "SmiteBoltRendererMixin",

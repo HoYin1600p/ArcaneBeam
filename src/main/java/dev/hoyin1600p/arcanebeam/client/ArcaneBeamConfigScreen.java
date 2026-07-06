@@ -7,7 +7,6 @@ import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import org.lwjgl.glfw.GLFW;
@@ -58,7 +57,6 @@ public class ArcaneBeamConfigScreen extends Screen {
     private final List<EditBox> glowColorBoxes = new ArrayList<>();
     private final List<EditBox> altarColorBoxes = new ArrayList<>();
     private final List<EditBox> stormArrowColorBoxes = new ArrayList<>();
-    private final List<EditBox> darksaberColorBoxes = new ArrayList<>();
     private final List<EditBox> originBoxes = new ArrayList<>();
     private final List<Button> originLabelButtons = new ArrayList<>();
     private final List<Button> tabButtons = new ArrayList<>();
@@ -107,24 +105,6 @@ public class ArcaneBeamConfigScreen extends Screen {
     private SettingSlider stormArrowSegmentLengthSlider;
     private SettingSlider stormArrowSegmentGapSlider;
     private SettingSlider stormArrowImpactFlashSizeSlider;
-    private SettingSlider darksaberCoreOpacitySlider;
-    private SettingSlider darksaberEdgeOpacitySlider;
-    private SettingSlider darksaberGlowOpacitySlider;
-    private SettingSlider darksaberShimmerAmountSlider;
-    private SettingSlider darksaberShimmerSpeedSlider;
-    private SettingSlider darksaberScaleSlider;
-    private SettingSlider darksaberOffsetXSlider;
-    private SettingSlider darksaberOffsetYSlider;
-    private SettingSlider darksaberOffsetZSlider;
-    private SettingSlider darksaberRotationXSlider;
-    private SettingSlider darksaberRotationYSlider;
-    private SettingSlider darksaberRotationZSlider;
-    private SettingSlider darksaberPreviewZoomSlider;
-    private SettingSlider darksaberPreviewOffsetXSlider;
-    private SettingSlider darksaberPreviewOffsetYSlider;
-    private SettingSlider darksaberPreviewPitchSlider;
-    private SettingSlider darksaberPreviewYawSlider;
-    private SettingSlider darksaberPreviewRollSlider;
     private Button soundButton;
     private Button handButton;
     private Button shaderCompatibilityButton;
@@ -169,16 +149,11 @@ public class ArcaneBeamConfigScreen extends Screen {
     private Button stormArrowImpactFlashButton;
     private Button stormArrowSoundButton;
     private Button stormArrowProjectileSoundButton;
-    private Button darksaberEnabledButton;
     private EditBox stormArrowLifetimeBox;
     private EditBox stormArrowOriginHeightBox;
     private EditBox archonMissileRadiusBox;
     private EditBox stormArrowSoundVolumeBox;
     private EditBox stormArrowAudioRangeBox;
-    private EditBox darksaberTransmogBox;
-    private EditBox darksaberCoreColorBox;
-    private EditBox darksaberEdgeColorBox;
-    private EditBox darksaberGlowColorBox;
     private EditBox pickerHexBox;
     private boolean profileDropdownOpen;
     private boolean railSelected;
@@ -187,7 +162,6 @@ public class ArcaneBeamConfigScreen extends Screen {
     private boolean stormArrowSelected;
     private boolean smiteSelected;
     private boolean archonSelected;
-    private boolean darksaberSelected;
     private boolean draggingPalette;
     private boolean draggingBrightness;
     private boolean colorPickerOpen;
@@ -215,8 +189,7 @@ public class ArcaneBeamConfigScreen extends Screen {
             new TabDescriptor(ConfigTabId.VAULT_ALTAR, "Vault Altar", 84, ArcaneBeamGuiTheme.GREEN),
             new TabDescriptor(ConfigTabId.STORM_ARROW, "Storm Arrow", 94, ArcaneBeamGuiTheme.BLUE),
             new TabDescriptor(ConfigTabId.SMITE, "Smite", 56, ArcaneBeamGuiTheme.RED),
-            new TabDescriptor(ConfigTabId.ARCHON, "Archon", 70, ArcaneBeamGuiTheme.VIOLET),
-            new TabDescriptor(ConfigTabId.DARKSABER, "Darksaber", 82, ArcaneBeamGuiTheme.CYAN)
+            new TabDescriptor(ConfigTabId.ARCHON, "Archon", 70, ArcaneBeamGuiTheme.VIOLET)
     };
 
     private enum DrawerState {
@@ -232,8 +205,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         VAULT_ALTAR,
         STORM_ARROW,
         SMITE,
-        ARCHON,
-        DARKSABER
+        ARCHON
     }
 
     private static final class TabDescriptor {
@@ -263,7 +235,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     public boolean lightningSelected() {
-        return lightningSelected || vaultAltarSelected || stormLikeSelected() || darksaberSelected;
+        return lightningSelected || vaultAltarSelected || stormLikeSelected();
     }
 
     @Override
@@ -274,7 +246,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         glowColorBoxes.clear();
         altarColorBoxes.clear();
         stormArrowColorBoxes.clear();
-        darksaberColorBoxes.clear();
         originBoxes.clear();
         originLabelButtons.clear();
         tabButtons.clear();
@@ -405,7 +376,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         addLightningControls(sliderX, sliderY);
         addVaultAltarControls(sliderX, sliderY);
         addStormArrowControls(sliderX, sliderY);
-        addDarksaberControls(sliderX, sliderY);
 
         drawerToggleButton = this.addRenderableWidget(new ThemeButton(layoutWidth / 2 - 74, drawerY() + 10, 84, 20, TextComponent.EMPTY, button -> {
             drawerState = drawerState == DrawerState.EXPANDED ? DrawerState.COLLAPSED : DrawerState.EXPANDED;
@@ -635,61 +605,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         stormArrowSoundVolumeBox = addStormArrowSoundVolumeBox(x + 208, y + 256);
     }
 
-    private void addDarksaberControls(int x, int y) {
-        int colorY = beamRowY();
-        addDarksaberColorBox(slotStartX(0), colorY, "Core", 0);
-        addDarksaberColorBox(slotStartX(1), colorY, "Edge", 1);
-        addDarksaberColorBox(slotStartX(2), colorY, "Glow", 2);
-
-        darksaberEnabledButton = this.addRenderableWidget(new ThemeButton(x, y, 150, 20, TextComponent.EMPTY, button -> {
-            darksaberSettings().enabled = !darksaberSettings().enabled;
-            refreshControls();
-            ArcaneBeamConfig.save();
-        }));
-        darksaberTransmogBox = new EditBox(this.font, x + 58, y + 28, 108, 20, new TextComponent("Transmog"));
-        darksaberTransmogBox.setMaxLength(64);
-        darksaberTransmogBox.setFilter(value -> value == null || !value.contains("\n") && !value.contains("\r") && !value.contains("\t"));
-        darksaberTransmogBox.setResponder(this::updateDarksaberTransmogFromText);
-        this.addRenderableWidget(darksaberTransmogBox);
-
-        darksaberCoreOpacitySlider = new SettingSlider(x, y + 56, 150, 20, "Core Opacity", 0.0D, 1.0D, () -> darksaberSettings().coreOpacity, value -> darksaberSettings().coreOpacity = (float) value);
-        darksaberEdgeOpacitySlider = new SettingSlider(x, y + 80, 150, 20, "Edge Opacity", 0.0D, 1.0D, () -> darksaberSettings().edgeOpacity, value -> darksaberSettings().edgeOpacity = (float) value);
-        darksaberGlowOpacitySlider = new SettingSlider(x, y + 104, 150, 20, "Glow Opacity", 0.0D, 1.0D, () -> darksaberSettings().glowOpacity, value -> darksaberSettings().glowOpacity = (float) value);
-        darksaberShimmerAmountSlider = new SettingSlider(x, y + 128, 150, 20, "Shimmer", 0.0D, 1.0D, () -> darksaberSettings().shimmerAmount, value -> darksaberSettings().shimmerAmount = (float) value);
-        darksaberShimmerSpeedSlider = new SettingSlider(x, y + 152, 150, 20, "Shimmer Speed", 1.0D, 120.0D, () -> darksaberSettings().shimmerSpeed, value -> darksaberSettings().shimmerSpeed = (float) value);
-        darksaberScaleSlider = new SettingSlider(x, y + 176, 150, 20, "Item Scale", 0.1D, 2.0D, () -> darksaberSettings().scale, value -> darksaberSettings().scale = (float) value);
-        darksaberOffsetXSlider = new SettingSlider(x, y + 200, 150, 20, "Item X", -16.0D, 16.0D, () -> darksaberSettings().offsetX, value -> darksaberSettings().offsetX = (float) value);
-        darksaberOffsetYSlider = new SettingSlider(x, y + 224, 150, 20, "Item Y", -16.0D, 16.0D, () -> darksaberSettings().offsetY, value -> darksaberSettings().offsetY = (float) value);
-        darksaberOffsetZSlider = new SettingSlider(x, y + 248, 150, 20, "Item Z", -16.0D, 16.0D, () -> darksaberSettings().offsetZ, value -> darksaberSettings().offsetZ = (float) value);
-        darksaberRotationXSlider = new SettingSlider(x, y + 272, 150, 20, "Item Pitch", -180.0D, 180.0D, () -> darksaberSettings().rotationX, value -> darksaberSettings().rotationX = (float) value);
-        darksaberRotationYSlider = new SettingSlider(x, y + 296, 150, 20, "Item Yaw", -180.0D, 180.0D, () -> darksaberSettings().rotationY, value -> darksaberSettings().rotationY = (float) value);
-        darksaberRotationZSlider = new SettingSlider(x, y + 320, 150, 20, "Item Roll", -180.0D, 180.0D, () -> darksaberSettings().rotationZ, value -> darksaberSettings().rotationZ = (float) value);
-        darksaberPreviewZoomSlider = new SettingSlider(x, y + 344, 150, 20, "Preview Zoom", 0.25D, 2.5D, () -> darksaberSettings().previewZoom, value -> darksaberSettings().previewZoom = (float) value);
-        darksaberPreviewOffsetXSlider = new SettingSlider(x, y + 368, 150, 20, "Preview X", -800.0D, 800.0D, () -> darksaberSettings().previewOffsetX, value -> darksaberSettings().previewOffsetX = (float) value);
-        darksaberPreviewOffsetYSlider = new SettingSlider(x, y + 392, 150, 20, "Preview Y", -500.0D, 500.0D, () -> darksaberSettings().previewOffsetY, value -> darksaberSettings().previewOffsetY = (float) value);
-        darksaberPreviewPitchSlider = new SettingSlider(x, y + 416, 150, 20, "Preview Pitch", -180.0D, 180.0D, () -> darksaberSettings().previewPitch, value -> darksaberSettings().previewPitch = (float) value);
-        darksaberPreviewYawSlider = new SettingSlider(x, y + 440, 150, 20, "Preview Yaw", -180.0D, 180.0D, () -> darksaberSettings().previewYaw, value -> darksaberSettings().previewYaw = (float) value);
-        darksaberPreviewRollSlider = new SettingSlider(x, y + 464, 150, 20, "Preview Roll", -180.0D, 180.0D, () -> darksaberSettings().previewRoll, value -> darksaberSettings().previewRoll = (float) value);
-        this.addRenderableWidget(darksaberCoreOpacitySlider);
-        this.addRenderableWidget(darksaberEdgeOpacitySlider);
-        this.addRenderableWidget(darksaberGlowOpacitySlider);
-        this.addRenderableWidget(darksaberShimmerAmountSlider);
-        this.addRenderableWidget(darksaberShimmerSpeedSlider);
-        this.addRenderableWidget(darksaberScaleSlider);
-        this.addRenderableWidget(darksaberOffsetXSlider);
-        this.addRenderableWidget(darksaberOffsetYSlider);
-        this.addRenderableWidget(darksaberOffsetZSlider);
-        this.addRenderableWidget(darksaberRotationXSlider);
-        this.addRenderableWidget(darksaberRotationYSlider);
-        this.addRenderableWidget(darksaberRotationZSlider);
-        this.addRenderableWidget(darksaberPreviewZoomSlider);
-        this.addRenderableWidget(darksaberPreviewOffsetXSlider);
-        this.addRenderableWidget(darksaberPreviewOffsetYSlider);
-        this.addRenderableWidget(darksaberPreviewPitchSlider);
-        this.addRenderableWidget(darksaberPreviewYawSlider);
-        this.addRenderableWidget(darksaberPreviewRollSlider);
-    }
-
     private void syncBooleansFromActiveTab() {
         railSelected = activeTab == ConfigTabId.RAIL;
         lightningSelected = activeTab == ConfigTabId.LIGHTNING_STRIKE;
@@ -697,7 +612,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         stormArrowSelected = activeTab == ConfigTabId.STORM_ARROW;
         smiteSelected = activeTab == ConfigTabId.SMITE;
         archonSelected = activeTab == ConfigTabId.ARCHON;
-        darksaberSelected = activeTab == ConfigTabId.DARKSABER;
     }
 
     private void selectTab(ConfigTabId tab) {
@@ -887,16 +801,6 @@ public class ArcaneBeamConfigScreen extends Screen {
                     DENSE_AUDIO_CARD_WIDTH
             };
         }
-        if (darksaberSelected) {
-            return new int[]{
-                    DENSE_SETUP_CARD_WIDTH,
-                    DENSE_MEDIUM_CARD_WIDTH,
-                    DENSE_MEDIUM_CARD_WIDTH,
-                    DENSE_WIDE_CARD_WIDTH,
-                    DENSE_WIDE_CARD_WIDTH,
-                    DENSE_WIDE_CARD_WIDTH
-            };
-        }
         return new int[]{
                 BEAM_SHAPE_CARD_WIDTH,
                 BEAM_MOTION_CARD_WIDTH,
@@ -1019,7 +923,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private boolean denseTabSelected() {
-        return lightningSelected || vaultAltarSelected || stormLikeSelected() || darksaberSelected;
+        return lightningSelected || vaultAltarSelected || stormLikeSelected();
     }
 
     private int activeAccent() {
@@ -1057,7 +961,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         layoutLightningWidgets();
         layoutVaultAltarWidgets();
         layoutStormArrowWidgets();
-        layoutDarksaberWidgets();
     }
 
     private void layoutTabs() {
@@ -1172,9 +1075,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
         for (int i = 0; i < stormArrowColorBoxes.size(); i++) {
             moveColorBox(stormArrowColorBoxes.get(i), i, beamRowY());
-        }
-        for (int i = 0; i < darksaberColorBoxes.size(); i++) {
-            moveColorBox(darksaberColorBoxes.get(i), i, beamRowY());
         }
     }
 
@@ -1335,54 +1235,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         } else {
             layoutStormArrowOnlyWidgets(y);
         }
-    }
-
-    private void layoutDarksaberWidgets() {
-        int y = controlCardY() + 30;
-        int cardX = denseControlsX();
-
-        int setupX = controlCardInnerX(cardX);
-        int setupWidth = controlCardInnerWidth(DENSE_SETUP_CARD_WIDTH);
-        moveWidget(darksaberEnabledButton, setupX, y, setupWidth);
-        moveWidget(darksaberTransmogBox, setupX + 58, y + 29, Math.max(76, setupWidth - 58));
-        cardX += DENSE_SETUP_CARD_WIDTH + CONTROL_CARD_GAP;
-
-        int opacityX = controlCardInnerX(cardX);
-        int opacityWidth = controlCardInnerWidth(DENSE_MEDIUM_CARD_WIDTH);
-        moveWidget(darksaberCoreOpacitySlider, opacityX, y, opacityWidth);
-        moveWidget(darksaberEdgeOpacitySlider, opacityX, y + 23, opacityWidth);
-        moveWidget(darksaberGlowOpacitySlider, opacityX, y + 46, opacityWidth);
-        cardX += DENSE_MEDIUM_CARD_WIDTH + CONTROL_CARD_GAP;
-
-        int shimmerX = controlCardInnerX(cardX);
-        int shimmerWidth = controlCardInnerWidth(DENSE_MEDIUM_CARD_WIDTH);
-        moveWidget(darksaberShimmerAmountSlider, shimmerX, y, shimmerWidth);
-        moveWidget(darksaberShimmerSpeedSlider, shimmerX, y + 23, shimmerWidth);
-        cardX += DENSE_MEDIUM_CARD_WIDTH + CONTROL_CARD_GAP;
-
-        int transformX = controlCardInnerX(cardX);
-        int transformWidth = controlCardInnerWidth(DENSE_WIDE_CARD_WIDTH);
-        moveWidget(darksaberScaleSlider, transformX, y, transformWidth);
-        moveWidget(darksaberOffsetXSlider, transformX, y + 23, transformWidth);
-        moveWidget(darksaberOffsetYSlider, transformX, y + 46, transformWidth);
-        moveWidget(darksaberOffsetZSlider, transformX, y + 69, transformWidth);
-        cardX += DENSE_WIDE_CARD_WIDTH + CONTROL_CARD_GAP;
-
-        int rotationX = controlCardInnerX(cardX);
-        int rotationWidth = controlCardInnerWidth(DENSE_WIDE_CARD_WIDTH);
-        moveWidget(darksaberRotationXSlider, rotationX, y, rotationWidth);
-        moveWidget(darksaberRotationYSlider, rotationX, y + 23, rotationWidth);
-        moveWidget(darksaberRotationZSlider, rotationX, y + 46, rotationWidth);
-        cardX += DENSE_WIDE_CARD_WIDTH + CONTROL_CARD_GAP;
-
-        int previewX = controlCardInnerX(cardX);
-        int previewWidth = controlCardInnerWidth(DENSE_WIDE_CARD_WIDTH);
-        moveWidget(darksaberPreviewZoomSlider, previewX, y, previewWidth);
-        moveWidget(darksaberPreviewOffsetXSlider, previewX, y + 23, previewWidth);
-        moveWidget(darksaberPreviewOffsetYSlider, previewX, y + 46, previewWidth);
-        moveWidget(darksaberPreviewPitchSlider, previewX, y + 69, previewWidth);
-        moveWidget(darksaberPreviewYawSlider, previewX, y + 92, previewWidth);
-        moveWidget(darksaberPreviewRollSlider, previewX, y + 115, previewWidth);
     }
 
     private void layoutStormArrowOnlyWidgets(int y) {
@@ -1669,22 +1521,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         this.addRenderableWidget(editBox);
     }
 
-    private void addDarksaberColorBox(int x, int y, String label, int slot) {
-        EditBox editBox = new EditBox(this.font, x + SLOT_PREVIEW_WIDTH + SLOT_INNER_GAP, y, SLOT_HEX_WIDTH, 20, new TextComponent(label));
-        editBox.setMaxLength(7);
-        editBox.setFilter(value -> value.isEmpty() || value.matches("#?[0-9a-fA-F]{0,6}"));
-        editBox.setResponder(value -> updateDarksaberColorFromText(slot, value));
-        darksaberColorBoxes.add(editBox);
-        this.addRenderableWidget(editBox);
-        if (slot == 0) {
-            darksaberCoreColorBox = editBox;
-        } else if (slot == 1) {
-            darksaberEdgeColorBox = editBox;
-        } else if (slot == 2) {
-            darksaberGlowColorBox = editBox;
-        }
-    }
-
     private EditBox addLightningSoundVolumeBox(int x, int y) {
         EditBox editBox = new EditBox(this.font, x + 50, y, 50, 20, new TextComponent("Sound Volume"));
         editBox.setMaxLength(4);
@@ -1756,18 +1592,10 @@ public class ArcaneBeamConfigScreen extends Screen {
         poseStack.pushPose();
         poseStack.scale(layoutScale, layoutScale, 1.0F);
         renderChrome(poseStack);
-        if (darksaberSelected) {
-            MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
-            DarksaberItemRenderer.renderScreenPreview(poseStack, buffer, layoutWidth, drawerY(), partialTick);
-            buffer.endBatch();
-        }
         if (drawerState == DrawerState.EXPANDED) {
             renderProfilePanel(poseStack);
             renderInputFrames(poseStack);
-            if (darksaberSelected) {
-                renderDarksaberColorPreviews(poseStack);
-                renderDarksaberLabels(poseStack);
-            } else if (stormLikeSelected()) {
+            if (stormLikeSelected()) {
                 renderStormArrowColorPreviews(poseStack);
                 renderStormArrowLabels(poseStack);
             } else if (vaultAltarSelected) {
@@ -1779,7 +1607,7 @@ public class ArcaneBeamConfigScreen extends Screen {
             } else {
                 renderInlinePreviews(poseStack);
             }
-            if (!lightningSelected && !vaultAltarSelected && !stormLikeSelected() && !darksaberSelected && soundVolumeBox != null) {
+            if (!lightningSelected && !vaultAltarSelected && !stormLikeSelected() && soundVolumeBox != null) {
                 drawControlLabel(poseStack, soundVolumeBox, "Volume", soundVolumeBox.x - this.font.width("Volume") - 8, soundVolumeBox.y + 6);
             }
             if (colorPickerOpen) {
@@ -1910,11 +1738,6 @@ public class ArcaneBeamConfigScreen extends Screen {
                     new int[]{DENSE_SETUP_CARD_WIDTH, DENSE_MEDIUM_CARD_WIDTH, DENSE_MEDIUM_CARD_WIDTH, DENSE_WIDE_CARD_WIDTH, DENSE_MEDIUM_CARD_WIDTH, DENSE_AUDIO_CARD_WIDTH});
             return;
         }
-        if (darksaberSelected) {
-            renderDenseCardRow(poseStack,
-                    new String[]{"Setup", "Opacity", "Shimmer", "Item Position", "Item Rotation", "Preview"},
-                    new int[]{DENSE_SETUP_CARD_WIDTH, DENSE_MEDIUM_CARD_WIDTH, DENSE_MEDIUM_CARD_WIDTH, DENSE_WIDE_CARD_WIDTH, DENSE_WIDE_CARD_WIDTH, DENSE_WIDE_CARD_WIDTH});
-        }
     }
 
     private void renderDenseCardRow(PoseStack poseStack, String[] labels, int[] widths) {
@@ -2023,7 +1846,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         renderInputFrame(poseStack, archonMissileRadiusBox);
         renderInputFrame(poseStack, stormArrowSoundVolumeBox);
         renderInputFrame(poseStack, stormArrowAudioRangeBox);
-        renderInputFrame(poseStack, darksaberTransmogBox);
         for (EditBox box : colorBoxes) {
             renderInputFrame(poseStack, box);
         }
@@ -2037,9 +1859,6 @@ public class ArcaneBeamConfigScreen extends Screen {
             renderInputFrame(poseStack, box);
         }
         for (EditBox box : stormArrowColorBoxes) {
-            renderInputFrame(poseStack, box);
-        }
-        for (EditBox box : darksaberColorBoxes) {
             renderInputFrame(poseStack, box);
         }
     }
@@ -2529,17 +2348,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
     }
 
-    private void renderDarksaberColorPreviews(PoseStack poseStack) {
-        if (darksaberColorBoxes.size() < 3) {
-            return;
-        }
-        for (int i = 0; i < darksaberColorBoxes.size(); i++) {
-            EditBox box = darksaberColorBoxes.get(i);
-            renderPreviewBox(poseStack, box.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP, box.y, darksaberColor(i), selectedSlot == i);
-            renderColorSlotLabel(poseStack, box, darksaberColorLabel(i));
-        }
-    }
-
     private String stormArrowColorLabel(int slot) {
         if (archonSelected) {
             return switch (slot) {
@@ -2566,14 +2374,6 @@ public class ArcaneBeamConfigScreen extends Screen {
             case 3 -> "Center 2";
             case 4 -> "Glow 1";
             default -> "Glow 2";
-        };
-    }
-
-    private String darksaberColorLabel(int slot) {
-        return switch (slot) {
-            case 0 -> "Core";
-            case 1 -> "Edge";
-            default -> "Glow";
         };
     }
 
@@ -2615,13 +2415,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
         drawControlLabel(poseStack, stormArrowAudioRangeBox, "Audio Range", stormArrowAudioRangeBox.x - this.font.width("Audio Range") - 8, stormArrowAudioRangeBox.y + 6);
         drawControlLabel(poseStack, stormArrowSoundVolumeBox, "Volume", stormArrowSoundVolumeBox.x - 50, stormArrowSoundVolumeBox.y + 6);
-    }
-
-    private void renderDarksaberLabels(PoseStack poseStack) {
-        if (darksaberTransmogBox == null) {
-            return;
-        }
-        drawControlLabel(poseStack, darksaberTransmogBox, "Sword", darksaberTransmogBox.x - 44, darksaberTransmogBox.y + 6);
     }
 
     private void drawControlLabel(PoseStack poseStack, AbstractWidget widget, String label, int x, int y) {
@@ -2697,9 +2490,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void addProfile() {
-        if (darksaberSelected) {
-            ArcaneBeamConfig.addDarksaberProfile(profileNameBox == null ? "" : profileNameBox.getValue());
-        } else if (archonSelected) {
+        if (archonSelected) {
             ArcaneBeamConfig.addArchonProfile(profileNameBox == null ? "" : profileNameBox.getValue());
         } else if (smiteSelected) {
             ArcaneBeamConfig.addSmiteProfile(profileNameBox == null ? "" : profileNameBox.getValue());
@@ -2743,17 +2534,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         if (stormLikeSelected()) {
             for (int i = 0; i < stormArrowColorBoxes.size(); i++) {
                 EditBox box = stormArrowColorBoxes.get(i);
-                int previewX = box.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP;
-                if (isInside(mouseX, mouseY, previewX, box.y, SLOT_PREVIEW_WIDTH, 20)) {
-                    selectedSlot = i;
-                    return true;
-                }
-            }
-            return false;
-        }
-        if (darksaberSelected) {
-            for (int i = 0; i < darksaberColorBoxes.size(); i++) {
-                EditBox box = darksaberColorBoxes.get(i);
                 int previewX = box.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP;
                 if (isInside(mouseX, mouseY, previewX, box.y, SLOT_PREVIEW_WIDTH, 20)) {
                     selectedSlot = i;
@@ -2809,17 +2589,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         if (stormLikeSelected()) {
             for (int i = 0; i < stormArrowColorBoxes.size(); i++) {
                 EditBox box = stormArrowColorBoxes.get(i);
-                if (isInside(mouseX, mouseY, box.x, box.y, SLOT_HEX_WIDTH, 20)) {
-                    selectedSlot = i;
-                    openColorPicker();
-                    return;
-                }
-            }
-            return;
-        }
-        if (darksaberSelected) {
-            for (int i = 0; i < darksaberColorBoxes.size(); i++) {
-                EditBox box = darksaberColorBoxes.get(i);
                 if (isInside(mouseX, mouseY, box.x, box.y, SLOT_HEX_WIDTH, 20)) {
                     selectedSlot = i;
                     openColorPicker();
@@ -2961,13 +2730,6 @@ public class ArcaneBeamConfigScreen extends Screen {
             refreshPickerHexBox();
             return;
         }
-        if (darksaberSelected) {
-            for (int i = 0; i < darksaberColorBoxes.size(); i++) {
-                darksaberColorBoxes.get(i).setValue(formatColor(darksaberColor(i)));
-            }
-            refreshPickerHexBox();
-            return;
-        }
         if (vaultAltarSelected) {
             for (int i = 0; i < altarColorBoxes.size(); i++) {
                 altarColorBoxes.get(i).setValue(formatColor(vaultAltarColor(i)));
@@ -3028,7 +2790,6 @@ public class ArcaneBeamConfigScreen extends Screen {
             refreshLightningControls();
             refreshVaultAltarControls();
             refreshStormArrowControls();
-            refreshDarksaberControls();
             layoutWidgets();
             updateWidgetVisibility();
         }
@@ -3054,11 +2815,10 @@ public class ArcaneBeamConfigScreen extends Screen {
         setVisible(doneButton, chromeVisible);
         setVisible(pickerHexBox, drawerOpen && colorPickerOpen);
 
-        boolean beamVisible = drawerOpen && !lightningSelected && !vaultAltarSelected && !stormLikeSelected() && !darksaberSelected;
+        boolean beamVisible = drawerOpen && !lightningSelected && !vaultAltarSelected && !stormLikeSelected();
         boolean lightningVisible = drawerOpen && lightningSelected;
         boolean altarVisible = drawerOpen && vaultAltarSelected;
         boolean stormVisible = drawerOpen && stormLikeSelected();
-        boolean darksaberVisible = drawerOpen && darksaberSelected;
         for (EditBox box : colorBoxes) {
             box.visible = beamVisible;
             box.active = beamVisible;
@@ -3173,30 +2933,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         setControlVisible(stormArrowSoundVolumeBox, stormVisible);
         setControlVisible(stormArrowAudioRangeBox, stormVisible);
 
-        for (EditBox box : darksaberColorBoxes) {
-            box.visible = darksaberVisible;
-            box.active = darksaberVisible;
-        }
-        setControlVisible(darksaberEnabledButton, darksaberVisible);
-        setControlVisible(darksaberTransmogBox, darksaberVisible);
-        setControlVisible(darksaberCoreOpacitySlider, darksaberVisible);
-        setControlVisible(darksaberEdgeOpacitySlider, darksaberVisible);
-        setControlVisible(darksaberGlowOpacitySlider, darksaberVisible);
-        setControlVisible(darksaberShimmerAmountSlider, darksaberVisible);
-        setControlVisible(darksaberShimmerSpeedSlider, darksaberVisible);
-        setControlVisible(darksaberScaleSlider, darksaberVisible);
-        setControlVisible(darksaberOffsetXSlider, darksaberVisible);
-        setControlVisible(darksaberOffsetYSlider, darksaberVisible);
-        setControlVisible(darksaberOffsetZSlider, darksaberVisible);
-        setControlVisible(darksaberRotationXSlider, darksaberVisible);
-        setControlVisible(darksaberRotationYSlider, darksaberVisible);
-        setControlVisible(darksaberRotationZSlider, darksaberVisible);
-        setControlVisible(darksaberPreviewZoomSlider, darksaberVisible);
-        setControlVisible(darksaberPreviewOffsetXSlider, darksaberVisible);
-        setControlVisible(darksaberPreviewOffsetYSlider, darksaberVisible);
-        setControlVisible(darksaberPreviewPitchSlider, darksaberVisible);
-        setControlVisible(darksaberPreviewYawSlider, darksaberVisible);
-        setControlVisible(darksaberPreviewRollSlider, darksaberVisible);
     }
 
     private static void setVisible(net.minecraft.client.gui.components.AbstractWidget widget, boolean visible) {
@@ -3337,36 +3073,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
         refreshStormArrowSoundVolumeBox();
         refreshStormArrowAudioRangeBox();
-    }
-
-    private void refreshDarksaberControls() {
-        if (darksaberEnabledButton == null) {
-            return;
-        }
-        ArcaneBeamConfig.DarksaberSettings settings = darksaberSettings();
-        darksaberEnabledButton.setMessage(new TextComponent("Replacement: " + (settings.enabled ? "On" : "Off")));
-        fitButton(darksaberEnabledButton, 150);
-        if (darksaberTransmogBox != null && !darksaberTransmogBox.isFocused()) {
-            darksaberTransmogBox.setValue(shortTransmog(settings.transmog));
-        }
-        darksaberCoreOpacitySlider.refresh();
-        darksaberEdgeOpacitySlider.refresh();
-        darksaberGlowOpacitySlider.refresh();
-        darksaberShimmerAmountSlider.refresh();
-        darksaberShimmerSpeedSlider.refresh();
-        darksaberScaleSlider.refresh();
-        darksaberOffsetXSlider.refresh();
-        darksaberOffsetYSlider.refresh();
-        darksaberOffsetZSlider.refresh();
-        darksaberRotationXSlider.refresh();
-        darksaberRotationYSlider.refresh();
-        darksaberRotationZSlider.refresh();
-        darksaberPreviewZoomSlider.refresh();
-        darksaberPreviewOffsetXSlider.refresh();
-        darksaberPreviewOffsetYSlider.refresh();
-        darksaberPreviewPitchSlider.refresh();
-        darksaberPreviewYawSlider.refresh();
-        darksaberPreviewRollSlider.refresh();
     }
 
     private void cycleShaderCompatibility() {
@@ -3851,16 +3557,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         return ArcaneBeamConfig.INSTANCE.archon;
     }
 
-    private ArcaneBeamConfig.DarksaberSettings darksaberSettings() {
-        return ArcaneBeamConfig.INSTANCE.darksaber;
-    }
-
-    private String shortTransmog(String value) {
-        String normalized = ArcaneBeamConfig.normalizeSwordTransmog(value);
-        String prefix = "the_vault:gear/sword/";
-        return normalized.startsWith(prefix) ? normalized.substring(prefix.length()) : normalized;
-    }
-
     private void refreshSoundVolumeBox() {
         if (soundVolumeBox != null) {
             soundVolumeBox.setValue(formatOffset(settings().soundVolume));
@@ -3917,9 +3613,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         if (stormLikeSelected()) {
             return stormArrowColor(selectedSlot);
         }
-        if (darksaberSelected) {
-            return darksaberColor(selectedSlot);
-        }
         if (vaultAltarSelected) {
             return vaultAltarColor(selectedSlot);
         }
@@ -3937,10 +3630,6 @@ public class ArcaneBeamConfigScreen extends Screen {
     private void setSelectedColor(int color) {
         if (stormLikeSelected()) {
             setStormArrowColor(selectedSlot, color);
-            return;
-        }
-        if (darksaberSelected) {
-            setDarksaberColor(selectedSlot, color);
             return;
         }
         if (vaultAltarSelected) {
@@ -3985,14 +3674,6 @@ public class ArcaneBeamConfigScreen extends Screen {
         };
     }
 
-    private int darksaberColor(int slot) {
-        return switch (slot) {
-            case 0 -> darksaberSettings().coreColor;
-            case 1 -> darksaberSettings().edgeColor;
-            default -> darksaberSettings().glowColor;
-        };
-    }
-
     private void setVaultAltarColor(int slot, int color) {
         switch (slot) {
             case 0 -> vaultAltarSettings().cornerColors[0] = color;
@@ -4017,48 +3698,12 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
     }
 
-    private void updateDarksaberColorFromText(int slot, String value) {
-        if (value == null) {
-            return;
-        }
-        String normalized = value.startsWith("#") ? value.substring(1) : value;
-        if (normalized.length() != 6) {
-            return;
-        }
-        try {
-            setDarksaberColor(slot, Integer.parseInt(normalized, 16));
-            ArcaneBeamConfig.save();
-        } catch (NumberFormatException ignored) {
-        }
-    }
-
-    private void updateDarksaberTransmogFromText(String value) {
-        if (value == null || value.isBlank()) {
-            return;
-        }
-        darksaberSettings().transmog = ArcaneBeamConfig.normalizeSwordTransmog(value);
-        ArcaneBeamConfig.save();
-    }
-
-    private void setDarksaberColor(int slot, int color) {
-        switch (slot) {
-            case 0 -> darksaberSettings().coreColor = color;
-            case 1 -> darksaberSettings().edgeColor = color;
-            case 2 -> darksaberSettings().glowColor = color;
-            default -> {
-            }
-        }
-    }
-
     private void syncPrimaryColors() {
         settings().color = settings().colors[0];
         settings().glowColor = settings().glowColors[0];
     }
 
     private List<String> profileNames() {
-        if (darksaberSelected) {
-            return ArcaneBeamConfig.darksaberProfileNames();
-        }
         if (archonSelected) {
             return ArcaneBeamConfig.archonProfileNames();
         }
@@ -4075,9 +3720,6 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private String selectedProfileName() {
-        if (darksaberSelected) {
-            return ArcaneBeamConfig.selectedDarksaberProfileName();
-        }
         if (archonSelected) {
             return ArcaneBeamConfig.selectedArchonProfileName();
         }
@@ -4094,9 +3736,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void selectProfile(String profileName) {
-        if (darksaberSelected) {
-            ArcaneBeamConfig.selectDarksaberProfile(profileName);
-        } else if (archonSelected) {
+        if (archonSelected) {
             ArcaneBeamConfig.selectArchonProfile(profileName);
         } else if (smiteSelected) {
             ArcaneBeamConfig.selectSmiteProfile(profileName);
@@ -4112,9 +3752,6 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private String profileLabel() {
-        if (darksaberSelected) {
-            return "Darksaber Profiles";
-        }
         if (archonSelected) {
             return "Archon Profiles";
         }
