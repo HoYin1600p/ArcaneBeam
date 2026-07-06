@@ -108,6 +108,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     private Button soundButton;
     private Button handButton;
     private Button shaderCompatibilityButton;
+    private Button crosshairAimButton;
     private Button fadeInModeButton;
     private Button fadeOutModeButton;
     private Button profileAddButton;
@@ -326,6 +327,11 @@ public class ArcaneBeamConfigScreen extends Screen {
         this.addRenderableWidget(glowRotationSlider);
         shaderCompatibilityButton = this.addRenderableWidget(new ThemeButton(sliderX, sliderY + 144, 150, 20, TextComponent.EMPTY, button -> {
             cycleShaderCompatibility();
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
+        crosshairAimButton = this.addRenderableWidget(new ThemeButton(sliderX, sliderY + 168, 150, 20, TextComponent.EMPTY, button -> {
+            cycleCrosshairAim();
             refreshControls();
             ArcaneBeamConfig.save();
         }));
@@ -1095,6 +1101,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         int advancedX = controlCardInnerX(beamAdvancedCardX());
         int advancedWidth = controlCardInnerWidth(BEAM_ADVANCED_CARD_WIDTH);
         moveWidget(shaderCompatibilityButton, advancedX, y, advancedWidth);
+        moveWidget(crosshairAimButton, advancedX, y + 23, advancedWidth);
 
         int audioX = controlCardInnerX(beamAudioCardX());
         int audioWidth = controlCardInnerWidth(BEAM_AUDIO_CARD_WIDTH);
@@ -2774,12 +2781,14 @@ public class ArcaneBeamConfigScreen extends Screen {
             colorShiftSlider.refresh();
             glowRotationSlider.refresh();
             shaderCompatibilityButton.setMessage(new TextComponent("Shader Compatibility: " + shaderCompatibility().label));
+            crosshairAimButton.setMessage(new TextComponent("Crosshair Aim: " + (settings().crosshairAim ? "On" : "Off")));
             soundButton.setMessage(new TextComponent("Sound: " + soundChoice().label));
             handButton.setMessage(new TextComponent("Start: " + startHand().label));
             fadeInModeButton.setMessage(new TextComponent(fadeInStyle().label));
             fadeOutModeButton.setMessage(new TextComponent(fadeOutStyle().label));
             profileDropdownButton.setMessage(new TextComponent("Profile: " + ellipsize(selectedProfileName(), 74)));
             fitButton(shaderCompatibilityButton, 150);
+            fitButton(crosshairAimButton, 150);
             fitButton(handButton, 150);
             fitButton(soundButton, 184);
             fitButton(fadeInModeButton, 122);
@@ -2846,6 +2855,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         setControlVisible(colorShiftSlider, beamVisible);
         setControlVisible(glowRotationSlider, beamVisible);
         setControlVisible(shaderCompatibilityButton, beamVisible);
+        setControlVisible(crosshairAimButton, beamVisible);
         setControlVisible(soundButton, beamVisible);
         setControlVisible(handButton, beamVisible);
         setControlVisible(fadeInModeButton, beamVisible);
@@ -3080,6 +3090,10 @@ public class ArcaneBeamConfigScreen extends Screen {
         settings().shaderCompatibility = current == ArcaneBeamConfig.ShaderCompatibility.ON
                 ? ArcaneBeamConfig.ShaderCompatibility.OFF.id
                 : ArcaneBeamConfig.ShaderCompatibility.ON.id;
+    }
+
+    private void cycleCrosshairAim() {
+        settings().crosshairAim = !settings().crosshairAim;
     }
 
     private void cycleSound() {

@@ -42,7 +42,8 @@
     "startOffsetX": 0.53,
     "startOffsetY": -0.35,
     "startOffsetZ": 0.08,
-    "shaderCompatibility": "on"
+    "shaderCompatibility": "on",
+    "crosshairAim": false
   },
   "rail": {
     "color": 12582835,
@@ -79,7 +80,8 @@
     "startOffsetX": 0.5,
     "startOffsetY": -0.4,
     "startOffsetZ": 0.34,
-    "shaderCompatibility": "on"
+    "shaderCompatibility": "on",
+    "crosshairAim": false
   },
   "lightningStrike": {
     "enabled": true,
@@ -264,7 +266,8 @@
       "startOffsetX": 0.63,
       "startOffsetY": -0.05,
       "startOffsetZ": 0.08,
-      "shaderCompatibility": "on"
+      "shaderCompatibility": "on",
+      "crosshairAim": false
     },
     "Test": {
       "color": 849935,
@@ -301,7 +304,8 @@
       "startOffsetX": 0.53,
       "startOffsetY": -0.35,
       "startOffsetZ": 0.08,
-      "shaderCompatibility": "on"
+      "shaderCompatibility": "on",
+      "crosshairAim": false
     }
   },
   "railProfiles": {
@@ -340,7 +344,8 @@
       "startOffsetX": 0.5,
       "startOffsetY": -0.4,
       "startOffsetZ": 0.34,
-      "shaderCompatibility": "on"
+      "shaderCompatibility": "on",
+      "crosshairAim": false
     }
   },
   "lightningStrikeProfiles": {

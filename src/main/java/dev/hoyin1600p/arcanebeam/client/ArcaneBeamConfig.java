@@ -869,6 +869,7 @@ public final class ArcaneBeamConfig {
         copy.startOffsetY = source.startOffsetY;
         copy.startOffsetZ = source.startOffsetZ;
         copy.shaderCompatibility = source.shaderCompatibility;
+        copy.crosshairAim = source.crosshairAim;
         return copy;
     }
 
@@ -1076,6 +1077,7 @@ public final class ArcaneBeamConfig {
         public double startOffsetY = -0.45D;
         public double startOffsetZ = 0.18D;
         public String shaderCompatibility;
+        public boolean crosshairAim = false;
 
         public BeamSettings() {
         }

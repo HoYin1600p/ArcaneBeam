@@ -15,6 +15,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -27,6 +28,7 @@ import net.minecraftforge.fml.common.Mod;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = ArcaneBeam.MOD_ID, value = Dist.CLIENT)
@@ -437,21 +439,18 @@ public final class ArcaneBeamManager {
         Vec3 aimStart = caster.getEyePosition(partialTick);
         Vec3 start = visualBeamStart(caster, partialTick, beam.settings());
         Vec3 look = resolveLookVector(beam.casterId, caster, partialTick);
-        double maxRange = beam.settings().maxRange;
-        Vec3 rangeEnd = aimStart.add(look.scale(maxRange));
-
-        BlockHitResult blockHit = level.clip(new ClipContext(aimStart, rangeEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, caster));
-        Vec3 hitEnd = blockHit.getType() == HitResult.Type.MISS ? rangeEnd : blockHit.getLocation();
-        Vec3 end = directionalRenderEnd(start, look, hitEnd);
+        Vec3 hitEnd = resolveCrosshairHit(level, caster, aimStart, look, beam.settings().maxRange);
+        Vec3 end = beam.settings().crosshairAim ? crosshairRenderEnd(start, hitEnd) : directionalRenderEnd(start, look, hitEnd);
 
         if (end == null) {
             return null;
         }
+        Vec3 renderDirection = beam.settings().crosshairAim ? end.subtract(start).normalize() : look;
         return new BeamTrace(
                 beam.kind,
                 start,
                 end,
-                look,
+                renderDirection,
                 beam.alphaMultiplier(level.getGameTime(), partialTick),
                 beam.beamRadiusMultiplier(level.getGameTime(), partialTick),
                 beam.glowRadiusMultiplier(level.getGameTime(), partialTick)
@@ -472,15 +471,14 @@ public final class ArcaneBeamManager {
         Vec3 aimStart = caster.getEyePosition(partialTick);
         Vec3 start = visualBeamStart(caster, partialTick, settings);
         Vec3 look = resolveLookVector(caster.getUUID(), caster, partialTick);
-        Vec3 rangeEnd = aimStart.add(look.scale(settings.maxRange));
-        BlockHitResult blockHit = level.clip(new ClipContext(aimStart, rangeEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, caster));
-        Vec3 hitEnd = blockHit.getType() == HitResult.Type.MISS ? rangeEnd : blockHit.getLocation();
-        Vec3 end = directionalRenderEnd(start, look, hitEnd);
+        Vec3 hitEnd = resolveCrosshairHit(level, caster, aimStart, look, settings.maxRange);
+        Vec3 end = settings.crosshairAim ? crosshairRenderEnd(start, hitEnd) : directionalRenderEnd(start, look, hitEnd);
 
         if (end == null) {
             return null;
         }
-        return new BeamTrace(kind, start, end, look, 1.0F, 1.0F, 1.0F);
+        Vec3 renderDirection = settings.crosshairAim ? end.subtract(start).normalize() : look;
+        return new BeamTrace(kind, start, end, renderDirection, 1.0F, 1.0F, 1.0F);
     }
 
     public static ActiveBeam getLocalActiveBeam(BeamKind kind) {
@@ -628,6 +626,53 @@ public final class ArcaneBeamManager {
             return null;
         }
         return start.add(look.scale(length));
+    }
+
+    private static Vec3 crosshairRenderEnd(Vec3 start, Vec3 hitEnd) {
+        Vec3 direction = hitEnd.subtract(start);
+        if (!isUsableVector(direction) || direction.length() < MIN_BEAM_RENDER_LENGTH) {
+            return null;
+        }
+        return hitEnd;
+    }
+
+    private static Vec3 resolveCrosshairHit(ClientLevel level, LivingEntity caster, Vec3 aimStart, Vec3 look, double maxRange) {
+        Vec3 rangeEnd = aimStart.add(look.scale(maxRange));
+        BlockHitResult blockHit = level.clip(new ClipContext(aimStart, rangeEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, caster));
+        Vec3 closestHit = blockHit.getType() == HitResult.Type.MISS ? rangeEnd : blockHit.getLocation();
+        double closestDistanceSqr = aimStart.distanceToSqr(closestHit);
+
+        AABB searchBox = boundsBetween(aimStart, rangeEnd).inflate(1.0D);
+        for (Entity entity : level.getEntities(caster, searchBox, ArcaneBeamManager::canBeamHitEntity)) {
+            AABB targetBox = entity.getBoundingBox().inflate(entity.getPickRadius());
+            Optional<Vec3> hit = targetBox.clip(aimStart, rangeEnd);
+            if (hit.isEmpty()) {
+                continue;
+            }
+
+            double distanceSqr = aimStart.distanceToSqr(hit.get());
+            if (distanceSqr < closestDistanceSqr) {
+                closestHit = hit.get();
+                closestDistanceSqr = distanceSqr;
+            }
+        }
+
+        return closestHit;
+    }
+
+    private static boolean canBeamHitEntity(Entity entity) {
+        return entity != null && !entity.isSpectator() && entity.isPickable();
+    }
+
+    private static AABB boundsBetween(Vec3 first, Vec3 second) {
+        return new AABB(
+                Math.min(first.x, second.x),
+                Math.min(first.y, second.y),
+                Math.min(first.z, second.z),
+                Math.max(first.x, second.x),
+                Math.max(first.y, second.y),
+                Math.max(first.z, second.z)
+        );
     }
 
     private static Vec3 safeLookVector(UUID casterId, Vec3 preferred, Vec3 fallback) {
