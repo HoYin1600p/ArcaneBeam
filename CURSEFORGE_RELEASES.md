@@ -34,7 +34,6 @@ This update focuses on Arcane Beam's beam configuration and keeps the mod center
 
 ### Mod Cleanup
 
-- Removed the experimental Darksaber/item-render work from Arcane Beam so this mod stays focused on ability and particle render replacements
 - Sophisticated Storage compatibility fixes have been moved out of Arcane Beam and into a standalone mod
 
 ### Notes
