@@ -9,6 +9,40 @@ Rules for future updates:
 - Keep the user-facing release text clean and ready to paste.
 - If Codex needs internal notes for a release, put them in a clearly separate `Internal Notes` subsection.
 
+## 0.1.14
+
+### Release Copy
+
+```markdown
+## 0.1.14
+
+This update focuses on Arcane Beam's beam configuration and keeps the mod centered on Vault Hunters ability visual replacements. Gameplay behavior, damage, cooldowns, targeting, mana costs, and server logic are unchanged.
+
+### Beam Configuration
+
+- Added a new Crosshair Aim toggle for Arcane/Rail beam rendering
+- When Crosshair Aim is enabled, the rendered beam points directly at the block or entity under the crosshair instead of staying locked to the player's look vector
+- This helps the beam visually line up with close targets, far targets, blocks, and entities even when the beam is cut off at different distances
+- Crosshair Aim is optional and defaults to off, preserving the previous beam behavior unless enabled
+- Crosshair Aim is saved per beam profile
+
+### Config Menu
+
+- Updated the Arcane Beam config menu to the newer tabbed layout
+- Improved spacing and organization for the existing ability replacement settings
+- Kept existing profiles, color controls, shader compatibility options, sound options, and resource pack sound slots intact
+
+### Mod Cleanup
+
+- Removed the experimental Darksaber/item-render work from Arcane Beam so this mod stays focused on ability and particle render replacements
+- Sophisticated Storage compatibility fixes have been moved out of Arcane Beam and into a standalone mod
+
+### Notes
+
+- This is still a client-side visual/audio replacement mod
+- Existing Arcane, Rail, Lightning Strike, Vault Altar, Storm Arrow, Smite, and Archon gameplay behavior is unchanged
+```
+
 ## 0.1.11
 
 ### Release Copy
