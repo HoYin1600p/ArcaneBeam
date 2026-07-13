@@ -59,6 +59,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     private final List<EditBox> stormArrowColorBoxes = new ArrayList<>();
     private final List<EditBox> originBoxes = new ArrayList<>();
     private final List<Button> originLabelButtons = new ArrayList<>();
+    private final List<WheelScrollTarget> wheelScrollTargets = new ArrayList<>();
     private final List<Button> tabButtons = new ArrayList<>();
     private final List<ConfigTabId> tabButtonIds = new ArrayList<>();
     private EditBox profileNameBox;
@@ -249,6 +250,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         stormArrowColorBoxes.clear();
         originBoxes.clear();
         originLabelButtons.clear();
+        wheelScrollTargets.clear();
         tabButtons.clear();
         tabButtonIds.clear();
         profileDropdownOpen = false;
@@ -382,6 +384,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         addLightningControls(sliderX, sliderY);
         addVaultAltarControls(sliderX, sliderY);
         addStormArrowControls(sliderX, sliderY);
+        configureWheelScrollTargets();
 
         drawerToggleButton = this.addRenderableWidget(new ThemeButton(layoutWidth / 2 - 74, drawerY() + 10, 84, 20, TextComponent.EMPTY, button -> {
             drawerState = drawerState == DrawerState.EXPANDED ? DrawerState.COLLAPSED : DrawerState.EXPANDED;
@@ -1958,96 +1961,8 @@ public class ArcaneBeamConfigScreen extends Screen {
         if (drawerState != DrawerState.EXPANDED) {
             return super.mouseScrolled(layoutMouseX, layoutMouseY, delta);
         }
-        if (!lightningSelected && !vaultAltarSelected && !stormLikeSelected() && soundVolumeBox != null && soundVolumeBox.isMouseOver(layoutMouseX, layoutMouseY)) {
-            double step = hasShiftDown() ? 0.10D : 0.01D;
-            nudgeSoundVolume(delta > 0.0D ? step : -step);
-            refreshSoundVolumeBox();
-            ArcaneBeamConfig.save();
+        if (dispatchWheelScrollTarget(layoutMouseX, layoutMouseY, delta)) {
             return true;
-        }
-        if (lightningSelected && lightningSoundVolumeBox != null && lightningSoundVolumeBox.isMouseOver(layoutMouseX, layoutMouseY)) {
-            double step = hasShiftDown() ? 0.10D : 0.01D;
-            nudgeLightningSoundVolume(delta > 0.0D ? step : -step);
-            refreshLightningSoundVolumeBox();
-            ArcaneBeamConfig.save();
-            return true;
-        }
-        if (vaultAltarSelected && altarSoundVolumeBox != null && altarSoundVolumeBox.isMouseOver(layoutMouseX, layoutMouseY)) {
-            double step = hasShiftDown() ? 0.10D : 0.01D;
-            nudgeAltarSoundVolume(delta > 0.0D ? step : -step);
-            refreshAltarSoundVolumeBox();
-            ArcaneBeamConfig.save();
-            return true;
-        }
-        if (stormLikeSelected() && stormArrowSoundVolumeBox != null && stormArrowSoundVolumeBox.isMouseOver(layoutMouseX, layoutMouseY)) {
-            double step = hasShiftDown() ? 0.10D : 0.01D;
-            nudgeStormArrowSoundVolume(delta > 0.0D ? step : -step);
-            refreshStormArrowSoundVolumeBox();
-            ArcaneBeamConfig.save();
-            return true;
-        }
-        if (stormLikeSelected() && stormArrowAudioRangeBox != null && stormArrowAudioRangeBox.isMouseOver(layoutMouseX, layoutMouseY)) {
-            nudgeStormArrowAudioRange(delta > 0.0D ? 1 : -1);
-            refreshStormArrowAudioRangeBox();
-            ArcaneBeamConfig.save();
-            return true;
-        }
-        if (stormLikeSelected() && stormArrowLifetimeBox != null && stormArrowLifetimeBox.isMouseOver(layoutMouseX, layoutMouseY)) {
-            int step = hasShiftDown() ? 10 : 1;
-            nudgeStormArrowLifetime(delta > 0.0D ? step : -step);
-            refreshStormArrowControls();
-            ArcaneBeamConfig.save();
-            return true;
-        }
-        if (stormLikeSelected() && stormArrowOriginHeightBox != null && stormArrowOriginHeightBox.isMouseOver(layoutMouseX, layoutMouseY)) {
-            double step = hasShiftDown() ? 1.0D : 0.1D;
-            nudgeStormArrowOriginHeight(delta > 0.0D ? step : -step);
-            refreshStormArrowControls();
-            ArcaneBeamConfig.save();
-            return true;
-        }
-        if (archonSelected && archonMissileRadiusBox != null && archonMissileRadiusBox.isMouseOver(layoutMouseX, layoutMouseY)) {
-            double step = hasShiftDown() ? 1.0D : 0.1D;
-            nudgeArchonMissileRadius(delta > 0.0D ? step : -step);
-            refreshStormArrowControls();
-            ArcaneBeamConfig.save();
-            return true;
-        }
-        if (vaultAltarSelected && altarOriginHeightBox != null && altarOriginHeightBox.isMouseOver(layoutMouseX, layoutMouseY)) {
-            double step = hasShiftDown() ? 0.10D : 0.01D;
-            nudgeAltarOriginHeight(delta > 0.0D ? step : -step);
-            refreshAltarOriginBoxes();
-            ArcaneBeamConfig.save();
-            return true;
-        }
-        if (vaultAltarSelected && altarOriginRadiusBox != null && altarOriginRadiusBox.isMouseOver(layoutMouseX, layoutMouseY)) {
-            double step = hasShiftDown() ? 0.10D : 0.01D;
-            nudgeAltarOriginRadius(delta > 0.0D ? step : -step);
-            refreshAltarOriginBoxes();
-            ArcaneBeamConfig.save();
-            return true;
-        }
-        if (!lightningSelected && !vaultAltarSelected && !stormLikeSelected() && fadeInTicksBox != null && fadeInTicksBox.isMouseOver(layoutMouseX, layoutMouseY)) {
-            nudgeFadeInTicks(delta > 0.0D ? 1 : -1);
-            refreshFadeTickBoxes();
-            ArcaneBeamConfig.save();
-            return true;
-        }
-        if (!lightningSelected && !vaultAltarSelected && !stormLikeSelected() && fadeOutTicksBox != null && fadeOutTicksBox.isMouseOver(layoutMouseX, layoutMouseY)) {
-            nudgeFadeOutTicks(delta > 0.0D ? 1 : -1);
-            refreshFadeTickBoxes();
-            ArcaneBeamConfig.save();
-            return true;
-        }
-        for (int i = 0; !lightningSelected && !vaultAltarSelected && !stormLikeSelected() && i < originBoxes.size(); i++) {
-            EditBox originBox = originBoxes.get(i);
-            if (originBox.isMouseOver(layoutMouseX, layoutMouseY)) {
-                double step = hasShiftDown() ? 0.10D : 0.01D;
-                nudgeOrigin(i, delta > 0.0D ? step : -step);
-                refreshOriginBoxes();
-                ArcaneBeamConfig.save();
-                return true;
-            }
         }
         if (maxControlScrollOffset() > 0 && isInsideControlViewport(layoutMouseX, layoutMouseY)) {
             controlScrollOffset = nextControlScrollOffset(delta < 0.0D);
@@ -2056,6 +1971,99 @@ public class ArcaneBeamConfigScreen extends Screen {
             return true;
         }
         return super.mouseScrolled(layoutMouseX, layoutMouseY, delta);
+    }
+
+    private void configureWheelScrollTargets() {
+        registerWheelScrollTarget(soundVolumeBox, (increase, coarse) -> {
+            double step = coarse ? 0.10D : 0.01D;
+            nudgeSoundVolume(increase ? step : -step);
+            refreshSoundVolumeBox();
+        });
+        registerWheelScrollTarget(lightningSoundVolumeBox, (increase, coarse) -> {
+            double step = coarse ? 0.10D : 0.01D;
+            nudgeLightningSoundVolume(increase ? step : -step);
+            refreshLightningSoundVolumeBox();
+        });
+        registerWheelScrollTarget(altarSoundVolumeBox, (increase, coarse) -> {
+            double step = coarse ? 0.10D : 0.01D;
+            nudgeAltarSoundVolume(increase ? step : -step);
+            refreshAltarSoundVolumeBox();
+        });
+        registerWheelScrollTarget(stormArrowSoundVolumeBox, (increase, coarse) -> {
+            double step = coarse ? 0.10D : 0.01D;
+            nudgeStormArrowSoundVolume(increase ? step : -step);
+            refreshStormArrowSoundVolumeBox();
+        });
+        registerWheelScrollTarget(stormArrowAudioRangeBox, (increase, coarse) -> {
+            nudgeStormArrowAudioRange(increase ? 1 : -1);
+            refreshStormArrowAudioRangeBox();
+        });
+        registerWheelScrollTarget(stormArrowLifetimeBox, (increase, coarse) -> {
+            int step = coarse ? 10 : 1;
+            nudgeStormArrowLifetime(increase ? step : -step);
+            refreshStormArrowControls();
+        });
+        registerWheelScrollTarget(stormArrowOriginHeightBox, (increase, coarse) -> {
+            double step = coarse ? 1.0D : 0.1D;
+            nudgeStormArrowOriginHeight(increase ? step : -step);
+            refreshStormArrowControls();
+        });
+        registerWheelScrollTarget(archonMissileRadiusBox, (increase, coarse) -> {
+            double step = coarse ? 1.0D : 0.1D;
+            nudgeArchonMissileRadius(increase ? step : -step);
+            refreshStormArrowControls();
+        });
+        registerWheelScrollTarget(altarOriginHeightBox, (increase, coarse) -> {
+            double step = coarse ? 0.10D : 0.01D;
+            nudgeAltarOriginHeight(increase ? step : -step);
+            refreshAltarOriginBoxes();
+        });
+        registerWheelScrollTarget(altarOriginRadiusBox, (increase, coarse) -> {
+            double step = coarse ? 0.10D : 0.01D;
+            nudgeAltarOriginRadius(increase ? step : -step);
+            refreshAltarOriginBoxes();
+        });
+        registerWheelScrollTarget(fadeInTicksBox, (increase, coarse) -> {
+            nudgeFadeInTicks(increase ? 1 : -1);
+            refreshFadeTickBoxes();
+        });
+        registerWheelScrollTarget(fadeOutTicksBox, (increase, coarse) -> {
+            nudgeFadeOutTicks(increase ? 1 : -1);
+            refreshFadeTickBoxes();
+        });
+        for (int axis = 0; axis < originBoxes.size(); axis++) {
+            final int originAxis = axis;
+            registerWheelScrollTarget(originBoxes.get(axis), (increase, coarse) -> {
+                double step = coarse ? 0.10D : 0.01D;
+                nudgeOrigin(originAxis, increase ? step : -step);
+                refreshOriginBoxes();
+            });
+        }
+    }
+
+    private void registerWheelScrollTarget(EditBox box, WheelScrollHandler handler) {
+        if (box != null) {
+            wheelScrollTargets.add(new WheelScrollTarget(box, handler));
+        }
+    }
+
+    private boolean dispatchWheelScrollTarget(double mouseX, double mouseY, double delta) {
+        boolean increase = delta > 0.0D;
+        boolean coarse = hasShiftDown();
+        for (WheelScrollTarget target : wheelScrollTargets) {
+            EditBox box = target.box();
+            if (!box.visible || !box.active || !isInsideInputFrame(box, mouseX, mouseY)) {
+                continue;
+            }
+            target.handler().scroll(increase, coarse);
+            ArcaneBeamConfig.save();
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean isInsideInputFrame(EditBox box, double mouseX, double mouseY) {
+        return isInside(mouseX, mouseY, box.x - 4, box.y - 4, box.getWidth() + 8, box.getHeight() + 8);
     }
 
     @Override
@@ -3934,6 +3942,14 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     private interface DoubleSetter {
         void set(double value);
+    }
+
+    @FunctionalInterface
+    private interface WheelScrollHandler {
+        void scroll(boolean increase, boolean coarse);
+    }
+
+    private record WheelScrollTarget(EditBox box, WheelScrollHandler handler) {
     }
 
     private static class ThemeButton extends Button {
