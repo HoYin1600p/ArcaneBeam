@@ -18,6 +18,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.Collection;
 
 public class ArcaneBeamRenderer extends RenderType {
+    private static final long ANIMATION_EPOCH_NANOS = System.nanoTime();
     private static final int CYLINDER_SIDES = 8;
     private static final ResourceLocation LOOT_BEAM_TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/entity/loot_beam.png");
     private static final ResourceLocation WHITE_TEXTURE = new ResourceLocation(ArcaneBeam.MOD_ID, "textures/entity/white.png");
@@ -68,9 +69,9 @@ public class ArcaneBeamRenderer extends RenderType {
 
     private static void renderTrace(PoseStack poseStack, MultiBufferSource buffer, ArcaneBeamManager.BeamTrace trace) {
         ArcaneBeamConfig.BeamSettings settings = trace.settings();
-        float partialTick = partialTicks();
-        int color = getAnimatedColor(settings.colors, settings.color, settings.colorShiftTicks, partialTick);
-        int glowColor = getAnimatedColor(settings.glowColors, settings.glowColor, settings.colorShiftTicks, partialTick);
+        double animationSeconds = animationSeconds();
+        int color = getAnimatedColor(settings.colors, settings.color, settings.colorShiftTicks, animationSeconds);
+        int glowColor = getAnimatedColor(settings.glowColors, settings.glowColor, settings.colorShiftTicks, animationSeconds);
         float red = ((color >> 16) & 0xFF) / 255.0F;
         float green = ((color >> 8) & 0xFF) / 255.0F;
         float blue = (color & 0xFF) / 255.0F;
@@ -100,7 +101,7 @@ public class ArcaneBeamRenderer extends RenderType {
         if (effectiveGlowAlpha > 0.001F) {
             VertexConsumer shaderGlow = main;
             poseStack.pushPose();
-            applyGlowRotation(poseStack, settings, partialTick);
+            applyGlowRotation(poseStack, settings, animationSeconds);
             if (shaderCompatibility) {
                 renderLitTube(poseStack, shaderGlow, glowRed, glowGreen, glowBlue, effectiveGlowAlpha, height, effectiveGlowRadius, false);
             } else {
@@ -120,32 +121,31 @@ public class ArcaneBeamRenderer extends RenderType {
         poseStack.popPose();
     }
 
-    private static void applyGlowRotation(PoseStack poseStack, ArcaneBeamConfig.BeamSettings settings, float partialTick) {
+    private static void applyGlowRotation(PoseStack poseStack, ArcaneBeamConfig.BeamSettings settings, double animationSeconds) {
         if (settings.glowRotationRpm <= 0.0F) {
             return;
         }
-        long gameTime = Minecraft.getInstance().level == null ? 0L : Minecraft.getInstance().level.getGameTime();
-        float degreesPerTick = settings.glowRotationRpm * 0.3F;
-        float angle = (gameTime + partialTick) * degreesPerTick;
+        double degreesPerSecond = settings.glowRotationRpm * 6.0D;
+        float angle = (float) ((animationSeconds * degreesPerSecond) % 360.0D);
         poseStack.mulPose(Vector3f.YP.rotationDegrees(angle));
     }
 
-    private static int getAnimatedColor(int[] colors, int fallbackColor, float colorShiftTicks, float partialTick) {
+    private static int getAnimatedColor(int[] colors, int fallbackColor, float colorShiftTicks, double animationSeconds) {
         if (colors == null || colors.length == 0) {
             return fallbackColor;
         }
-        long gameTime = Minecraft.getInstance().level == null ? 0L : Minecraft.getInstance().level.getGameTime();
         int length = colors.length;
-        double clampedShiftTicks = Math.max(2.0D, colorShiftTicks);
-        double animatedTime = gameTime + partialTick;
-        int index = (int) Math.floor(animatedTime / clampedShiftTicks) % length;
+        double shiftSeconds = Math.max(2.0D, colorShiftTicks) / 20.0D;
+        double cyclePosition = animationSeconds / shiftSeconds;
+        long colorIndex = (long) Math.floor(cyclePosition);
+        int index = (int) Math.floorMod(colorIndex, length);
         int nextIndex = (index + 1) % length;
-        float progress = (float) ((animatedTime % clampedShiftTicks) / clampedShiftTicks);
+        float progress = (float) (cyclePosition - Math.floor(cyclePosition));
         return lerpColor(colors[index], colors[nextIndex], progress);
     }
 
-    private static float partialTicks() {
-        return Minecraft.getInstance().getFrameTime();
+    private static double animationSeconds() {
+        return (System.nanoTime() - ANIMATION_EPOCH_NANOS) / 1_000_000_000.0D;
     }
 
     private static int lerpColor(int first, int second, float progress) {
