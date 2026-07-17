@@ -107,11 +107,14 @@ public final class BlastWaveVisualManager {
             return false;
         }
         Vec3 position = new Vec3(x, y, z);
+        boolean localActivation = minecraft.player != null
+                && level.getGameTime() <= localActivationUntilGameTime
+                && minecraft.player.position().distanceToSqr(position) <= SOUND_MATCH_DISTANCE_SQR;
         return hasBlastWavePlayerNear(level, position)
-                || level.getGameTime() <= localActivationUntilGameTime
-                || lastPulseOrigin != null
+                || localActivation
+                || (lastPulseOrigin != null
                 && level.getGameTime() - lastPulseGameTime <= SOUND_MATCH_TICKS
-                && lastPulseOrigin.distanceToSqr(position) <= SOUND_MATCH_DISTANCE_SQR;
+                && lastPulseOrigin.distanceToSqr(position) <= SOUND_MATCH_DISTANCE_SQR);
     }
 
     public static boolean handleActivationSound(double x, double y, double z) {
