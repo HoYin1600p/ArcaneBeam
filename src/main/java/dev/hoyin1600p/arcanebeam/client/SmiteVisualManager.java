@@ -408,10 +408,10 @@ public final class SmiteVisualManager {
         }
 
         ActiveSmiteCircle circle = showCircle && minecraft.player != null
-                ? new ActiveSmiteCircle(minecraft.player.position().add(0.0D, 0.08D, 0.0D), StormArrowVisualManager.StormArrowRenderSettings.from(settings))
+                ? new ActiveSmiteCircle(minecraft.player, StormArrowVisualManager.StormArrowRenderSettings.from(settings))
                 : null;
         ActiveSmiteCircle archonCircle = showArchonCircle && minecraft.player != null
-                ? new ActiveSmiteCircle(minecraft.player.position().add(0.0D, 0.08D, 0.0D), StormArrowVisualManager.StormArrowRenderSettings.from(archonSettings), ARCHON_FALLBACK_RADIUS)
+                ? new ActiveSmiteCircle(minecraft.player, StormArrowVisualManager.StormArrowRenderSettings.from(archonSettings), ARCHON_FALLBACK_RADIUS)
                 : null;
         StormArrowVisualRenderer.render(
                 event.getPoseStack(),
@@ -427,9 +427,18 @@ public final class SmiteVisualManager {
         }
     }
 
-    public record ActiveSmiteCircle(Vec3 groundCenter, StormArrowVisualManager.StormArrowRenderSettings settings, float radius) implements StormArrowVisualRenderer.CircleVisual {
-        public ActiveSmiteCircle(Vec3 groundCenter, StormArrowVisualManager.StormArrowRenderSettings settings) {
-            this(groundCenter, settings, FALLBACK_RADIUS);
+    public record ActiveSmiteCircle(LocalPlayer player, StormArrowVisualManager.StormArrowRenderSettings settings, float radius) implements StormArrowVisualRenderer.CircleVisual {
+        public ActiveSmiteCircle(LocalPlayer player, StormArrowVisualManager.StormArrowRenderSettings settings) {
+            this(player, settings, FALLBACK_RADIUS);
+        }
+
+        @Override
+        public Vec3 groundCenter(float partialTick) {
+            return new Vec3(
+                    Mth.lerp((double) partialTick, player.xOld, player.getX()),
+                    Mth.lerp((double) partialTick, player.yOld, player.getY()) + 0.08D,
+                    Mth.lerp((double) partialTick, player.zOld, player.getZ())
+            );
         }
 
         @Override

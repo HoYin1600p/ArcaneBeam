@@ -246,8 +246,12 @@ public final class StormArrowVisualManager {
     }
 
     public record ActiveStorm(VaultStormEntity entity, StormArrowRenderSettings settings) implements StormArrowVisualRenderer.CircleVisual {
-        public Vec3 groundCenter() {
-            return new Vec3(entity.getX(), entity.getY() - STORM_ENTITY_VERTICAL_OFFSET + 0.08D, entity.getZ());
+        public Vec3 groundCenter(float partialTick) {
+            return new Vec3(
+                    Mth.lerp((double) partialTick, entity.xOld, entity.getX()),
+                    Mth.lerp((double) partialTick, entity.yOld, entity.getY()) - STORM_ENTITY_VERTICAL_OFFSET + 0.08D,
+                    Mth.lerp((double) partialTick, entity.zOld, entity.getZ())
+            );
         }
 
         public float radius() {

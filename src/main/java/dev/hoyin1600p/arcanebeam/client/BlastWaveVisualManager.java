@@ -289,7 +289,7 @@ public final class BlastWaveVisualManager {
         if (settings.enabled && minecraft.player != null && now <= localCircleUntilGameTime) {
             float radius = settings.useActualRadius ? lastPulseRadius : FALLBACK_CIRCLE_RADIUS;
             circles = Collections.singletonList(new BlastWaveCircle(
-                    minecraft.player.position().add(0.0D, 0.08D, 0.0D), radius,
+                    minecraft.player, radius,
                     StormArrowVisualManager.StormArrowRenderSettings.from(settings)
             ));
         }
@@ -320,9 +320,17 @@ public final class BlastWaveVisualManager {
     private record PendingStrikeSound(long dueGameTime, Vec3 position, float pitch) {
     }
 
-    private record BlastWaveCircle(Vec3 groundCenter, float radius,
+    private record BlastWaveCircle(Player player, float radius,
                                    StormArrowVisualManager.StormArrowRenderSettings settings)
             implements StormArrowVisualRenderer.CircleVisual {
+        @Override
+        public Vec3 groundCenter(float partialTick) {
+            return new Vec3(
+                    Mth.lerp((double) partialTick, player.xOld, player.getX()),
+                    Mth.lerp((double) partialTick, player.yOld, player.getY()) + 0.08D,
+                    Mth.lerp((double) partialTick, player.zOld, player.getZ())
+            );
+        }
     }
 
     private record PreviewMissile(Vec3 origin, StormArrowVisualManager.StormArrowRenderSettings settings)

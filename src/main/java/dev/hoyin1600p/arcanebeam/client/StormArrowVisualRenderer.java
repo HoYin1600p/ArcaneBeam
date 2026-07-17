@@ -36,7 +36,7 @@ public class StormArrowVisualRenderer extends RenderType {
         poseStack.translate(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z);
 
         for (CircleVisual storm : activeStorms) {
-            renderStormCircle(poseStack, buffer, storm);
+            renderStormCircle(poseStack, buffer, storm, partialTick);
         }
         long gameTime = Minecraft.getInstance().level == null ? 0L : Minecraft.getInstance().level.getGameTime();
         for (StrikeVisual strike : activeStrikes) {
@@ -48,7 +48,7 @@ public class StormArrowVisualRenderer extends RenderType {
         buffer.endBatch(SHADER_SAFE);
     }
 
-    private static void renderStormCircle(PoseStack poseStack, MultiBufferSource buffer, CircleVisual storm) {
+    private static void renderStormCircle(PoseStack poseStack, MultiBufferSource buffer, CircleVisual storm, float partialTick) {
         StormArrowVisualManager.StormArrowRenderSettings settings = storm.settings();
         if (!settings.showTargetingCircle() || settings.circleAlpha() <= 0.001F) {
             return;
@@ -56,7 +56,7 @@ public class StormArrowVisualRenderer extends RenderType {
 
         boolean shaderCompatibility = shaderCompatibility(settings);
         VertexConsumer builder = buffer.getBuffer(shaderCompatibility ? SHADER_SAFE : NORMAL);
-        Vec3 center = storm.groundCenter();
+        Vec3 center = storm.groundCenter(partialTick);
         float radius = Math.max(0.01F, storm.radius());
         float innerRadius = Math.max(0.0F, radius - settings.circleThickness() * 0.5F);
         float outerRadius = radius + settings.circleThickness() * 0.5F;
@@ -274,7 +274,7 @@ public class StormArrowVisualRenderer extends RenderType {
     public interface CircleVisual {
         StormArrowVisualManager.StormArrowRenderSettings settings();
 
-        Vec3 groundCenter();
+        Vec3 groundCenter(float partialTick);
 
         float radius();
     }
