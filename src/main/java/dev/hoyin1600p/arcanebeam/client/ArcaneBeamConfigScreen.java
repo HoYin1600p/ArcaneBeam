@@ -106,6 +106,8 @@ public class ArcaneBeamConfigScreen extends Screen {
     private SettingSlider stormArrowSegmentLengthSlider;
     private SettingSlider stormArrowSegmentGapSlider;
     private SettingSlider stormArrowImpactFlashSizeSlider;
+    private SettingSlider blastWaveLateralSpreadSlider;
+    private SettingSlider blastWavePitchVarianceSlider;
     private Button soundButton;
     private Button handButton;
     private Button shaderCompatibilityButton;
@@ -154,6 +156,12 @@ public class ArcaneBeamConfigScreen extends Screen {
     private EditBox stormArrowLifetimeBox;
     private EditBox stormArrowOriginHeightBox;
     private EditBox archonMissileRadiusBox;
+    private EditBox blastWaveOriginXBox;
+    private EditBox blastWaveOriginYBox;
+    private EditBox blastWaveOriginZBox;
+    private EditBox blastWaveMaxMissilesBox;
+    private EditBox blastWaveSoundLayersBox;
+    private EditBox blastWaveSoundStaggerBox;
     private EditBox stormArrowSoundVolumeBox;
     private EditBox stormArrowAudioRangeBox;
     private EditBox pickerHexBox;
@@ -164,6 +172,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     private boolean stormArrowSelected;
     private boolean smiteSelected;
     private boolean archonSelected;
+    private boolean blastWaveSelected;
     private boolean draggingPalette;
     private boolean draggingBrightness;
     private boolean colorPickerOpen;
@@ -191,7 +200,8 @@ public class ArcaneBeamConfigScreen extends Screen {
             new TabDescriptor(ConfigTabId.VAULT_ALTAR, "Vault Altar", 84, ArcaneBeamGuiTheme.GREEN),
             new TabDescriptor(ConfigTabId.STORM_ARROW, "Storm Arrow", 94, ArcaneBeamGuiTheme.BLUE),
             new TabDescriptor(ConfigTabId.SMITE, "Smite", 56, ArcaneBeamGuiTheme.RED),
-            new TabDescriptor(ConfigTabId.ARCHON, "Archon", 70, ArcaneBeamGuiTheme.VIOLET)
+            new TabDescriptor(ConfigTabId.ARCHON, "Archon", 70, ArcaneBeamGuiTheme.VIOLET),
+            new TabDescriptor(ConfigTabId.BLAST_WAVE, "Blast Wave", 88, ArcaneBeamGuiTheme.CYAN)
     };
 
     private enum DrawerState {
@@ -207,7 +217,8 @@ public class ArcaneBeamConfigScreen extends Screen {
         VAULT_ALTAR,
         STORM_ARROW,
         SMITE,
-        ARCHON
+        ARCHON,
+        BLAST_WAVE
     }
 
     private static final class TabDescriptor {
@@ -233,7 +244,11 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private boolean stormLikeSelected() {
-        return stormArrowSelected || smiteSelected || archonSelected;
+        return stormArrowSelected || smiteSelected || archonSelected || blastWaveSelected;
+    }
+
+    public boolean blastWaveSelected() {
+        return blastWaveSelected;
     }
 
     public boolean lightningSelected() {
@@ -612,6 +627,16 @@ public class ArcaneBeamConfigScreen extends Screen {
         archonMissileRadiusBox = addStormArrowNumberBox(x + 158, y + 228, 54, 4, "Radius", "[0-9]{0,2}(\\.[0-9]?)?", this::updateArchonMissileRadiusFromText);
         stormArrowAudioRangeBox = addStormArrowAudioRangeBox(x, y + 228);
         stormArrowSoundVolumeBox = addStormArrowSoundVolumeBox(x + 208, y + 256);
+        blastWaveOriginXBox = addBlastWaveDecimalBox(x, y + 284, "Origin X", this::updateBlastWaveOriginXFromText);
+        blastWaveOriginYBox = addBlastWaveDecimalBox(x, y + 308, "Origin Y", this::updateBlastWaveOriginYFromText);
+        blastWaveOriginZBox = addBlastWaveDecimalBox(x, y + 332, "Origin Z", this::updateBlastWaveOriginZFromText);
+        blastWaveMaxMissilesBox = addStormArrowNumberBox(x, y + 356, 42, 2, "Missiles", "[0-9]{0,2}", this::updateBlastWaveMaxMissilesFromText);
+        blastWaveSoundLayersBox = addStormArrowNumberBox(x, y + 380, 42, 2, "Layers", "[0-9]{0,2}", this::updateBlastWaveSoundLayersFromText);
+        blastWaveSoundStaggerBox = addStormArrowNumberBox(x, y + 404, 42, 1, "Stagger", "[0-9]?", this::updateBlastWaveSoundStaggerFromText);
+        blastWaveLateralSpreadSlider = new SettingSlider(x, y + 428, 180, 20, "Side Veer", 0.0D, 4.0D, () -> blastWaveSettings().lateralSpread, value -> blastWaveSettings().lateralSpread = (float) value);
+        blastWavePitchVarianceSlider = new SettingSlider(x, y + 452, 180, 20, "Pitch Variation", 0.0D, 0.20D, () -> blastWaveSettings().pitchVariance, value -> blastWaveSettings().pitchVariance = (float) value);
+        this.addRenderableWidget(blastWaveLateralSpreadSlider);
+        this.addRenderableWidget(blastWavePitchVarianceSlider);
     }
 
     private void syncBooleansFromActiveTab() {
@@ -621,6 +646,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         stormArrowSelected = activeTab == ConfigTabId.STORM_ARROW;
         smiteSelected = activeTab == ConfigTabId.SMITE;
         archonSelected = activeTab == ConfigTabId.ARCHON;
+        blastWaveSelected = activeTab == ConfigTabId.BLAST_WAVE;
     }
 
     private void selectTab(ConfigTabId tab) {
@@ -777,6 +803,18 @@ public class ArcaneBeamConfigScreen extends Screen {
                     DENSE_WIDE_CARD_WIDTH,
                     DENSE_NARROW_CARD_WIDTH,
                     DENSE_AUDIO_CARD_WIDTH
+            };
+        }
+        if (blastWaveSelected) {
+            return new int[]{
+                    DENSE_SETUP_CARD_WIDTH,
+                    DENSE_MEDIUM_CARD_WIDTH,
+                    DENSE_WIDE_CARD_WIDTH,
+                    DENSE_WIDE_CARD_WIDTH,
+                    DENSE_WIDE_CARD_WIDTH,
+                    DENSE_NARROW_CARD_WIDTH,
+                    DENSE_AUDIO_CARD_WIDTH,
+                    DENSE_MEDIUM_CARD_WIDTH
             };
         }
         if (archonSelected) {
@@ -1238,7 +1276,9 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     private void layoutStormArrowWidgets() {
         int y = controlCardY() + 30;
-        if (archonSelected) {
+        if (blastWaveSelected) {
+            layoutBlastWaveWidgets(y);
+        } else if (archonSelected) {
             layoutArchonWidgets(y);
         } else if (smiteSelected) {
             layoutSmiteWidgets(y);
@@ -1387,6 +1427,66 @@ public class ArcaneBeamConfigScreen extends Screen {
         moveWidget(stormArrowAudioRangeBox, rangeX + 78, y, 34);
     }
 
+    private void layoutBlastWaveWidgets(int y) {
+        int cardX = denseControlsX();
+
+        int setupX = controlCardInnerX(cardX);
+        int setupWidth = controlCardInnerWidth(DENSE_SETUP_CARD_WIDTH);
+        moveWidget(stormArrowEnabledButton, setupX, y, setupWidth);
+        moveWidget(stormArrowShaderCompatibilityButton, setupX, y + 23, setupWidth);
+        moveWidget(stormArrowFullbrightButton, setupX, y + 46, setupWidth);
+        cardX += DENSE_SETUP_CARD_WIDTH + CONTROL_CARD_GAP;
+
+        int targetX = controlCardInnerX(cardX);
+        int targetWidth = controlCardInnerWidth(DENSE_MEDIUM_CARD_WIDTH);
+        moveWidget(stormArrowTargetingCircleButton, targetX, y, targetWidth);
+        moveWidget(stormArrowActualRadiusButton, targetX, y + 23, targetWidth);
+        moveWidget(stormArrowCircleAlphaSlider, targetX, y + 46, targetWidth);
+        moveWidget(stormArrowCircleThicknessSlider, targetX, y + 69, targetWidth);
+        cardX += DENSE_MEDIUM_CARD_WIDTH + CONTROL_CARD_GAP;
+
+        int originX = controlCardInnerX(cardX);
+        moveWidget(blastWaveOriginXBox, originX + 70, y, 54);
+        moveWidget(blastWaveOriginYBox, originX + 70, y + 27, 54);
+        moveWidget(blastWaveOriginZBox, originX + 70, y + 54, 54);
+        cardX += DENSE_WIDE_CARD_WIDTH + CONTROL_CARD_GAP;
+
+        int flightX = controlCardInnerX(cardX);
+        int flightWidth = controlCardInnerWidth(DENSE_WIDE_CARD_WIDTH);
+        moveWidget(stormArrowOriginHeightBox, flightX + 70, y, 54);
+        moveWidget(stormArrowLifetimeBox, flightX + 70, y + 27, 54);
+        moveWidget(blastWaveMaxMissilesBox, flightX + 70, y + 54, 42);
+        moveWidget(blastWaveLateralSpreadSlider, flightX, y + 84, flightWidth);
+        cardX += DENSE_WIDE_CARD_WIDTH + CONTROL_CARD_GAP;
+
+        int missileX = controlCardInnerX(cardX);
+        int missileWidth = controlCardInnerWidth(DENSE_WIDE_CARD_WIDTH);
+        moveWidget(stormArrowBlasterAlphaSlider, missileX, y, missileWidth);
+        moveWidget(stormArrowBlasterWidthSlider, missileX, y + 23, missileWidth);
+        moveWidget(stormArrowSegmentLengthSlider, missileX, y + 46, missileWidth);
+        moveWidget(stormArrowImpactFlashSizeSlider, missileX, y + 69, missileWidth);
+        moveWidget(stormArrowImpactFlashButton, missileX, y + 97, missileWidth);
+        cardX += DENSE_WIDE_CARD_WIDTH + CONTROL_CARD_GAP;
+
+        int activationX = controlCardInnerX(cardX);
+        int activationWidth = controlCardInnerWidth(DENSE_NARROW_CARD_WIDTH);
+        moveWidget(stormArrowProjectileSoundButton, activationX, y, activationWidth);
+        cardX += DENSE_NARROW_CARD_WIDTH + CONTROL_CARD_GAP;
+
+        int audioX = controlCardInnerX(cardX);
+        int audioWidth = controlCardInnerWidth(DENSE_AUDIO_CARD_WIDTH);
+        moveWidget(stormArrowSoundButton, audioX, y, audioWidth);
+        moveWidget(stormArrowSoundVolumeBox, audioX + 58, y + 29, 50);
+        moveWidget(stormArrowAudioRangeBox, audioX + 78, y + 58, 34);
+        cardX += DENSE_AUDIO_CARD_WIDTH + CONTROL_CARD_GAP;
+
+        int layerX = controlCardInnerX(cardX);
+        int layerWidth = controlCardInnerWidth(DENSE_MEDIUM_CARD_WIDTH);
+        moveWidget(blastWaveSoundLayersBox, layerX + 70, y, 42);
+        moveWidget(blastWaveSoundStaggerBox, layerX + 70, y + 27, 42);
+        moveWidget(blastWavePitchVarianceSlider, layerX, y + 58, layerWidth);
+    }
+
     private void layoutOriginWidgets(int x, int y) {
         for (int i = 0; i < originBoxes.size() && i < originLabelButtons.size(); i++) {
             int originX = x + i * 96;
@@ -1447,6 +1547,12 @@ public class ArcaneBeamConfigScreen extends Screen {
         styleEditBox(stormArrowLifetimeBox);
         styleEditBox(stormArrowOriginHeightBox);
         styleEditBox(archonMissileRadiusBox);
+        styleEditBox(blastWaveOriginXBox);
+        styleEditBox(blastWaveOriginYBox);
+        styleEditBox(blastWaveOriginZBox);
+        styleEditBox(blastWaveMaxMissilesBox);
+        styleEditBox(blastWaveSoundLayersBox);
+        styleEditBox(blastWaveSoundStaggerBox);
         styleEditBox(stormArrowSoundVolumeBox);
         styleEditBox(stormArrowAudioRangeBox);
         styleEditBox(pickerHexBox);
@@ -1571,6 +1677,15 @@ public class ArcaneBeamConfigScreen extends Screen {
         EditBox editBox = new EditBox(this.font, x + 58, y, width, 20, new TextComponent(label));
         editBox.setMaxLength(maxLength);
         editBox.setFilter(value -> value.isEmpty() || value.matches(pattern));
+        editBox.setResponder(responder);
+        this.addRenderableWidget(editBox);
+        return editBox;
+    }
+
+    private EditBox addBlastWaveDecimalBox(int x, int y, String label, Consumer<String> responder) {
+        EditBox editBox = new EditBox(this.font, x + 58, y, 54, 20, new TextComponent(label));
+        editBox.setMaxLength(6);
+        editBox.setFilter(value -> value.isEmpty() || value.matches("-?[0-9]{0,1}(\\.[0-9]{0,2})?"));
         editBox.setResponder(responder);
         this.addRenderableWidget(editBox);
         return editBox;
@@ -1730,6 +1845,12 @@ public class ArcaneBeamConfigScreen extends Screen {
                     new int[]{DENSE_SETUP_CARD_WIDTH, DENSE_MEDIUM_CARD_WIDTH, DENSE_WIDE_CARD_WIDTH, DENSE_WIDE_CARD_WIDTH, DENSE_WIDE_CARD_WIDTH, DENSE_NARROW_CARD_WIDTH, DENSE_AUDIO_CARD_WIDTH});
             return;
         }
+        if (blastWaveSelected) {
+            renderDenseCardRow(poseStack,
+                    new String[]{"Setup", "Targeting", "Missile Origin", "Flight", "Missile + Impact", "Activation", "Strike Audio", "Sound Layering"},
+                    new int[]{DENSE_SETUP_CARD_WIDTH, DENSE_MEDIUM_CARD_WIDTH, DENSE_WIDE_CARD_WIDTH, DENSE_WIDE_CARD_WIDTH, DENSE_WIDE_CARD_WIDTH, DENSE_NARROW_CARD_WIDTH, DENSE_AUDIO_CARD_WIDTH, DENSE_MEDIUM_CARD_WIDTH});
+            return;
+        }
         if (archonSelected) {
             renderDenseCardRow(poseStack,
                     new String[]{"Setup", "Targeting", "Missile", "Strike + Impact", "Activation", "Strike Audio", "Audio Range"},
@@ -1854,6 +1975,12 @@ public class ArcaneBeamConfigScreen extends Screen {
         renderInputFrame(poseStack, stormArrowLifetimeBox);
         renderInputFrame(poseStack, stormArrowOriginHeightBox);
         renderInputFrame(poseStack, archonMissileRadiusBox);
+        renderInputFrame(poseStack, blastWaveOriginXBox);
+        renderInputFrame(poseStack, blastWaveOriginYBox);
+        renderInputFrame(poseStack, blastWaveOriginZBox);
+        renderInputFrame(poseStack, blastWaveMaxMissilesBox);
+        renderInputFrame(poseStack, blastWaveSoundLayersBox);
+        renderInputFrame(poseStack, blastWaveSoundStaggerBox);
         renderInputFrame(poseStack, stormArrowSoundVolumeBox);
         renderInputFrame(poseStack, stormArrowAudioRangeBox);
         for (EditBox box : colorBoxes) {
@@ -2013,6 +2140,21 @@ public class ArcaneBeamConfigScreen extends Screen {
             nudgeArchonMissileRadius(increase ? step : -step);
             refreshStormArrowControls();
         });
+        registerWheelScrollTarget(blastWaveOriginXBox, (increase, coarse) -> nudgeBlastWaveOrigin(0, increase, coarse));
+        registerWheelScrollTarget(blastWaveOriginYBox, (increase, coarse) -> nudgeBlastWaveOrigin(1, increase, coarse));
+        registerWheelScrollTarget(blastWaveOriginZBox, (increase, coarse) -> nudgeBlastWaveOrigin(2, increase, coarse));
+        registerWheelScrollTarget(blastWaveMaxMissilesBox, (increase, coarse) -> {
+            blastWaveSettings().maxMissiles = clamp(blastWaveSettings().maxMissiles + (increase ? 1 : -1), 1, 64);
+            refreshBlastWaveBoxes();
+        });
+        registerWheelScrollTarget(blastWaveSoundLayersBox, (increase, coarse) -> {
+            blastWaveSettings().maxSoundLayers = clamp(blastWaveSettings().maxSoundLayers + (increase ? 1 : -1), 1, 12);
+            refreshBlastWaveBoxes();
+        });
+        registerWheelScrollTarget(blastWaveSoundStaggerBox, (increase, coarse) -> {
+            blastWaveSettings().soundStaggerTicks = clamp(blastWaveSettings().soundStaggerTicks + (increase ? 1 : -1), 0, 4);
+            refreshBlastWaveBoxes();
+        });
         registerWheelScrollTarget(altarOriginHeightBox, (increase, coarse) -> {
             double step = coarse ? 0.10D : 0.01D;
             nudgeAltarOriginHeight(increase ? step : -step);
@@ -2157,7 +2299,10 @@ public class ArcaneBeamConfigScreen extends Screen {
         if (isFocused(altarVerticalTicksBox) || isFocused(altarConvergeTicksBox) || isFocused(altarCenterGrowTicksBox) || isFocused(altarOriginHeightBox) || isFocused(altarOriginRadiusBox) || isFocused(altarSoundVolumeBox)) {
             return true;
         }
-        if (isFocused(stormArrowLifetimeBox) || isFocused(stormArrowOriginHeightBox) || isFocused(archonMissileRadiusBox) || isFocused(stormArrowSoundVolumeBox) || isFocused(stormArrowAudioRangeBox)) {
+        if (isFocused(stormArrowLifetimeBox) || isFocused(stormArrowOriginHeightBox) || isFocused(archonMissileRadiusBox)
+                || isFocused(blastWaveOriginXBox) || isFocused(blastWaveOriginYBox) || isFocused(blastWaveOriginZBox)
+                || isFocused(blastWaveMaxMissilesBox) || isFocused(blastWaveSoundLayersBox) || isFocused(blastWaveSoundStaggerBox)
+                || isFocused(stormArrowSoundVolumeBox) || isFocused(stormArrowAudioRangeBox)) {
             return true;
         }
         if (isFocused(pickerHexBox)) {
@@ -2249,6 +2394,13 @@ public class ArcaneBeamConfigScreen extends Screen {
         tickBox(altarSoundVolumeBox);
         tickBox(stormArrowLifetimeBox);
         tickBox(stormArrowOriginHeightBox);
+        tickBox(archonMissileRadiusBox);
+        tickBox(blastWaveOriginXBox);
+        tickBox(blastWaveOriginYBox);
+        tickBox(blastWaveOriginZBox);
+        tickBox(blastWaveMaxMissilesBox);
+        tickBox(blastWaveSoundLayersBox);
+        tickBox(blastWaveSoundStaggerBox);
         tickBox(stormArrowSoundVolumeBox);
         tickBox(stormArrowAudioRangeBox);
         tickBox(pickerHexBox);
@@ -2364,7 +2516,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private String stormArrowColorLabel(int slot) {
-        if (archonSelected) {
+        if (archonSelected || blastWaveSelected) {
             return switch (slot) {
                 case 0 -> "Circle";
                 case 1 -> "Plume";
@@ -2424,9 +2576,17 @@ public class ArcaneBeamConfigScreen extends Screen {
             return;
         }
         drawControlLabel(poseStack, stormArrowLifetimeBox, "Lifetime", stormArrowLifetimeBox.x - 54, stormArrowLifetimeBox.y + 6);
-        drawControlLabel(poseStack, stormArrowOriginHeightBox, "Height", stormArrowOriginHeightBox.x - 46, stormArrowOriginHeightBox.y + 6);
+        drawControlLabel(poseStack, stormArrowOriginHeightBox, blastWaveSelected ? "Apex" : "Height", stormArrowOriginHeightBox.x - 46, stormArrowOriginHeightBox.y + 6);
         if (archonSelected && archonMissileRadiusBox != null) {
             drawControlLabel(poseStack, archonMissileRadiusBox, "Radius", archonMissileRadiusBox.x - 46, archonMissileRadiusBox.y + 6);
+        }
+        if (blastWaveSelected) {
+            drawControlLabel(poseStack, blastWaveOriginXBox, "Origin X", blastWaveOriginXBox.x - 58, blastWaveOriginXBox.y + 6);
+            drawControlLabel(poseStack, blastWaveOriginYBox, "Origin Y", blastWaveOriginYBox.x - 58, blastWaveOriginYBox.y + 6);
+            drawControlLabel(poseStack, blastWaveOriginZBox, "Origin Z", blastWaveOriginZBox.x - 58, blastWaveOriginZBox.y + 6);
+            drawControlLabel(poseStack, blastWaveMaxMissilesBox, "Missiles", blastWaveMaxMissilesBox.x - 58, blastWaveMaxMissilesBox.y + 6);
+            drawControlLabel(poseStack, blastWaveSoundLayersBox, "Layers", blastWaveSoundLayersBox.x - 50, blastWaveSoundLayersBox.y + 6);
+            drawControlLabel(poseStack, blastWaveSoundStaggerBox, "Stagger", blastWaveSoundStaggerBox.x - 54, blastWaveSoundStaggerBox.y + 6);
         }
         drawControlLabel(poseStack, stormArrowAudioRangeBox, "Audio Range", stormArrowAudioRangeBox.x - this.font.width("Audio Range") - 8, stormArrowAudioRangeBox.y + 6);
         drawControlLabel(poseStack, stormArrowSoundVolumeBox, "Volume", stormArrowSoundVolumeBox.x - 50, stormArrowSoundVolumeBox.y + 6);
@@ -2505,7 +2665,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void addProfile() {
-        if (archonSelected) {
+        if (blastWaveSelected) {
+            ArcaneBeamConfig.addBlastWaveProfile(profileNameBox == null ? "" : profileNameBox.getValue());
+        } else if (archonSelected) {
             ArcaneBeamConfig.addArchonProfile(profileNameBox == null ? "" : profileNameBox.getValue());
         } else if (smiteSelected) {
             ArcaneBeamConfig.addSmiteProfile(profileNameBox == null ? "" : profileNameBox.getValue());
@@ -2943,11 +3105,19 @@ public class ArcaneBeamConfigScreen extends Screen {
         setControlVisible(stormArrowBlasterAlphaSlider, stormVisible);
         setControlVisible(stormArrowBlasterWidthSlider, stormVisible);
         setControlVisible(stormArrowSegmentLengthSlider, stormVisible);
-        setControlVisible(stormArrowSegmentGapSlider, stormVisible && !archonSelected);
+        setControlVisible(stormArrowSegmentGapSlider, stormVisible && !archonSelected && !blastWaveSelected);
         setControlVisible(stormArrowImpactFlashSizeSlider, stormVisible);
         setControlVisible(stormArrowLifetimeBox, stormVisible);
         setControlVisible(stormArrowOriginHeightBox, stormVisible);
         setControlVisible(archonMissileRadiusBox, drawerOpen && archonSelected);
+        setControlVisible(blastWaveOriginXBox, drawerOpen && blastWaveSelected);
+        setControlVisible(blastWaveOriginYBox, drawerOpen && blastWaveSelected);
+        setControlVisible(blastWaveOriginZBox, drawerOpen && blastWaveSelected);
+        setControlVisible(blastWaveMaxMissilesBox, drawerOpen && blastWaveSelected);
+        setControlVisible(blastWaveSoundLayersBox, drawerOpen && blastWaveSelected);
+        setControlVisible(blastWaveSoundStaggerBox, drawerOpen && blastWaveSelected);
+        setControlVisible(blastWaveLateralSpreadSlider, drawerOpen && blastWaveSelected);
+        setControlVisible(blastWavePitchVarianceSlider, drawerOpen && blastWaveSelected);
         setControlVisible(stormArrowSoundVolumeBox, stormVisible);
         setControlVisible(stormArrowAudioRangeBox, stormVisible);
 
@@ -3064,11 +3234,12 @@ public class ArcaneBeamConfigScreen extends Screen {
         stormArrowShaderCompatibilityButton.setMessage(new TextComponent("Shader Compatibility: " + stormArrowShaderCompatibility().label));
         stormArrowFullbrightButton.setMessage(new TextComponent("Fullbright: " + (settings.fullbright ? "On" : "Off")));
         stormArrowImpactFlashButton.setMessage(new TextComponent("Impact Flash: " + (settings.impactFlashEnabled ? "On" : "Off")));
-        stormArrowBlasterAlphaSlider.setLabel(archonSelected ? "Missile Alpha" : "Blaster Alpha");
-        stormArrowBlasterWidthSlider.setLabel(archonSelected ? "Missile Width" : "Blaster Width");
-        stormArrowSegmentLengthSlider.setLabel(archonSelected ? "Plume Length" : "Bolt Length");
+        boolean missile = archonSelected || blastWaveSelected;
+        stormArrowBlasterAlphaSlider.setLabel(missile ? "Missile Alpha" : "Blaster Alpha");
+        stormArrowBlasterWidthSlider.setLabel(missile ? "Missile Width" : "Blaster Width");
+        stormArrowSegmentLengthSlider.setLabel(missile ? "Plume Length" : "Bolt Length");
         stormArrowSoundButton.setMessage(new TextComponent("Strike: " + stormArrowSoundLabel()));
-        stormArrowProjectileSoundButton.setMessage(new TextComponent((smiteSelected || archonSelected ? "Activation: " : "Projectile: ") + stormArrowProjectileSoundMode().label));
+        stormArrowProjectileSoundButton.setMessage(new TextComponent((smiteSelected || archonSelected || blastWaveSelected ? "Activation: " : "Projectile: ") + stormArrowProjectileSoundMode().label));
         fitButton(stormArrowEnabledButton, 150);
         fitButton(stormArrowTargetingCircleButton, 150);
         fitButton(stormArrowActualRadiusButton, 150);
@@ -3088,6 +3259,11 @@ public class ArcaneBeamConfigScreen extends Screen {
         stormArrowOriginHeightBox.setValue(formatTenths(settings.originHeight));
         if (archonMissileRadiusBox != null) {
             archonMissileRadiusBox.setValue(formatTenths(archonSettings().missileOriginRadius));
+        }
+        refreshBlastWaveBoxes();
+        if (blastWaveLateralSpreadSlider != null) {
+            blastWaveLateralSpreadSlider.refresh();
+            blastWavePitchVarianceSlider.refresh();
         }
         refreshStormArrowSoundVolumeBox();
         refreshStormArrowAudioRangeBox();
@@ -3448,7 +3624,7 @@ public class ArcaneBeamConfigScreen extends Screen {
             return;
         }
         try {
-            stormArrowSettings().lifetimeTicks = clamp(Integer.parseInt(value), 1, 80);
+            stormArrowSettings().lifetimeTicks = clamp(Integer.parseInt(value), 1, blastWaveSelected ? 20 : 80);
             ArcaneBeamConfig.save();
         } catch (NumberFormatException ignored) {
         }
@@ -3459,7 +3635,7 @@ public class ArcaneBeamConfigScreen extends Screen {
             return;
         }
         try {
-            stormArrowSettings().originHeight = clampTenths((float) roundTenths(Double.parseDouble(value)), 2.0F, 64.0F);
+            stormArrowSettings().originHeight = clampTenths((float) roundTenths(Double.parseDouble(value)), blastWaveSelected ? 0.5F : 2.0F, blastWaveSelected ? 16.0F : 64.0F);
             ArcaneBeamConfig.save();
         } catch (NumberFormatException ignored) {
         }
@@ -3471,6 +3647,69 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
         try {
             archonSettings().missileOriginRadius = clampTenths((float) roundTenths(Double.parseDouble(value)), 0.0F, 16.0F);
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void updateBlastWaveOriginXFromText(String value) {
+        updateBlastWaveOriginFromText(value, 0);
+    }
+
+    private void updateBlastWaveOriginYFromText(String value) {
+        updateBlastWaveOriginFromText(value, 1);
+    }
+
+    private void updateBlastWaveOriginZFromText(String value) {
+        updateBlastWaveOriginFromText(value, 2);
+    }
+
+    private void updateBlastWaveOriginFromText(String value, int axis) {
+        if (value == null || value.isEmpty() || "-".equals(value) || ".".equals(value) || "-.".equals(value)) {
+            return;
+        }
+        try {
+            float parsed = (float) Math.max(-4.0D, Math.min(4.0D, roundOffset(Double.parseDouble(value))));
+            if (axis == 0) {
+                blastWaveSettings().originOffsetX = parsed;
+            } else if (axis == 1) {
+                blastWaveSettings().originOffsetY = parsed;
+            } else {
+                blastWaveSettings().originOffsetZ = parsed;
+            }
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void updateBlastWaveMaxMissilesFromText(String value) {
+        if (value == null || value.isEmpty()) {
+            return;
+        }
+        try {
+            blastWaveSettings().maxMissiles = clamp(Integer.parseInt(value), 1, 64);
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void updateBlastWaveSoundLayersFromText(String value) {
+        if (value == null || value.isEmpty()) {
+            return;
+        }
+        try {
+            blastWaveSettings().maxSoundLayers = clamp(Integer.parseInt(value), 1, 12);
+            ArcaneBeamConfig.save();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void updateBlastWaveSoundStaggerFromText(String value) {
+        if (value == null || value.isEmpty()) {
+            return;
+        }
+        try {
+            blastWaveSettings().soundStaggerTicks = clamp(Integer.parseInt(value), 0, 4);
             ArcaneBeamConfig.save();
         } catch (NumberFormatException ignored) {
         }
@@ -3529,15 +3768,27 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void nudgeStormArrowLifetime(int amount) {
-        stormArrowSettings().lifetimeTicks = clamp(stormArrowSettings().lifetimeTicks + amount, 1, 80);
+        stormArrowSettings().lifetimeTicks = clamp(stormArrowSettings().lifetimeTicks + amount, 1, blastWaveSelected ? 20 : 80);
     }
 
     private void nudgeStormArrowOriginHeight(double amount) {
-        stormArrowSettings().originHeight = clampTenths((float) roundTenths(stormArrowSettings().originHeight + amount), 2.0F, 64.0F);
+        stormArrowSettings().originHeight = clampTenths((float) roundTenths(stormArrowSettings().originHeight + amount), blastWaveSelected ? 0.5F : 2.0F, blastWaveSelected ? 16.0F : 64.0F);
     }
 
     private void nudgeArchonMissileRadius(double amount) {
         archonSettings().missileOriginRadius = clampTenths((float) roundTenths(archonSettings().missileOriginRadius + amount), 0.0F, 16.0F);
+    }
+
+    private void nudgeBlastWaveOrigin(int axis, boolean increase, boolean coarse) {
+        float amount = (float) ((coarse ? 0.10D : 0.01D) * (increase ? 1.0D : -1.0D));
+        if (axis == 0) {
+            blastWaveSettings().originOffsetX = clampHundredths((float) roundHundredths(blastWaveSettings().originOffsetX + amount), -4.0F, 4.0F);
+        } else if (axis == 1) {
+            blastWaveSettings().originOffsetY = clampHundredths((float) roundHundredths(blastWaveSettings().originOffsetY + amount), -4.0F, 4.0F);
+        } else {
+            blastWaveSettings().originOffsetZ = clampHundredths((float) roundHundredths(blastWaveSettings().originOffsetZ + amount), -4.0F, 4.0F);
+        }
+        refreshBlastWaveBoxes();
     }
 
     private void nudgeAltarOriginHeight(double amount) {
@@ -3569,6 +3820,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private ArcaneBeamConfig.StormArrowSettings stormArrowSettings() {
+        if (blastWaveSelected) {
+            return ArcaneBeamConfig.INSTANCE.blastWave;
+        }
         if (archonSelected) {
             return ArcaneBeamConfig.INSTANCE.archon;
         }
@@ -3577,6 +3831,21 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     private ArcaneBeamConfig.ArchonSettings archonSettings() {
         return ArcaneBeamConfig.INSTANCE.archon;
+    }
+
+    private ArcaneBeamConfig.BlastWaveSettings blastWaveSettings() {
+        return ArcaneBeamConfig.INSTANCE.blastWave;
+    }
+
+    private void refreshBlastWaveBoxes() {
+        if (blastWaveOriginXBox != null) {
+            blastWaveOriginXBox.setValue(formatHundredths(blastWaveSettings().originOffsetX));
+            blastWaveOriginYBox.setValue(formatHundredths(blastWaveSettings().originOffsetY));
+            blastWaveOriginZBox.setValue(formatHundredths(blastWaveSettings().originOffsetZ));
+            blastWaveMaxMissilesBox.setValue(Integer.toString(blastWaveSettings().maxMissiles));
+            blastWaveSoundLayersBox.setValue(Integer.toString(blastWaveSettings().maxSoundLayers));
+            blastWaveSoundStaggerBox.setValue(Integer.toString(blastWaveSettings().soundStaggerTicks));
+        }
     }
 
     private void refreshSoundVolumeBox() {
@@ -3726,6 +3995,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private List<String> profileNames() {
+        if (blastWaveSelected) {
+            return ArcaneBeamConfig.blastWaveProfileNames();
+        }
         if (archonSelected) {
             return ArcaneBeamConfig.archonProfileNames();
         }
@@ -3742,6 +4014,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private String selectedProfileName() {
+        if (blastWaveSelected) {
+            return ArcaneBeamConfig.selectedBlastWaveProfileName();
+        }
         if (archonSelected) {
             return ArcaneBeamConfig.selectedArchonProfileName();
         }
@@ -3758,7 +4033,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private void selectProfile(String profileName) {
-        if (archonSelected) {
+        if (blastWaveSelected) {
+            ArcaneBeamConfig.selectBlastWaveProfile(profileName);
+        } else if (archonSelected) {
             ArcaneBeamConfig.selectArchonProfile(profileName);
         } else if (smiteSelected) {
             ArcaneBeamConfig.selectSmiteProfile(profileName);
@@ -3774,6 +4051,9 @@ public class ArcaneBeamConfigScreen extends Screen {
     }
 
     private String profileLabel() {
+        if (blastWaveSelected) {
+            return "Blast Wave Profiles";
+        }
         if (archonSelected) {
             return "Archon Profiles";
         }
@@ -3839,7 +4119,7 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     private String stormArrowSoundLabel() {
         ArcaneBeamConfig.StormArrowSoundMode mode = stormArrowSoundMode();
-        if (archonSelected && mode == ArcaneBeamConfig.StormArrowSoundMode.BLASTER) {
+        if ((archonSelected || blastWaveSelected) && mode == ArcaneBeamConfig.StormArrowSoundMode.BLASTER) {
             return "Whistling Bird";
         }
         return mode.label;

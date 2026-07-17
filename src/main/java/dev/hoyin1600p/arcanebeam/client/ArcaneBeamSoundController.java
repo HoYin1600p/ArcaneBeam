@@ -286,6 +286,40 @@ public final class ArcaneBeamSoundController {
         return minecraft != null && slot != null && hasSoundFile(minecraft, slot.soundPath());
     }
 
+    public static boolean playBlastWaveStrike(Minecraft minecraft, Vec3 position, float pitch) {
+        StormArrowSoundSlot slot = archonSoundSlot(blastWaveSoundMode());
+        if (minecraft == null || position == null || slot == null || !hasSoundFile(minecraft, slot.soundPath())) {
+            return false;
+        }
+        minecraft.getSoundManager().play(new PositionedFileSoundInstance(
+                slot.eventName(), slot.soundPath(), position,
+                ArcaneBeamConfig.INSTANCE.blastWave.soundVolume, blastWaveAudioRange(), pitch
+        ));
+        return true;
+    }
+
+    public static boolean canPlayBlastWaveStrike(Minecraft minecraft) {
+        StormArrowSoundSlot slot = archonSoundSlot(blastWaveSoundMode());
+        return minecraft != null && slot != null && hasSoundFile(minecraft, slot.soundPath());
+    }
+
+    public static boolean playBlastWaveActivation(Minecraft minecraft, Vec3 position) {
+        StormArrowSoundSlot slot = archonActivationSoundSlot(blastWaveActivationSoundMode());
+        if (minecraft == null || position == null || slot == null || !hasSoundFile(minecraft, slot.soundPath())) {
+            return false;
+        }
+        minecraft.getSoundManager().play(new PositionedFileSoundInstance(
+                slot.eventName(), slot.soundPath(), position,
+                ArcaneBeamConfig.INSTANCE.blastWave.soundVolume, blastWaveAudioRange()
+        ));
+        return true;
+    }
+
+    public static boolean canPlayBlastWaveActivation(Minecraft minecraft) {
+        StormArrowSoundSlot slot = archonActivationSoundSlot(blastWaveActivationSoundMode());
+        return minecraft != null && slot != null && hasSoundFile(minecraft, slot.soundPath());
+    }
+
     private static void playLightningStrikeSound(Minecraft minecraft, Vec3 position, boolean impact) {
         LightningSoundSlot slot = lightningSoundSlot(lightningSoundMode(), impact);
         if (impact) {
@@ -321,6 +355,10 @@ public final class ArcaneBeamSoundController {
 
     private static int archonAudioRange() {
         return Math.max(16, Math.min(32, ArcaneBeamConfig.INSTANCE.archon.audioRange));
+    }
+
+    private static int blastWaveAudioRange() {
+        return Math.max(16, Math.min(32, ArcaneBeamConfig.INSTANCE.blastWave.audioRange));
     }
 
     private static void stopArcaneSounds(Minecraft minecraft) {
@@ -386,6 +424,16 @@ public final class ArcaneBeamSoundController {
 
     private static ArcaneBeamConfig.StormArrowProjectileSoundMode archonActivationSoundMode() {
         ArcaneBeamConfig.StormArrowProjectileSoundMode mode = ArcaneBeamConfig.StormArrowProjectileSoundMode.fromId(ArcaneBeamConfig.INSTANCE.archon.projectileSoundMode);
+        return mode == null ? ArcaneBeamConfig.StormArrowProjectileSoundMode.DEFAULT : mode;
+    }
+
+    private static ArcaneBeamConfig.StormArrowSoundMode blastWaveSoundMode() {
+        ArcaneBeamConfig.StormArrowSoundMode mode = ArcaneBeamConfig.StormArrowSoundMode.fromId(ArcaneBeamConfig.INSTANCE.blastWave.soundMode);
+        return mode == null ? ArcaneBeamConfig.StormArrowSoundMode.DEFAULT : mode;
+    }
+
+    private static ArcaneBeamConfig.StormArrowProjectileSoundMode blastWaveActivationSoundMode() {
+        ArcaneBeamConfig.StormArrowProjectileSoundMode mode = ArcaneBeamConfig.StormArrowProjectileSoundMode.fromId(ArcaneBeamConfig.INSTANCE.blastWave.projectileSoundMode);
         return mode == null ? ArcaneBeamConfig.StormArrowProjectileSoundMode.DEFAULT : mode;
     }
 
@@ -561,6 +609,11 @@ public final class ArcaneBeamSoundController {
 
         private PositionedFileSoundInstance(String eventName, String path, Vec3 position, float volume, int attenuationDistance) {
             this(eventName, path, position, volume, false, ONE_SHOT_LIFETIME_TICKS, attenuationDistance);
+        }
+
+        private PositionedFileSoundInstance(String eventName, String path, Vec3 position, float volume, int attenuationDistance, float pitch) {
+            this(eventName, path, position, volume, false, ONE_SHOT_LIFETIME_TICKS, attenuationDistance);
+            this.pitch = pitch;
         }
 
         private PositionedFileSoundInstance(String eventName, String path, Vec3 position, float volume, boolean stream, int maxAgeTicks) {

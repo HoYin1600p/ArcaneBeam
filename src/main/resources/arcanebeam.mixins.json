@@ -5,6 +5,7 @@
   "refmap": "arcanebeam.refmap.json",
   "client": [
     "AbilityActivityMessageMixin",
+    "BlastWaveParticleMessageMixin",
     "ChainLightningProjectileMixin",
     "ClientLevelMixin",
     "LightningArrowRendererMixin",

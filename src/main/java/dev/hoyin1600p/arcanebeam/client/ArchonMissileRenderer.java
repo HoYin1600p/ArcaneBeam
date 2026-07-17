@@ -66,8 +66,8 @@ public class ArchonMissileRenderer extends RenderType {
         VertexConsumer glowBuilder = buffer.getBuffer(shaderCompatibility ? SHADER_GLOW : GLOW);
         Vec3 impact = missile.impact().add(0.0D, 0.42D, 0.0D);
         Vec3 origin = missile.origin();
-        Vec3 current = missilePosition(origin, impact, progress);
-        Vec3 previous = missilePosition(origin, impact, Math.max(0.0F, progress - 0.035F));
+        Vec3 current = missile.positionAt(progress);
+        Vec3 previous = missile.positionAt(Math.max(0.0F, progress - 0.035F));
         Vec3 direction = current.subtract(previous);
         if (direction.lengthSqr() < 1.0E-5D) {
             direction = impact.subtract(origin);
@@ -277,6 +277,10 @@ public class ArchonMissileRenderer extends RenderType {
         Vec3 origin();
 
         Vec3 impact();
+
+        default Vec3 positionAt(float progress) {
+            return missilePosition(origin(), impact().add(0.0D, 0.42D, 0.0D), progress);
+        }
 
         float progress(long gameTime, float partialTick);
     }

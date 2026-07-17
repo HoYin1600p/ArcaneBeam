@@ -2,6 +2,7 @@ package dev.hoyin1600p.arcanebeam.mixin;
 
 import dev.hoyin1600p.arcanebeam.client.ArcaneBeamManager;
 import dev.hoyin1600p.arcanebeam.client.ArcaneBeamSoundController;
+import dev.hoyin1600p.arcanebeam.client.BlastWaveVisualManager;
 import dev.hoyin1600p.arcanebeam.client.LightningStrikeShockwaveManager;
 import dev.hoyin1600p.arcanebeam.client.SmiteVisualManager;
 import dev.hoyin1600p.arcanebeam.client.StormArrowVisualManager;
@@ -71,6 +72,13 @@ public abstract class SoundManagerMixin {
             return;
         }
         if (SMITE_ACTIVATION.equals(sound.getLocation())
+                && BlastWaveVisualManager.matchesBlastWaveSound(sound.getX(), sound.getY(), sound.getZ())) {
+            if (BlastWaveVisualManager.handleActivationSound(sound.getX(), sound.getY(), sound.getZ())) {
+                ci.cancel();
+            }
+            return;
+        }
+        if (SMITE_ACTIVATION.equals(sound.getLocation())
                 && SmiteVisualManager.handleSmiteActivationSound(sound.getX(), sound.getY(), sound.getZ())) {
             ci.cancel();
             return;
@@ -78,6 +86,13 @@ public abstract class SoundManagerMixin {
         if (LIGHTNING_IMPACT.equals(sound.getLocation())
                 && LightningStrikeShockwaveManager.handleLightningImpactSound(sound.getX(), sound.getY(), sound.getZ())) {
             ci.cancel();
+            return;
+        }
+        if (SMITE_STRIKE.equals(sound.getLocation())
+                && BlastWaveVisualManager.matchesBlastWaveSound(sound.getX(), sound.getY(), sound.getZ())) {
+            if (BlastWaveVisualManager.handleStrikeSound(sound.getX(), sound.getY(), sound.getZ())) {
+                ci.cancel();
+            }
             return;
         }
         if (SMITE_STRIKE.equals(sound.getLocation())
