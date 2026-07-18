@@ -107,6 +107,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     private SettingSlider stormArrowSegmentGapSlider;
     private SettingSlider stormArrowImpactFlashSizeSlider;
     private SettingSlider blastWaveLateralSpreadSlider;
+    private SettingSlider blastWaveMissileScaleSlider;
     private SettingSlider blastWavePitchVarianceSlider;
     private Button soundButton;
     private Button handButton;
@@ -634,8 +635,10 @@ public class ArcaneBeamConfigScreen extends Screen {
         blastWaveSoundLayersBox = addStormArrowNumberBox(x, y + 380, 42, 2, "Layers", "[0-9]{0,2}", this::updateBlastWaveSoundLayersFromText);
         blastWaveSoundStaggerBox = addStormArrowNumberBox(x, y + 404, 42, 1, "Stagger", "[0-9]?", this::updateBlastWaveSoundStaggerFromText);
         blastWaveLateralSpreadSlider = new SettingSlider(x, y + 428, 180, 20, "Side Veer", 0.0D, 4.0D, () -> blastWaveSettings().lateralSpread, value -> blastWaveSettings().lateralSpread = (float) value);
-        blastWavePitchVarianceSlider = new SettingSlider(x, y + 452, 180, 20, "Pitch Variation", 0.0D, 0.20D, () -> blastWaveSettings().pitchVariance, value -> blastWaveSettings().pitchVariance = (float) value);
+        blastWaveMissileScaleSlider = new SettingSlider(x, y + 452, 180, 20, "Missile Scale", 0.25D, 3.0D, () -> blastWaveSettings().missileScale, value -> blastWaveSettings().missileScale = (float) value);
+        blastWavePitchVarianceSlider = new SettingSlider(x, y + 476, 180, 20, "Pitch Variation", 0.0D, 0.20D, () -> blastWaveSettings().pitchVariance, value -> blastWaveSettings().pitchVariance = (float) value);
         this.addRenderableWidget(blastWaveLateralSpreadSlider);
+        this.addRenderableWidget(blastWaveMissileScaleSlider);
         this.addRenderableWidget(blastWavePitchVarianceSlider);
     }
 
@@ -1464,8 +1467,9 @@ public class ArcaneBeamConfigScreen extends Screen {
         moveWidget(stormArrowBlasterAlphaSlider, missileX, y, missileWidth);
         moveWidget(stormArrowBlasterWidthSlider, missileX, y + 23, missileWidth);
         moveWidget(stormArrowSegmentLengthSlider, missileX, y + 46, missileWidth);
-        moveWidget(stormArrowImpactFlashSizeSlider, missileX, y + 69, missileWidth);
-        moveWidget(stormArrowImpactFlashButton, missileX, y + 97, missileWidth);
+        moveWidget(blastWaveMissileScaleSlider, missileX, y + 69, missileWidth);
+        moveWidget(stormArrowImpactFlashSizeSlider, missileX, y + 92, missileWidth);
+        moveWidget(stormArrowImpactFlashButton, missileX, y + 120, missileWidth);
         cardX += DENSE_WIDE_CARD_WIDTH + CONTROL_CARD_GAP;
 
         int activationX = controlCardInnerX(cardX);
@@ -3117,6 +3121,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         setControlVisible(blastWaveSoundLayersBox, drawerOpen && blastWaveSelected);
         setControlVisible(blastWaveSoundStaggerBox, drawerOpen && blastWaveSelected);
         setControlVisible(blastWaveLateralSpreadSlider, drawerOpen && blastWaveSelected);
+        setControlVisible(blastWaveMissileScaleSlider, drawerOpen && blastWaveSelected);
         setControlVisible(blastWavePitchVarianceSlider, drawerOpen && blastWaveSelected);
         setControlVisible(stormArrowSoundVolumeBox, stormVisible);
         setControlVisible(stormArrowAudioRangeBox, stormVisible);
@@ -3263,6 +3268,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         refreshBlastWaveBoxes();
         if (blastWaveLateralSpreadSlider != null) {
             blastWaveLateralSpreadSlider.refresh();
+            blastWaveMissileScaleSlider.refresh();
             blastWavePitchVarianceSlider.refresh();
         }
         refreshStormArrowSoundVolumeBox();

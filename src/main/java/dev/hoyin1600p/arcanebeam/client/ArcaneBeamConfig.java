@@ -611,6 +611,7 @@ public final class ArcaneBeamConfig {
         settings.originOffsetY = clampFloat(settings.originOffsetY, -4.0F, 4.0F);
         settings.originOffsetZ = clampFloat(settings.originOffsetZ, -4.0F, 4.0F);
         settings.lateralSpread = clampFloat(settings.lateralSpread, 0.0F, 4.0F);
+        settings.missileScale = clampFloat(settings.missileScale <= 0.0F ? 1.0F : settings.missileScale, 0.25F, 3.0F);
         settings.maxMissiles = clampInt(settings.maxMissiles <= 0 ? 12 : settings.maxMissiles, 1, 64);
         settings.maxSoundLayers = clampInt(settings.maxSoundLayers <= 0 ? 4 : settings.maxSoundLayers, 1, 12);
         settings.soundStaggerTicks = clampInt(settings.soundStaggerTicks, 0, 4);
@@ -1134,6 +1135,7 @@ public final class ArcaneBeamConfig {
         copy.originOffsetY = source.originOffsetY;
         copy.originOffsetZ = source.originOffsetZ;
         copy.lateralSpread = source.lateralSpread;
+        copy.missileScale = source.missileScale;
         copy.maxMissiles = source.maxMissiles;
         copy.maxSoundLayers = source.maxSoundLayers;
         copy.soundStaggerTicks = source.soundStaggerTicks;
@@ -1417,6 +1419,7 @@ public final class ArcaneBeamConfig {
         public float originOffsetY = -0.28F;
         public float originOffsetZ = 0.18F;
         public float lateralSpread = 1.0F;
+        public float missileScale = 1.0F;
         public int maxMissiles = 12;
         public int maxSoundLayers = 4;
         public int soundStaggerTicks = 1;

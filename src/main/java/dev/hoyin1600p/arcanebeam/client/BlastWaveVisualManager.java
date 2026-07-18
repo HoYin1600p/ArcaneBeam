@@ -70,7 +70,7 @@ public final class BlastWaveVisualManager {
                     Mth.lerp(0.48D, missileOrigin.z, targetPoint.z) + lateral.z * 1.33D
             );
             ACTIVE_MISSILES.put(nextMissileId++, new ActiveBlastWaveMissile(
-                    target.getId(), missileOrigin, targetPoint, controlOne, controlTwo, now, renderSettings
+                    target.getId(), missileOrigin, targetPoint, controlOne, controlTwo, now, settings.missileScale, renderSettings
             ));
             if (nextMissileId == Integer.MAX_VALUE) {
                 nextMissileId = 1;
@@ -301,7 +301,7 @@ public final class BlastWaveVisualManager {
         }
         if (minecraft.screen instanceof ArcaneBeamConfigScreen screen && screen.blastWaveSelected() && minecraft.player != null) {
             Vec3 origin = configuredOrigin(minecraft.player, minecraft.player.position(), settings);
-            PreviewMissile preview = new PreviewMissile(origin, StormArrowVisualManager.StormArrowRenderSettings.from(settings));
+            PreviewMissile preview = new PreviewMissile(origin, settings.missileScale, StormArrowVisualManager.StormArrowRenderSettings.from(settings));
             ArchonMissileRenderer.render(event.getPoseStack(), event.getCamera().getPosition(), event.getPartialTick(), Collections.singletonList(preview));
         }
     }
@@ -333,7 +333,7 @@ public final class BlastWaveVisualManager {
         }
     }
 
-    private record PreviewMissile(Vec3 origin, StormArrowVisualManager.StormArrowRenderSettings settings)
+    private record PreviewMissile(Vec3 origin, float scale, StormArrowVisualManager.StormArrowRenderSettings settings)
             implements ArchonMissileRenderer.MissileVisual {
         @Override
         public Vec3 impact() {
@@ -353,6 +353,7 @@ public final class BlastWaveVisualManager {
             Vec3 controlOne,
             Vec3 controlTwo,
             long startGameTime,
+            float scale,
             StormArrowVisualManager.StormArrowRenderSettings settings
     ) implements ArchonMissileRenderer.MissileVisual {
         private Vec3 targetPoint() {

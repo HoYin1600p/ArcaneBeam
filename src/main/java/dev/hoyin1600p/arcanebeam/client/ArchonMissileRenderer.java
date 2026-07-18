@@ -76,6 +76,8 @@ public class ArchonMissileRenderer extends RenderType {
         poseStack.pushPose();
         poseStack.translate(current.x, current.y, current.z);
         alignLocalNegativeYToDirection(poseStack, direction);
+        float missileScale = Mth.clamp(missile.scale(), 0.01F, 16.0F);
+        poseStack.scale(missileScale, missileScale, missileScale);
         renderBody(poseStack, bodyBuilder, shaderCompatibility, settings.fullbright());
         renderPlume(poseStack, glowBuilder, settings, shaderCompatibility);
         poseStack.popPose();
@@ -277,6 +279,10 @@ public class ArchonMissileRenderer extends RenderType {
         Vec3 origin();
 
         Vec3 impact();
+
+        default float scale() {
+            return 1.0F;
+        }
 
         default Vec3 positionAt(float progress) {
             return missilePosition(origin(), impact().add(0.0D, 0.42D, 0.0D), progress);
