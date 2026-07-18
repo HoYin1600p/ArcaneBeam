@@ -564,6 +564,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         addStormArrowColorBox(slotStartX(1), colorY, "Blaster", 1);
         addStormArrowColorBox(slotStartX(2), colorY, "Core", 2);
         addStormArrowColorBox(slotStartX(3), colorY, "Flash", 3);
+        addStormArrowColorBox(slotStartX(0), altarSecondColorRowY(), "Pulse Circle", 4);
 
         stormArrowEnabledButton = this.addRenderableWidget(new ThemeButton(x, y, 150, 20, TextComponent.EMPTY, button -> {
             stormArrowSettings().enabled = !stormArrowSettings().enabled;
@@ -1124,7 +1125,9 @@ public class ArcaneBeamConfigScreen extends Screen {
             moveColorBox(altarColorBoxes.get(i), slot, y);
         }
         for (int i = 0; i < stormArrowColorBoxes.size(); i++) {
-            moveColorBox(stormArrowColorBoxes.get(i), i, beamRowY());
+            int slot = i < 4 ? i : 0;
+            int y = i < 4 ? beamRowY() : altarSecondColorRowY();
+            moveColorBox(stormArrowColorBoxes.get(i), slot, y);
         }
     }
 
@@ -2514,6 +2517,9 @@ public class ArcaneBeamConfigScreen extends Screen {
         }
         for (int i = 0; i < stormArrowColorBoxes.size(); i++) {
             EditBox box = stormArrowColorBoxes.get(i);
+            if (!box.visible) {
+                continue;
+            }
             renderPreviewBox(poseStack, box.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP, box.y, stormArrowColor(i), selectedSlot == i);
             renderColorSlotLabel(poseStack, box, stormArrowColorLabel(i));
         }
@@ -2526,6 +2532,7 @@ public class ArcaneBeamConfigScreen extends Screen {
                 case 1 -> "Plume";
                 case 2 -> "Core";
                 case 3 -> "Flash";
+                case 4 -> blastWaveSelected ? "Pulse Circle" : "";
                 default -> "";
             };
         }
@@ -2715,6 +2722,9 @@ public class ArcaneBeamConfigScreen extends Screen {
         if (stormLikeSelected()) {
             for (int i = 0; i < stormArrowColorBoxes.size(); i++) {
                 EditBox box = stormArrowColorBoxes.get(i);
+                if (!box.visible) {
+                    continue;
+                }
                 int previewX = box.x - SLOT_PREVIEW_WIDTH - SLOT_INNER_GAP;
                 if (isInside(mouseX, mouseY, previewX, box.y, SLOT_PREVIEW_WIDTH, 20)) {
                     selectedSlot = i;
@@ -2770,6 +2780,9 @@ public class ArcaneBeamConfigScreen extends Screen {
         if (stormLikeSelected()) {
             for (int i = 0; i < stormArrowColorBoxes.size(); i++) {
                 EditBox box = stormArrowColorBoxes.get(i);
+                if (!box.visible) {
+                    continue;
+                }
                 if (isInside(mouseX, mouseY, box.x, box.y, SLOT_HEX_WIDTH, 20)) {
                     selectedSlot = i;
                     openColorPicker();
@@ -3092,9 +3105,11 @@ public class ArcaneBeamConfigScreen extends Screen {
         setControlVisible(altarOriginRadiusBox, altarVisible);
         setControlVisible(altarSoundVolumeBox, altarVisible);
 
-        for (EditBox box : stormArrowColorBoxes) {
-            box.visible = stormVisible;
-            box.active = stormVisible;
+        for (int i = 0; i < stormArrowColorBoxes.size(); i++) {
+            EditBox box = stormArrowColorBoxes.get(i);
+            boolean visible = stormVisible && (i < 4 || blastWaveSelected);
+            box.visible = visible;
+            box.active = visible;
         }
         setControlVisible(stormArrowEnabledButton, stormVisible);
         setControlVisible(stormArrowTargetingCircleButton, stormVisible);
@@ -3967,6 +3982,7 @@ public class ArcaneBeamConfigScreen extends Screen {
             case 1 -> stormArrowSettings().blasterColor;
             case 2 -> stormArrowSettings().coreColor;
             case 3 -> stormArrowSettings().impactFlashColor;
+            case 4 -> blastWaveSelected ? blastWaveSettings().pulseCircleColor : stormArrowSettings().circleColor;
             default -> stormArrowSettings().circleColor;
         };
     }
@@ -3990,6 +4006,11 @@ public class ArcaneBeamConfigScreen extends Screen {
             case 1 -> stormArrowSettings().blasterColor = color;
             case 2 -> stormArrowSettings().coreColor = color;
             case 3 -> stormArrowSettings().impactFlashColor = color;
+            case 4 -> {
+                if (blastWaveSelected) {
+                    blastWaveSettings().pulseCircleColor = color;
+                }
+            }
             default -> {
             }
         }

@@ -35,10 +35,10 @@ public class StormArrowVisualRenderer extends RenderType {
         poseStack.pushPose();
         poseStack.translate(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z);
 
-        for (CircleVisual storm : activeStorms) {
-            renderStormCircle(poseStack, buffer, storm, partialTick);
-        }
         long gameTime = Minecraft.getInstance().level == null ? 0L : Minecraft.getInstance().level.getGameTime();
+        for (CircleVisual storm : activeStorms) {
+            renderStormCircle(poseStack, buffer, storm, gameTime, partialTick);
+        }
         for (StrikeVisual strike : activeStrikes) {
             renderBlasterStrike(poseStack, buffer, strike, gameTime, partialTick);
         }
@@ -48,7 +48,7 @@ public class StormArrowVisualRenderer extends RenderType {
         buffer.endBatch(SHADER_SAFE);
     }
 
-    private static void renderStormCircle(PoseStack poseStack, MultiBufferSource buffer, CircleVisual storm, float partialTick) {
+    private static void renderStormCircle(PoseStack poseStack, MultiBufferSource buffer, CircleVisual storm, long gameTime, float partialTick) {
         StormArrowVisualManager.StormArrowRenderSettings settings = storm.settings();
         if (!settings.showTargetingCircle() || settings.circleAlpha() <= 0.001F) {
             return;
@@ -60,7 +60,7 @@ public class StormArrowVisualRenderer extends RenderType {
         float radius = Math.max(0.01F, storm.radius());
         float innerRadius = Math.max(0.0F, radius - settings.circleThickness() * 0.5F);
         float outerRadius = radius + settings.circleThickness() * 0.5F;
-        float[] rgb = rgb(settings.circleColor());
+        float[] rgb = rgb(storm.circleColor(gameTime, partialTick));
 
         poseStack.pushPose();
         poseStack.translate(center.x, center.y, center.z);
@@ -277,6 +277,10 @@ public class StormArrowVisualRenderer extends RenderType {
         Vec3 groundCenter(float partialTick);
 
         float radius();
+
+        default int circleColor(long gameTime, float partialTick) {
+            return settings().circleColor();
+        }
     }
 
     public interface StrikeVisual {

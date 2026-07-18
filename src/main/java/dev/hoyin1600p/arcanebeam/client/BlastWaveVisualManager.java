@@ -30,6 +30,8 @@ public final class BlastWaveVisualManager {
     private static final ResourceLocation BLAST_WAVE_EFFECT = new ResourceLocation("the_vault", "smite_blast_wave");
     private static final float FALLBACK_CIRCLE_RADIUS = 5.0F;
     private static final long CIRCLE_LINGER_TICKS = 60L;
+    private static final float CIRCLE_PULSE_TICKS = 5.0F;
+    private static final float CIRCLE_PULSE_FADE_TICKS = 1.0F;
     private static final long SOUND_MATCH_TICKS = 4L;
     private static final long ACTIVATION_GRACE_TICKS = 8L;
     private static final double SOUND_MATCH_DISTANCE_SQR = 9.0D;
@@ -40,6 +42,7 @@ public final class BlastWaveVisualManager {
     private static float lastPulseRadius;
     private static long lastPulseGameTime = Long.MIN_VALUE;
     private static long localCircleUntilGameTime = Long.MIN_VALUE;
+    private static long localCirclePulseGameTime = Long.MIN_VALUE;
     private static long lastActivationSoundGameTime = Long.MIN_VALUE;
     private static Vec3 lastActivationSoundPosition;
     private static long localActivationUntilGameTime = Long.MIN_VALUE;
@@ -82,6 +85,7 @@ public final class BlastWaveVisualManager {
         lastPulseGameTime = now;
         if (source == minecraft.player) {
             localCircleUntilGameTime = now + CIRCLE_LINGER_TICKS;
+            localCirclePulseGameTime = now;
         }
         queueStrikeSounds(minecraft, missileOrigin, targets.size(), now, settings);
         return true;
@@ -290,6 +294,7 @@ public final class BlastWaveVisualManager {
             float radius = settings.useActualRadius ? lastPulseRadius : FALLBACK_CIRCLE_RADIUS;
             circles = Collections.singletonList(new BlastWaveCircle(
                     minecraft.player, radius,
+                    localCirclePulseGameTime, settings.pulseCircleColor,
                     StormArrowVisualManager.StormArrowRenderSettings.from(settings)
             ));
         }
@@ -312,6 +317,7 @@ public final class BlastWaveVisualManager {
         lastPulseOrigin = null;
         lastPulseGameTime = Long.MIN_VALUE;
         localCircleUntilGameTime = Long.MIN_VALUE;
+        localCirclePulseGameTime = Long.MIN_VALUE;
         lastActivationSoundGameTime = Long.MIN_VALUE;
         lastActivationSoundPosition = null;
         localActivationUntilGameTime = Long.MIN_VALUE;
@@ -320,7 +326,7 @@ public final class BlastWaveVisualManager {
     private record PendingStrikeSound(long dueGameTime, Vec3 position, float pitch) {
     }
 
-    private record BlastWaveCircle(Player player, float radius,
+    private record BlastWaveCircle(Player player, float radius, long pulseGameTime, int pulseColor,
                                    StormArrowVisualManager.StormArrowRenderSettings settings)
             implements StormArrowVisualRenderer.CircleVisual {
         @Override
@@ -331,6 +337,31 @@ public final class BlastWaveVisualManager {
                     Mth.lerp((double) partialTick, player.zOld, player.getZ())
             );
         }
+
+        @Override
+        public int circleColor(long gameTime, float partialTick) {
+            float age = gameTime - pulseGameTime + partialTick;
+            if (age < 0.0F || age >= CIRCLE_PULSE_TICKS) {
+                return settings.circleColor();
+            }
+            float blend = age < CIRCLE_PULSE_FADE_TICKS
+                    ? smoothStep(age / CIRCLE_PULSE_FADE_TICKS)
+                    : smoothStep((CIRCLE_PULSE_TICKS - age) / CIRCLE_PULSE_FADE_TICKS);
+            return blendColor(settings.circleColor(), pulseColor, blend);
+        }
+    }
+
+    private static float smoothStep(float value) {
+        float clamped = Mth.clamp(value, 0.0F, 1.0F);
+        return clamped * clamped * (3.0F - 2.0F * clamped);
+    }
+
+    private static int blendColor(int from, int to, float amount) {
+        float blend = Mth.clamp(amount, 0.0F, 1.0F);
+        int red = Mth.floor(Mth.lerp(blend, (from >> 16) & 0xFF, (to >> 16) & 0xFF));
+        int green = Mth.floor(Mth.lerp(blend, (from >> 8) & 0xFF, (to >> 8) & 0xFF));
+        int blue = Mth.floor(Mth.lerp(blend, from & 0xFF, to & 0xFF));
+        return red << 16 | green << 8 | blue;
     }
 
     private record PreviewMissile(Vec3 origin, float scale, StormArrowVisualManager.StormArrowRenderSettings settings)
