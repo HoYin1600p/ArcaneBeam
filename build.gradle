@@ -20,6 +20,9 @@ minecraft {
 }
 
 repositories {
+    flatDir {
+        dirs "reference"
+    }
     maven {
         url "https://cursemaven.com"
         content {
@@ -30,7 +33,10 @@ repositories {
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    compileOnly fg.deobf("curse.maven:vault-hunters-official-mod-458203:${vault_hunters_version}")
+    def localVaultJar = file("reference/the_vault-1.18.2-${vault_hunters_local_version}.jar")
+    compileOnly fg.deobf(localVaultJar.exists()
+            ? "local.thevault:the_vault-1.18.2:${vault_hunters_local_version}"
+            : "curse.maven:vault-hunters-official-mod-458203:${vault_hunters_version}")
     annotationProcessor "org.spongepowered:mixin:${mixin_version}:processor"
 }
 
