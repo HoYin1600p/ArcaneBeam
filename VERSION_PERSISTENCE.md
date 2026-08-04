@@ -12,11 +12,99 @@ When the user asks to append to this file, add a new subsection for the new vers
 
 ## Current Version
 
-- Current version: `0.1.10`
+- Current version: `0.1.17`
 - Repo: `https://github.com/HoYin1600p/ArcaneBeam`
 - Main technical reference: [PERSISTENCE.md](PERSISTENCE.md)
 
 ## Version History
+
+### 0.1.17 - Direct Beam Hooks and Player Profiles (2026-08-04)
+
+#### Summary
+
+`0.1.17` replaces fragile local Arcane/Rail particle ownership inference with direct Vault ability and successful-cast signals. It also adds optional per-player remote beam/particle profiles while preserving default Vault particles for unassigned players.
+
+#### Changes
+
+- Added independent enable/disable toggles for Arcane and Rail
+- Reworked local Arcane activation around `AbilityActivityMessage` and `AbilityKnownOnesMessage`
+- Added a client mixin for the Arcane particle factory so local replacement particles can be cancelled before construction
+- Added a narrow outgoing ability-packet latch to cover server sound/particle packets that arrive before activation synchronization
+- Suppressed local Arcane particles for the complete active window plus the network-delay tail
+- Hardened Arcane default sound suppression when a custom Arcane sound is selected
+- Suppressed Rail's particle ray beginning with its first successful-cast particle
+- Enabled Crosshair Aim in the default Rail settings
+- Added UUID/name-based player assignments under `config/arcanebeam/player_beams/assignments.json`
+- Added resource-pack beam profiles under `assets/<namespace>/arcanebeam/beam_profiles/<profile>.json`
+- Added optional single-texture and multi-texture particle profiles for assigned remote players
+- Preserved normal Vault particles for unassigned players, missing profiles, and ambiguous remote ownership
+- Updated the example resource pack with the player-profile structure
+
+#### Release Notes
+
+- Artifact: `build/libs/ArcaneBeam-1.18.2-0.1.17.jar`
+- Version source: `gradle.properties -> mod_version=0.1.17`
+- SHA256: `AC4C078BC2BD1A4D6B3351E71100F73D3E96A9E5F777EADA001E1FBA8C5FF2FC`
+
+### 0.1.16 - Blast Wave Visual Replacement (2026-07-26)
+
+#### Summary
+
+`0.1.16` adds a client-side visual and sound replacement for Smite: Blast Wave using short-lived, curved Whistling Bird-style missiles launched from the player toward affected targets.
+
+#### Changes
+
+- Added a complete Blast Wave config tab and profile group
+- Added curved player-origin missile trajectories with configurable apex height and lateral spread
+- Added configurable missile cap, scale, lifetime, colors, opacity, origin offsets, and impact visuals
+- Added a live in-world missile origin preview through the config screen
+- Added configurable activation and strike sounds using the existing Archon/Whistling Bird sound slots
+- Added sound volume, range, layer count, stagger, and pitch-variation controls
+- Added a player-following targeting circle with optional actual-radius display
+- Added a secondary pulse color for the Blast Wave damage interval
+- Smoothed player-following circles used by Blast Wave, Smite, and Storm Arrow
+- Verified the mod against the then-current local Vault Hunters jar
+
+### 0.1.15 - Animation and Config Input Maintenance (2026-07-15)
+
+#### Summary
+
+`0.1.15` prevents horizontal config-card scrolling from stealing wheel input from adjustable controls and restores smooth beam color/rotation animation.
+
+#### Changes
+
+- Added shared wheel-event occlusion for hovered numeric controls
+- Kept horizontal card scrolling available when the pointer is not over an adjustable control
+- Moved beam color shifting and rotation to a monotonic `System.nanoTime()` clock
+- Removed visible one-tick jumps from color interpolation and rotation animation
+
+### 0.1.14 - Beam Configuration Cleanup (2026-07-08)
+
+#### Summary
+
+`0.1.14` keeps Arcane Beam focused on Vault Hunters ability visual replacements, introduces optional Crosshair Aim, and moves Sophisticated Storage compatibility into its own standalone mod.
+
+#### Changes
+
+- Added a profile-specific Crosshair Aim toggle for Arcane and Rail
+- Kept block collision as a maximum beam-length constraint while aiming toward the crosshair target
+- Updated the config menu to the newer tabbed/card layout
+- Removed Sophisticated Storage compatibility mixins from Arcane Beam
+- Updated CurseForge release copy for `0.1.14`
+
+### 0.1.11 - Audio Stability Maintenance (2026-06-20)
+
+#### Summary
+
+`0.1.11` focuses on cleanup of custom sound instances to reduce the risk of Minecraft/OpenAL channel exhaustion during extended play.
+
+#### Changes
+
+- Added defensive cleanup for Arcane Beam sounds when leaving a world, disconnecting, or stopping the sound engine
+- Changed bundled short ability sounds away from unnecessary streaming playback
+- Changed runtime custom sounds to use the non-streamed path by default
+- Improved cleanup for Arcane, Rail, Lightning Strike, Vault Altar, Storm Arrow, Smite, and Archon sounds
+- Updated CurseForge release copy for `0.1.11`
 
 ### 0.1.10 - Menu Overhaul Worktree Build (2026-06-21)
 
@@ -168,14 +256,20 @@ It also includes a small client-side Sophisticated Storage compatibility mixin f
 - Moved the shared Compressium helper out of the configured mixin package to avoid Mixin `IllegalClassLoadError` during client startup
 - Updated optional mixin detection to use Mixin's bytecode provider so the Sophisticated Storage compatibility mixin is not silently skipped during early loading
 - Added local compile-only Sophisticated Core/Storage jars so the optional mixin target can be validated during development without bundling those mods
+- Added config-screen fit scaling so the Arcane/Rail editor remains visible at larger GUI scales and smaller resolutions
+- Added `Resourcepack1` and `Resourcepack2` sound slots for both Arcane and Rail
+- Added direct resource-pack sound paths for `arcane_resourcepack_1.ogg`, `arcane_resourcepack_2.ogg`, `rail_resourcepack_1.ogg`, and `rail_resourcepack_2.ogg`
+- Added an example resource pack zip with placeholder sound files for the new slots
 - Updated CurseForge release copy for `0.1.4`
 
 #### Release Notes
 
 - Artifact: `build/libs/ArcaneBeam-1.18.2-0.1.4.jar`
 - Version source: `gradle.properties -> mod_version=0.1.4`
-- SHA256: `76A6B0C215A2EC49371211C4ADC7C9140672D32D3D38E35704BCC38A5B0AA3CC`
+- SHA256: `B980E7FF7797C73A191F8AA7349FC83DE7E803F20157DD9AFC439BD62CDD02DD`
 - Matching jar deployed to the Prism instance mod folder
+- Example resource pack: `ArcaneBeam-Example-Resourcepack-Sounds.zip`
+- Example resource pack SHA256: `DDB9D3DE4818822E3493A7041A961F40D3CC426C8D7DC43F8EA1BE568BEABE6D`
 
 ### 0.1.3
 

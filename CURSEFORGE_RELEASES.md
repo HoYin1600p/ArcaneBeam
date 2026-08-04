@@ -9,6 +9,107 @@ Rules for future updates:
 - Keep the user-facing release text clean and ready to paste.
 - If Codex needs internal notes for a release, put them in a clearly separate `Internal Notes` subsection.
 
+## 0.1.17
+
+### Release Copy
+
+```markdown
+## 0.1.17
+
+This update makes the Arcane and Rail replacements more reliable in multiplayer and adds optional per-player particle styles. All changes remain client-side and do not alter Vault Hunters damage, mana costs, cooldowns, targeting, or server behavior.
+
+### Arcane and Rail Reliability
+
+- Reworked local Arcane activation to follow Vault Hunters' synchronized ability state instead of continuously polling the ability key
+- Improved suppression of the local player's original Arcane particles, including delayed particles caused by network latency
+- Improved suppression of the original Arcane cast sound when a custom sound option is selected
+- Improved Rail cast detection so its original particle ray is suppressed from the first received particle
+- Added separate enable/disable toggles for the Arcane and Rail replacements
+- Fixed Rail Crosshair Aim behavior and enabled it in the default Rail profile
+
+### Player Particle Profiles
+
+- Added optional per-player beam and particle profiles for nearby players
+- Profiles can be assigned by player UUID, with player name available as a fallback
+- Unassigned players continue using the normal Vault Hunters particles
+- Resource packs can provide a custom beam profile, a single custom particle texture, or a randomized list of particle textures for an assigned player
+- Missing profiles and uncertain particle ownership safely fall back to the normal Vault Hunters particles
+
+Player assignments are stored in:
+
+`config/arcanebeam/player_beams/assignments.json`
+
+Resource-pack profiles are loaded from:
+
+`assets/<namespace>/arcanebeam/beam_profiles/<profile>.json`
+
+### Notes
+
+- Arcane Beam remains a client-side visual and audio replacement mod
+- Other players do not need Arcane Beam installed
+- Existing ability gameplay behavior is unchanged
+```
+
+## 0.1.16
+
+### Release Copy
+
+```markdown
+## 0.1.16
+
+This update adds a configurable visual and sound replacement for the Smite: Blast Wave specialization.
+
+### Blast Wave
+
+- Replaces each Blast Wave damage pulse with a group of small Whistling Bird-style missiles
+- Missiles launch upward from the player, follow curved paths with configurable side-to-side movement, and descend onto affected targets
+- Added a configurable maximum missile count to prevent excessive rendering in large groups of mobs
+- Added configurable missile size, lifetime, apex height, lateral spread, colors, opacity, impact effects, and player-relative origin offsets
+- Added an in-world missile origin preview while adjusting the origin controls
+- Added profiles and the same shader-compatible rendering controls used by the other ability replacements
+
+### Targeting Circle
+
+- Added an optional Blast Wave targeting circle that follows the player smoothly
+- Added actual-radius display support
+- Added a second pulse color that briefly fades in when Blast Wave damages nearby targets
+- Improved player-following circle movement for Storm Arrow and Smite as well
+
+### Sound
+
+- Added configurable activation and strike sound selections
+- Reuses the Whistling Bird and Archon resource-pack sound slots
+- Added configurable volume, audible range, sound layering, stagger timing, and slight pitch variation
+
+### Notes
+
+- Blast Wave damage remains instant; the missiles are visual only
+- Damage, radius, timing, mana costs, cooldowns, and server logic are unchanged
+```
+
+## 0.1.15
+
+### Release Copy
+
+```markdown
+## 0.1.15
+
+This maintenance update improves config-screen controls and restores smooth beam animation.
+
+### Config Controls
+
+- Mouse-wheel adjustments over numeric controls now stay with the hovered control instead of moving the config screen horizontally
+- The protection applies through the shared control system so future scroll-adjustable settings inherit the same behavior
+
+### Beam Animation
+
+- Restored smooth Arcane and Rail color transitions
+- Restored smooth beam and glow rotation
+- Animation timing now uses a monotonic client clock, avoiding visible jumps caused by game-tick timing
+
+Gameplay behavior and server logic are unchanged.
+```
+
 ## 0.1.14
 
 ### Release Copy
@@ -297,6 +398,9 @@ No custom `sounds.json` is needed for these Arcane Beam resource pack slots. Rep
 - Kept block collision behavior intact: beams can still stop early on blocks, but collision can only shorten the beam instead of changing its direction
 - Added fallback handling for brief invalid look-vector frames so beams keep their last valid aim instead of snapping to a world direction
 - Added a client-side compatibility fix for Compressium compressed blocks on Sophisticated Storage barrel display faces
+- Improved the Arcane/Rail config screen so it scales down to fit larger GUI scales and smaller screens
+- Added two resource-pack sound slots for Arcane and two resource-pack sound slots for Rail
+- Included an example resource pack zip showing the sound file paths for the new slots
 ```
 
 ## 0.1.3
