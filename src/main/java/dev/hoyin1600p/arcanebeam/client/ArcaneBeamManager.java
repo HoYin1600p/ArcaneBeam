@@ -71,7 +71,7 @@ public final class ArcaneBeamManager {
             return false;
         }
 
-        if (kind == BeamKind.ARCANE && shouldForceSuppressLocalArcaneParticles()) {
+        if (kind == BeamKind.ARCANE && isLocalArcaneReplacementWindow()) {
             return true;
         }
 
@@ -203,7 +203,7 @@ public final class ArcaneBeamManager {
         return best;
     }
 
-    private static boolean shouldForceSuppressLocalArcaneParticles() {
+    private static boolean isLocalArcaneReplacementWindow() {
         return replacementEnabled(BeamKind.ARCANE)
                 && (localArcaneActive
                 || getLocalActiveBeam(BeamKind.ARCANE) != null
@@ -283,11 +283,10 @@ public final class ArcaneBeamManager {
 
     public static boolean handleArcaneCastSound(SoundInstance sound) {
         if (!replacementEnabled(BeamKind.ARCANE)
-                || soundChoice(ArcaneBeamConfig.INSTANCE.arcane.sound) == ArcaneBeamConfig.SoundChoice.DEFAULT
-                || !isLocalSoundOwner(sound)) {
+                || soundChoice(ArcaneBeamConfig.INSTANCE.arcane.sound) == ArcaneBeamConfig.SoundChoice.DEFAULT) {
             return false;
         }
-        return localArcaneActive || isWithinRecentWindow(lastLocalArcaneDeactivateGameTime, LOCAL_ARCANE_POST_DEACTIVATE_IGNORE_TICKS);
+        return isLocalArcaneReplacementWindow();
     }
 
     public static boolean handleRailCastSound(SoundInstance sound) {
