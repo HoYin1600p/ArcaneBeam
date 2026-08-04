@@ -49,6 +49,7 @@ public final class ArcaneBeamManager {
     private static final double MIN_LOOK_VECTOR_LENGTH_SQR = 1.0E-6D;
     private static final float FADE_OUT_GRACE_TICKS = 2.0F;
     private static final int LOCAL_ARCANE_PRE_ACTIVATE_SOUND_TICKS = 20;
+    private static final int LOCAL_RAIL_PRE_ACTIVATE_PARTICLE_TICKS = 20;
     private static final int LOCAL_ARCANE_POST_DEACTIVATE_IGNORE_TICKS = 8;
     private static final int REMOTE_ACTIVITY_GRACE_TICKS = 4;
     private static final Map<UUID, ActiveBeam> activeBeams = new LinkedHashMap<>();
@@ -59,6 +60,7 @@ public final class ArcaneBeamManager {
     private static boolean localArcaneSelected = false;
     private static boolean localRailSelected = false;
     private static long localArcaneSoundArmedUntilGameTime = Long.MIN_VALUE;
+    private static long localRailParticleArmedUntilGameTime = Long.MIN_VALUE;
     private static long localArcaneFirstSeenGameTime = Long.MIN_VALUE;
     private static long lastLocalArcaneDeactivateGameTime = Long.MIN_VALUE;
     private static long localRailFirstSeenGameTime = Long.MIN_VALUE;
@@ -77,6 +79,18 @@ public final class ArcaneBeamManager {
 
         if (kind == BeamKind.ARCANE && isLocalArcaneReplacementWindow()) {
             return true;
+        }
+
+        long gameTime = minecraft.level.getGameTime();
+        if (kind == BeamKind.RAIL && replacementEnabled(kind) && localRailSelected) {
+            if (gameTime <= localRailParticleArmedUntilGameTime) {
+                localRailParticleArmedUntilGameTime = Long.MIN_VALUE;
+                latchLocalRail(gameTime);
+                return true;
+            }
+            if (isLocalRailLatched(gameTime)) {
+                return true;
+            }
         }
 
         ParticleOwner owner = findParticleOwner(minecraft.level, new Vec3(x, y, z), kind);
@@ -245,15 +259,20 @@ public final class ArcaneBeamManager {
     }
 
     public static void observeLocalAbilityKey(ServerboundAbilityKeyMessage.Opcode opcode) {
-        if (opcode != ServerboundAbilityKeyMessage.Opcode.KeyDown
-                || !localArcaneSelected
-                || !replacementEnabled(BeamKind.ARCANE)
-                || soundChoice(ArcaneBeamConfig.INSTANCE.arcane.sound) == ArcaneBeamConfig.SoundChoice.DEFAULT) {
+        if (opcode != ServerboundAbilityKeyMessage.Opcode.KeyDown) {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level != null && minecraft.player != null) {
+        if (minecraft.level == null || minecraft.player == null) {
+            return;
+        }
+        if (localArcaneSelected
+                && replacementEnabled(BeamKind.ARCANE)
+                && soundChoice(ArcaneBeamConfig.INSTANCE.arcane.sound) != ArcaneBeamConfig.SoundChoice.DEFAULT) {
             localArcaneSoundArmedUntilGameTime = minecraft.level.getGameTime() + LOCAL_ARCANE_PRE_ACTIVATE_SOUND_TICKS;
+        }
+        if (localRailSelected && replacementEnabled(BeamKind.RAIL)) {
+            localRailParticleArmedUntilGameTime = minecraft.level.getGameTime() + LOCAL_RAIL_PRE_ACTIVATE_PARTICLE_TICKS;
         }
     }
 
@@ -504,6 +523,7 @@ public final class ArcaneBeamManager {
         } else {
             localRailFirstSeenGameTime = Long.MIN_VALUE;
             localRailLatchedUntilGameTime = Long.MIN_VALUE;
+            localRailParticleArmedUntilGameTime = Long.MIN_VALUE;
         }
     }
 
@@ -515,6 +535,7 @@ public final class ArcaneBeamManager {
         localArcaneSelected = false;
         localRailSelected = false;
         localArcaneSoundArmedUntilGameTime = Long.MIN_VALUE;
+        localRailParticleArmedUntilGameTime = Long.MIN_VALUE;
         localArcaneFirstSeenGameTime = Long.MIN_VALUE;
         lastLocalArcaneDeactivateGameTime = Long.MIN_VALUE;
         localRailFirstSeenGameTime = Long.MIN_VALUE;
