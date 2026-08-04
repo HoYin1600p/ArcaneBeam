@@ -11,7 +11,10 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.util.Mth;
 
 import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 public final class PlayerBeamProfileManager extends SimpleJsonResourceReloadListener {
     private static final Gson GSON = new GsonBuilder().create();
@@ -65,31 +68,52 @@ public final class PlayerBeamProfileManager extends SimpleJsonResourceReloadList
     }
 
     private static ParticleSettings validateParticleSettings(ParticleSettings settings, ResourceLocation profileId, String field) {
-        if (settings == null || settings.texture == null || settings.texture.isBlank()) {
+        if (settings == null) {
             return null;
         }
-        ResourceLocation texture = ResourceLocation.tryParse(settings.texture.trim());
-        if (texture == null) {
-            ArcaneBeam.LOGGER.warn("Ignoring invalid {} texture '{}' in player beam profile {}",
-                    field, settings.texture, profileId);
+
+        List<ResourceLocation> textures = new ArrayList<>();
+        addTexture(textures, settings.texture, profileId, field);
+        if (settings.textures != null) {
+            for (String texture : settings.textures) {
+                addTexture(textures, texture, profileId, field);
+            }
+        }
+        if (textures.isEmpty()) {
             return null;
         }
-        settings.texture = texture.toString();
+        settings.resolvedTextures = List.copyOf(textures);
         settings.lifetimeTicks = Mth.clamp(settings.lifetimeTicks, 1, 40);
         settings.size = Mth.clamp(settings.size, 0.01F, 4.0F);
         settings.alpha = Mth.clamp(settings.alpha, 0.0F, 1.0F);
         return settings;
     }
 
+    private static void addTexture(List<ResourceLocation> textures, String rawTexture,
+                                   ResourceLocation profileId, String field) {
+        if (rawTexture == null || rawTexture.isBlank()) {
+            return;
+        }
+        ResourceLocation texture = ResourceLocation.tryParse(rawTexture.trim());
+        if (texture == null) {
+            ArcaneBeam.LOGGER.warn("Ignoring invalid {} texture '{}' in player beam profile {}",
+                    field, rawTexture, profileId);
+            return;
+        }
+        textures.add(texture);
+    }
+
     public static final class ParticleSettings {
         private String texture;
+        private List<String> textures;
         private int lifetimeTicks = 5;
         private float size = 0.4F;
         private float alpha = 1.0F;
         private boolean fullbright = true;
+        private transient List<ResourceLocation> resolvedTextures = List.of();
 
-        public ResourceLocation texture() {
-            return new ResourceLocation(texture);
+        public ResourceLocation chooseTexture(Random random) {
+            return resolvedTextures.get(random.nextInt(resolvedTextures.size()));
         }
 
         public int lifetimeTicks() {

@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 @Mod.EventBusSubscriber(modid = ArcaneBeam.MOD_ID, value = Dist.CLIENT)
 public final class RemotePlayerParticleManager {
@@ -31,6 +32,7 @@ public final class RemotePlayerParticleManager {
     private static final int MAX_PARTICLES = 4096;
     private static final List<RemoteParticle> PARTICLES = new ArrayList<>();
     private static final Map<ResourceLocation, RenderType> RENDER_TYPES = new HashMap<>();
+    private static final Random RANDOM = new Random();
 
     private RemotePlayerParticleManager() {
     }
@@ -76,7 +78,7 @@ public final class RemotePlayerParticleManager {
         Map<ResourceLocation, RenderType> usedTypes = new HashMap<>();
 
         for (RemoteParticle particle : PARTICLES) {
-            ResourceLocation texture = particle.settings.texture();
+            ResourceLocation texture = particle.texture;
             RenderType renderType = RENDER_TYPES.computeIfAbsent(texture, RenderType::entityTranslucent);
             usedTypes.put(texture, renderType);
             renderParticle(poseStack, buffer.getBuffer(renderType), event, cameraPosition, particle, partialTick);
@@ -123,6 +125,7 @@ public final class RemotePlayerParticleManager {
 
     private static final class RemoteParticle {
         private final PlayerBeamProfileManager.ParticleSettings settings;
+        private final ResourceLocation texture;
         private double previousX;
         private double previousY;
         private double previousZ;
@@ -137,6 +140,7 @@ public final class RemotePlayerParticleManager {
         private RemoteParticle(double x, double y, double z, double xSpeed, double ySpeed, double zSpeed,
                                PlayerBeamProfileManager.ParticleSettings settings) {
             this.settings = settings;
+            this.texture = settings.chooseTexture(RANDOM);
             this.previousX = this.x = x;
             this.previousY = this.y = y;
             this.previousZ = this.z = z;

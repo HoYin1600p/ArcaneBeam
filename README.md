@@ -337,6 +337,8 @@ A profile can instead preserve the player's particle-style beam while selecting 
 
 `railParticle` provides the same option for Rail. The resource pack is enabled globally, but ArcaneBeam selects its named profile only for assigned players. Press `F3+T` after changing assignments or profile JSON. Missing profiles, unassigned players, and uncertain ownership retain the original Vault particles.
 
+Use `"textures": ["namespace:textures/particle/first.png", "namespace:textures/particle/second.png"]` instead of `texture` when a profile should randomly choose among several sprites for each particle.
+
 ## Audio Assets
 
 Current bundled sound files:
