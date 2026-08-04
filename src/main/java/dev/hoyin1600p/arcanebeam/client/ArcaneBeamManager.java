@@ -39,6 +39,10 @@ public final class ArcaneBeamManager {
     private static final double MAX_PARTICLE_RAY_DISTANCE_SQR = 0.36D;
     private static final double OWNERSHIP_AMBIGUITY_MARGIN = 0.04D;
     private static final double REMOTE_ACQUIRE_DISTANCE = 3.0D;
+    private static final double LOCAL_SEQUENCE_ORIGIN_DISTANCE_SQR = 0.36D;
+    private static final double LOCAL_SEQUENCE_PATH_DISTANCE_SQR = 1.0D;
+    private static final double LOCAL_SEQUENCE_INITIAL_DISTANCE = 1.25D;
+    private static final double LOCAL_SEQUENCE_MIN_LOOK_DOT = 0.866D;
     private static final double SOUND_OWNER_DISTANCE_SQR = 1.0D;
     private static final double SOUND_OWNER_AMBIGUITY_MARGIN = 0.25D;
     private static final double ORIGIN_VERTICAL_SMOOTHING_TICKS = 5.0D;
@@ -59,6 +63,7 @@ public final class ArcaneBeamManager {
     private static long lastLocalArcaneDeactivateGameTime = Long.MIN_VALUE;
     private static long localRailFirstSeenGameTime = Long.MIN_VALUE;
     private static long localRailLatchedUntilGameTime = Long.MIN_VALUE;
+    private static LocalParticleSequence localParticleSequence;
 
     private ArcaneBeamManager() {
     }
@@ -73,15 +78,21 @@ public final class ArcaneBeamManager {
 
         ParticleOwner owner = findParticleOwner(minecraft.level, new Vec3(x, y, z), kind);
         if (owner == null) {
-            return false;
+            return shouldSuppressLocalSequence(kind, new Vec3(x, y, z), minecraft.level.getGameTime());
         }
 
         if (owner.player.getUUID().equals(minecraft.player.getUUID())) {
+            boolean replaceLocal = kind == BeamKind.RAIL
+                    ? replacementEnabled(kind) && localRailSelected
+                    : getLocalActiveBeam(kind) != null;
+            if (replaceLocal) {
+                trackLocalSequence(kind, new Vec3(x, y, z), minecraft.level.getGameTime());
+            }
             if (kind == BeamKind.RAIL && replacementEnabled(kind) && localRailSelected
                     && owner.alongRay <= REMOTE_ACQUIRE_DISTANCE) {
                 latchLocalRail(minecraft.level.getGameTime());
             }
-            return getLocalActiveBeam(kind) != null;
+            return replaceLocal;
         }
 
         ResourceLocation profileId = PlayerBeamAssignments.profileFor(owner.player);
@@ -197,6 +208,79 @@ public final class ArcaneBeamManager {
             return null;
         }
         return best;
+    }
+
+    // Vault emits each ray in order from the caster; latch that sequence so delayed server aim does not leak particles.
+    private static boolean shouldSuppressLocalSequence(BeamKind kind, Vec3 particlePosition, long gameTime) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || !localReplacementReady(kind)) {
+            localParticleSequence = null;
+            return false;
+        }
+
+        Vec3 origin = serverBeamStart(minecraft.player, 1.0F);
+        if (particlePosition.distanceToSqr(origin) <= LOCAL_SEQUENCE_ORIGIN_DISTANCE_SQR) {
+            localParticleSequence = new LocalParticleSequence(kind, origin, gameTime);
+            if (kind == BeamKind.RAIL) {
+                latchLocalRail(gameTime);
+            }
+            return true;
+        }
+
+        LocalParticleSequence sequence = localParticleSequence;
+        if (sequence == null || sequence.kind != kind || gameTime - sequence.gameTime > 1L) {
+            return false;
+        }
+
+        Vec3 fromOrigin = particlePosition.subtract(sequence.origin);
+        double distance = fromOrigin.length();
+        if (distance < 1.0E-4D) {
+            return true;
+        }
+
+        if (sequence.direction == null) {
+            Vec3 direction = fromOrigin.scale(1.0D / distance);
+            Vec3 look = safeLookVector(minecraft.player.getUUID(), minecraft.player.getViewVector(1.0F), minecraft.player.getLookAngle());
+            if (distance > LOCAL_SEQUENCE_INITIAL_DISTANCE || direction.dot(look) < LOCAL_SEQUENCE_MIN_LOOK_DOT) {
+                return false;
+            }
+            sequence.direction = direction;
+            sequence.farthestDistance = distance;
+            return true;
+        }
+
+        double alongRay = fromOrigin.dot(sequence.direction);
+        double maxRange = kind == BeamKind.RAIL ? 160.0D : 64.0D;
+        if (alongRay < -0.5D || alongRay > maxRange + 1.0D) {
+            return false;
+        }
+        Vec3 closestPoint = sequence.origin.add(sequence.direction.scale(alongRay));
+        if (closestPoint.distanceToSqr(particlePosition) > LOCAL_SEQUENCE_PATH_DISTANCE_SQR) {
+            return false;
+        }
+
+        if (distance > sequence.farthestDistance) {
+            sequence.direction = fromOrigin.scale(1.0D / distance);
+            sequence.farthestDistance = distance;
+        }
+        return true;
+    }
+
+    private static void trackLocalSequence(BeamKind kind, Vec3 particlePosition, long gameTime) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || !localReplacementReady(kind)) {
+            return;
+        }
+        Vec3 origin = serverBeamStart(minecraft.player, 1.0F);
+        if (particlePosition.distanceToSqr(origin) <= LOCAL_SEQUENCE_ORIGIN_DISTANCE_SQR) {
+            localParticleSequence = new LocalParticleSequence(kind, origin, gameTime);
+            return;
+        }
+        shouldSuppressLocalSequence(kind, particlePosition, gameTime);
+    }
+
+    private static boolean localReplacementReady(BeamKind kind) {
+        return replacementEnabled(kind) && (kind == BeamKind.RAIL ? localRailSelected : localArcaneActive);
     }
 
     private static void removeExpiredBeams(long gameTime) {
@@ -458,6 +542,9 @@ public final class ArcaneBeamManager {
 
     private static void clearReplacementState(BeamKind kind) {
         removeLocalBeam(kind);
+        if (localParticleSequence != null && localParticleSequence.kind == kind) {
+            localParticleSequence = null;
+        }
 
         if (kind == BeamKind.ARCANE) {
             localArcaneFirstSeenGameTime = Long.MIN_VALUE;
@@ -480,6 +567,7 @@ public final class ArcaneBeamManager {
         localRailFirstSeenGameTime = Long.MIN_VALUE;
         localRailLatchedUntilGameTime = Long.MIN_VALUE;
         lastArcaneSeenGameTime = Long.MIN_VALUE;
+        localParticleSequence = null;
     }
 
     private static boolean isWithinRecentWindow(long lastSeenGameTime, long windowTicks) {
@@ -682,6 +770,20 @@ public final class ArcaneBeamManager {
     }
 
     private record ParticleOwner(AbstractClientPlayer player, double alongRay) {
+    }
+
+    private static final class LocalParticleSequence {
+        private final BeamKind kind;
+        private final Vec3 origin;
+        private final long gameTime;
+        private Vec3 direction;
+        private double farthestDistance;
+
+        private LocalParticleSequence(BeamKind kind, Vec3 origin, long gameTime) {
+            this.kind = kind;
+            this.origin = origin;
+            this.gameTime = gameTime;
+        }
     }
 
     public enum BeamKind {
