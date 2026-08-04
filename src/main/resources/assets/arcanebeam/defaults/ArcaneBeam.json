@@ -9,6 +9,7 @@
   "selectedArchonProfile": "Default",
   "selectedBlastWaveProfile": "Default",
   "arcane": {
+    "enabled": true,
     "color": 849935,
     "colors": [
       849935,
@@ -47,6 +48,7 @@
     "crosshairAim": false
   },
   "rail": {
+    "enabled": true,
     "color": 12582835,
     "colors": [
       12582835,
@@ -268,6 +270,7 @@
   },
   "arcaneProfiles": {
     "Default": {
+      "enabled": true,
       "color": 15666188,
       "colors": [
         15666188,
@@ -306,6 +309,7 @@
       "crosshairAim": false
     },
     "Test": {
+      "enabled": true,
       "color": 849935,
       "colors": [
         849935,
@@ -346,6 +350,7 @@
   },
   "railProfiles": {
     "Default": {
+      "enabled": true,
       "color": 12582835,
       "colors": [
         12582835,

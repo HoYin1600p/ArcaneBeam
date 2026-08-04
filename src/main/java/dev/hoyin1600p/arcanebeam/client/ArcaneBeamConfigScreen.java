@@ -41,6 +41,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     private static final int COLOR_ROW_GAP = 6;
     private static final int GLOW_ROW_GAP = 26;
     private static final int CONTROL_CARD_GAP = 14;
+    private static final int BEAM_SETUP_CARD_WIDTH = 184;
     private static final int BEAM_SHAPE_CARD_WIDTH = 224;
     private static final int BEAM_MOTION_CARD_WIDTH = 196;
     private static final int BEAM_ADVANCED_CARD_WIDTH = 184;
@@ -110,6 +111,7 @@ public class ArcaneBeamConfigScreen extends Screen {
     private SettingSlider blastWaveMissileScaleSlider;
     private SettingSlider blastWavePitchVarianceSlider;
     private Button soundButton;
+    private Button beamEnabledButton;
     private Button handButton;
     private Button shaderCompatibilityButton;
     private Button crosshairAimButton;
@@ -343,6 +345,11 @@ public class ArcaneBeamConfigScreen extends Screen {
         this.addRenderableWidget(glowOpacitySlider);
         this.addRenderableWidget(colorShiftSlider);
         this.addRenderableWidget(glowRotationSlider);
+        beamEnabledButton = this.addRenderableWidget(new ThemeButton(sliderX, sliderY + 144, 150, 20, TextComponent.EMPTY, button -> {
+            settings().enabled = !settings().enabled;
+            refreshControls();
+            ArcaneBeamConfig.save();
+        }));
         shaderCompatibilityButton = this.addRenderableWidget(new ThemeButton(sliderX, sliderY + 144, 150, 20, TextComponent.EMPTY, button -> {
             cycleShaderCompatibility();
             refreshControls();
@@ -853,6 +860,7 @@ public class ArcaneBeamConfigScreen extends Screen {
             };
         }
         return new int[]{
+                BEAM_SETUP_CARD_WIDTH,
                 BEAM_SHAPE_CARD_WIDTH,
                 BEAM_MOTION_CARD_WIDTH,
                 BEAM_ADVANCED_CARD_WIDTH,
@@ -873,8 +881,12 @@ public class ArcaneBeamConfigScreen extends Screen {
         return total;
     }
 
-    private int beamShapeCardX() {
+    private int beamSetupCardX() {
         return controlContentX();
+    }
+
+    private int beamShapeCardX() {
+        return beamSetupCardX() + BEAM_SETUP_CARD_WIDTH + CONTROL_CARD_GAP;
     }
 
     private int beamMotionCardX() {
@@ -1133,6 +1145,10 @@ public class ArcaneBeamConfigScreen extends Screen {
 
     private void layoutBeamWidgets() {
         int y = controlCardY() + 30;
+        int setupX = controlCardInnerX(beamSetupCardX());
+        int setupWidth = controlCardInnerWidth(BEAM_SETUP_CARD_WIDTH);
+        moveWidget(beamEnabledButton, setupX, y, setupWidth);
+
         int shapeX = controlCardInnerX(beamShapeCardX());
         int shapeWidth = controlCardInnerWidth(BEAM_SHAPE_CARD_WIDTH);
         moveWidget(intensitySlider, shapeX, y, shapeWidth);
@@ -1892,6 +1908,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         int y = controlCardY() + 30;
         int cardY = y - 18;
         int cardHeight = 112;
+        renderControlSubCard(poseStack, beamSetupCardX(), cardY, BEAM_SETUP_CARD_WIDTH, cardHeight, "Setup");
         renderControlSubCard(poseStack, beamShapeCardX(), cardY, BEAM_SHAPE_CARD_WIDTH, cardHeight, "Shape");
         renderControlSubCard(poseStack, beamMotionCardX(), cardY, BEAM_MOTION_CARD_WIDTH, cardHeight, "Motion");
         renderControlSubCard(poseStack, beamAdvancedCardX(), cardY, BEAM_ADVANCED_CARD_WIDTH, cardHeight, "Advanced");
@@ -2967,6 +2984,7 @@ public class ArcaneBeamConfigScreen extends Screen {
             glowOpacitySlider.refresh();
             colorShiftSlider.refresh();
             glowRotationSlider.refresh();
+            beamEnabledButton.setMessage(new TextComponent("Replacement: " + (settings().enabled ? "On" : "Off")));
             shaderCompatibilityButton.setMessage(new TextComponent("Shader Compatibility: " + shaderCompatibility().label));
             crosshairAimButton.setMessage(new TextComponent("Crosshair Aim: " + (settings().crosshairAim ? "On" : "Off")));
             soundButton.setMessage(new TextComponent("Sound: " + soundChoice().label));
@@ -2974,6 +2992,7 @@ public class ArcaneBeamConfigScreen extends Screen {
             fadeInModeButton.setMessage(new TextComponent(fadeInStyle().label));
             fadeOutModeButton.setMessage(new TextComponent(fadeOutStyle().label));
             profileDropdownButton.setMessage(new TextComponent("Profile: " + ellipsize(selectedProfileName(), 74)));
+            fitButton(beamEnabledButton, 150);
             fitButton(shaderCompatibilityButton, 150);
             fitButton(crosshairAimButton, 150);
             fitButton(handButton, 150);
@@ -3041,6 +3060,7 @@ public class ArcaneBeamConfigScreen extends Screen {
         setControlVisible(glowOpacitySlider, beamVisible);
         setControlVisible(colorShiftSlider, beamVisible);
         setControlVisible(glowRotationSlider, beamVisible);
+        setControlVisible(beamEnabledButton, beamVisible);
         setControlVisible(shaderCompatibilityButton, beamVisible);
         setControlVisible(crosshairAimButton, beamVisible);
         setControlVisible(soundButton, beamVisible);

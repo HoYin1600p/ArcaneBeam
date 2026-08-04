@@ -75,6 +75,9 @@ public final class ArcaneBeamManager {
         } else {
             return false;
         }
+        if (!replacementEnabled(kind)) {
+            return false;
+        }
 
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level != null) {
@@ -120,6 +123,8 @@ public final class ArcaneBeamManager {
             lastArcaneSeenGameTime = Long.MIN_VALUE;
             return;
         }
+
+        clearDisabledReplacementState();
 
         if (minecraft.player != null) {
             long gameTime = minecraft.level.getGameTime();
@@ -297,6 +302,10 @@ public final class ArcaneBeamManager {
         if (kind == null) {
             return;
         }
+        if (!replacementEnabled(kind)) {
+            clearReplacementState(kind);
+            return;
+        }
 
         long gameTime = minecraft.level.getGameTime();
         if (kind == BeamKind.ARCANE) {
@@ -329,6 +338,9 @@ public final class ArcaneBeamManager {
     }
 
     private static void refreshLocalArcaneBeam(UUID casterId, long gameTime) {
+        if (!replacementEnabled(BeamKind.ARCANE)) {
+            return;
+        }
         if (localArcaneFirstSeenGameTime == Long.MIN_VALUE) {
             localArcaneFirstSeenGameTime = gameTime;
         }
@@ -360,6 +372,9 @@ public final class ArcaneBeamManager {
     }
 
     private static void primeLocalArcane(UUID casterId, long gameTime) {
+        if (!replacementEnabled(BeamKind.ARCANE)) {
+            return;
+        }
         if (localArcaneFirstSeenGameTime == Long.MIN_VALUE) {
             localArcaneFirstSeenGameTime = gameTime;
         }
@@ -398,6 +413,9 @@ public final class ArcaneBeamManager {
     }
 
     private static void latchLocalRail(UUID casterId, long gameTime) {
+        if (!replacementEnabled(BeamKind.RAIL)) {
+            return;
+        }
         ArcaneBeamConfig.BeamSettings settings = BeamKind.RAIL.settings();
         long latchTicks = Math.max(Math.max(settings.lifetimeTicks, settings.fadeOutTicks), 2);
         if (gameTime > localRailLatchedUntilGameTime) {
@@ -408,6 +426,9 @@ public final class ArcaneBeamManager {
     }
 
     private static void refreshBeam(UUID casterId, BeamKind kind, long gameTime) {
+        if (!replacementEnabled(kind)) {
+            return;
+        }
         ActiveBeam existing = activeBeams.get(casterId);
         long firstSeen = existing != null && existing.kind == kind ? existing.firstSeenGameTime : gameTime;
         activeBeams.put(casterId, new ActiveBeam(casterId, kind, firstSeen, gameTime));
@@ -425,6 +446,9 @@ public final class ArcaneBeamManager {
     }
 
     public static BeamTrace traceBeam(ActiveBeam beam, float partialTick) {
+        if (!replacementEnabled(beam.kind)) {
+            return null;
+        }
         Minecraft minecraft = Minecraft.getInstance();
         ClientLevel level = minecraft.level;
         if (level == null) {
@@ -482,6 +506,9 @@ public final class ArcaneBeamManager {
     }
 
     public static ActiveBeam getLocalActiveBeam(BeamKind kind) {
+        if (!replacementEnabled(kind)) {
+            return null;
+        }
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null) {
             return null;
@@ -491,10 +518,13 @@ public final class ArcaneBeamManager {
     }
 
     public static boolean shouldSuppressAbilityCooldownSound() {
-        return isWithinRecentWindow(lastArcaneSeenGameTime, 5L);
+        return replacementEnabled(BeamKind.ARCANE) && isWithinRecentWindow(lastArcaneSeenGameTime, 5L);
     }
 
     public static boolean shouldSuppressArcaneCastSound() {
+        if (!replacementEnabled(BeamKind.ARCANE)) {
+            return false;
+        }
         if (soundChoice(ArcaneBeamConfig.INSTANCE.arcane.sound) == ArcaneBeamConfig.SoundChoice.DEFAULT) {
             return false;
         }
@@ -514,8 +544,46 @@ public final class ArcaneBeamManager {
     }
 
     public static boolean shouldSuppressRailCastSound() {
-        return getLocalActiveBeam(BeamKind.RAIL) != null
+        return replacementEnabled(BeamKind.RAIL)
+                && getLocalActiveBeam(BeamKind.RAIL) != null
                 && soundChoice(ArcaneBeamConfig.INSTANCE.rail.sound) != ArcaneBeamConfig.SoundChoice.DEFAULT;
+    }
+
+    private static boolean replacementEnabled(BeamKind kind) {
+        return kind.settings().enabled;
+    }
+
+    private static void clearDisabledReplacementState() {
+        for (BeamKind kind : BeamKind.values()) {
+            if (!replacementEnabled(kind)) {
+                clearReplacementState(kind);
+            }
+        }
+    }
+
+    private static void clearReplacementState(BeamKind kind) {
+        Iterator<ActiveBeam> iterator = activeBeams.values().iterator();
+        while (iterator.hasNext()) {
+            ActiveBeam beam = iterator.next();
+            if (beam.kind == kind) {
+                smoothedStarts.remove(beam.casterId);
+                lastLookVectors.remove(beam.casterId);
+                iterator.remove();
+            }
+        }
+
+        if (kind == BeamKind.ARCANE) {
+            localArcanePacketActive = false;
+            localArcaneKeyHeld = false;
+            localArcaneFirstSeenGameTime = Long.MIN_VALUE;
+            lastLocalArcaneSignalGameTime = Long.MIN_VALUE;
+            lastLocalArcaneDeactivateGameTime = Long.MIN_VALUE;
+            localArcanePrimedUntilGameTime = Long.MIN_VALUE;
+            lastArcaneSeenGameTime = Long.MIN_VALUE;
+        } else {
+            localRailFirstSeenGameTime = Long.MIN_VALUE;
+            localRailLatchedUntilGameTime = Long.MIN_VALUE;
+        }
     }
 
     private static boolean isWithinRecentWindow(long lastSeenGameTime, long windowTicks) {

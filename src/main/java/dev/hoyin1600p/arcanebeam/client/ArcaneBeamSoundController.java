@@ -167,6 +167,7 @@ public final class ArcaneBeamSoundController {
 
     private static void syncRail(Minecraft minecraft, ArcaneBeamManager.ActiveBeam beam) {
         if (beam == null) {
+            lastRailFirstSeen = Long.MIN_VALUE;
             return;
         }
         if (beam.firstSeenGameTime() == lastRailFirstSeen) {

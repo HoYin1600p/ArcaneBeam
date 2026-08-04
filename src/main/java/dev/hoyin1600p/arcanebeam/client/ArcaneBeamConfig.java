@@ -936,6 +936,7 @@ public final class ArcaneBeamConfig {
 
     private static BeamSettings copyOf(BeamSettings source) {
         BeamSettings copy = new BeamSettings();
+        copy.enabled = source.enabled;
         copy.color = source.color;
         copy.colors = source.colors == null ? null : source.colors.clone();
         copy.glowColor = source.glowColor;
@@ -1185,6 +1186,7 @@ public final class ArcaneBeamConfig {
     }
 
     public static final class BeamSettings {
+        public boolean enabled = true;
         public int color;
         public int[] colors;
         public int glowColor;
