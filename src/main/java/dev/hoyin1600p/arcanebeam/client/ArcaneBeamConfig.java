@@ -931,7 +931,9 @@ public final class ArcaneBeamConfig {
     }
 
     private static BeamSettings defaultRailSettings() {
-        return new BeamSettings(0x00FF44, new int[]{0x00FF44, 0x7CFF5C, 0x00FFC8, 0xFFFFFF}, 0.11F, 0.95F, 0.18F, 8, 128.0D);
+        BeamSettings settings = new BeamSettings(0x00FF44, new int[]{0x00FF44, 0x7CFF5C, 0x00FFC8, 0xFFFFFF}, 0.11F, 0.95F, 0.18F, 8, 128.0D);
+        settings.crosshairAim = true;
+        return settings;
     }
 
     static BeamSettings validateExternalBeamSettings(BeamSettings settings, boolean rail) {

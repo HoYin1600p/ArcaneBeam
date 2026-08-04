@@ -84,7 +84,7 @@
     "startOffsetY": -0.4,
     "startOffsetZ": 0.34,
     "shaderCompatibility": "on",
-    "crosshairAim": false
+    "crosshairAim": true
   },
   "lightningStrike": {
     "enabled": true,
@@ -386,7 +386,7 @@
       "startOffsetY": -0.4,
       "startOffsetZ": 0.34,
       "shaderCompatibility": "on",
-      "crosshairAim": false
+      "crosshairAim": true
     }
   },
   "lightningStrikeProfiles": {
