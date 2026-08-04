@@ -21,7 +21,7 @@ public abstract class ArcaneParticleFactoryMixin {
                                                   double x, double y, double z,
                                                   double xSpeed, double ySpeed, double zSpeed,
                                                   CallbackInfoReturnable<Particle> cir) {
-        if (ArcaneBeamManager.handleArcaneParticle(this.isRail, x, y, z)) {
+        if (ArcaneBeamManager.handleArcaneParticle(this.isRail, x, y, z, xSpeed, ySpeed, zSpeed)) {
             cir.setReturnValue(null);
         }
     }

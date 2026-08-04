@@ -63,7 +63,8 @@ public final class ArcaneBeamManager {
     private ArcaneBeamManager() {
     }
 
-    public static boolean handleArcaneParticle(boolean rail, double x, double y, double z) {
+    public static boolean handleArcaneParticle(boolean rail, double x, double y, double z,
+                                               double xSpeed, double ySpeed, double zSpeed) {
         BeamKind kind = rail ? BeamKind.RAIL : BeamKind.ARCANE;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null) {
@@ -84,6 +85,13 @@ public final class ArcaneBeamManager {
         }
 
         ResourceLocation profileId = PlayerBeamAssignments.profileFor(owner.player);
+        PlayerBeamProfileManager.ParticleSettings particleSettings =
+                PlayerBeamProfileManager.particleSettings(profileId, kind);
+        if (particleSettings != null) {
+            RemotePlayerParticleManager.addParticle(x, y, z, xSpeed, ySpeed, zSpeed, particleSettings);
+            return true;
+        }
+
         ArcaneBeamConfig.BeamSettings settings = PlayerBeamProfileManager.settings(profileId, kind);
         if (settings == null || !settings.enabled) {
             return false;

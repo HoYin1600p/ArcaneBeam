@@ -321,7 +321,21 @@ Example profile:
 }
 ```
 
-The resource pack is enabled globally, but ArcaneBeam selects its named profile only for assigned players. Press `F3+T` after changing assignments or profile JSON. Missing profiles, unassigned players, and uncertain ownership retain the original Vault particles.
+A profile can instead preserve the player's particle-style beam while selecting a unique texture:
+
+```json
+{
+  "arcaneParticle": {
+    "texture": "example_pack:textures/particle/custom_arcane.png",
+    "lifetimeTicks": 5,
+    "size": 0.4,
+    "alpha": 1.0,
+    "fullbright": true
+  }
+}
+```
+
+`railParticle` provides the same option for Rail. The resource pack is enabled globally, but ArcaneBeam selects its named profile only for assigned players. Press `F3+T` after changing assignments or profile JSON. Missing profiles, unassigned players, and uncertain ownership retain the original Vault particles.
 
 ## Audio Assets
 

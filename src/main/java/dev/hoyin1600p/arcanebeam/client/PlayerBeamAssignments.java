@@ -117,6 +117,7 @@ public final class PlayerBeamAssignments {
                             + "}\n\n"
                             + "Resource-pack profile location:\n"
                             + "assets/<namespace>/arcanebeam/beam_profiles/<profile>.json\n"
+                            + "Profiles may contain arcane/rail beam settings or arcaneParticle/railParticle texture settings.\n"
                             + "Press F3+T after editing assignments or resource-pack profiles.\n",
                     StandardCharsets.UTF_8);
         }
