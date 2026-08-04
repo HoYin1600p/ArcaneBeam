@@ -3,6 +3,7 @@ package dev.hoyin1600p.arcanebeam.client;
 import dev.hoyin1600p.arcanebeam.ArcaneBeam;
 import iskallia.vault.network.message.AbilityActivityMessage;
 import iskallia.vault.network.message.AbilityKnownOnesMessage;
+import iskallia.vault.network.message.ServerboundAbilityKeyMessage;
 import iskallia.vault.skill.ability.effect.ArcaneAbility;
 import iskallia.vault.skill.ability.effect.ArcaneRailAbility;
 import iskallia.vault.skill.ability.effect.spi.core.Ability;
@@ -47,6 +48,7 @@ public final class ArcaneBeamManager {
     private static final double MIN_BEAM_RENDER_LENGTH = 0.1D;
     private static final double MIN_LOOK_VECTOR_LENGTH_SQR = 1.0E-6D;
     private static final float FADE_OUT_GRACE_TICKS = 2.0F;
+    private static final int LOCAL_ARCANE_PRE_ACTIVATE_SOUND_TICKS = 20;
     private static final int LOCAL_ARCANE_POST_DEACTIVATE_IGNORE_TICKS = 8;
     private static final int REMOTE_ACTIVITY_GRACE_TICKS = 4;
     private static final Map<UUID, ActiveBeam> activeBeams = new LinkedHashMap<>();
@@ -54,7 +56,9 @@ public final class ArcaneBeamManager {
     private static final Map<UUID, Vec3> lastLookVectors = new LinkedHashMap<>();
     private static long lastArcaneSeenGameTime = Long.MIN_VALUE;
     private static boolean localArcaneActive = false;
+    private static boolean localArcaneSelected = false;
     private static boolean localRailSelected = false;
+    private static long localArcaneSoundArmedUntilGameTime = Long.MIN_VALUE;
     private static long localArcaneFirstSeenGameTime = Long.MIN_VALUE;
     private static long lastLocalArcaneDeactivateGameTime = Long.MIN_VALUE;
     private static long localRailFirstSeenGameTime = Long.MIN_VALUE;
@@ -230,10 +234,27 @@ public final class ArcaneBeamManager {
 
         boolean[] active = new boolean[]{false};
         message.getTree().iterate(ArcaneAbility.class, ability -> active[0] |= ability.isActive());
-        localRailSelected = message.getTree().getSelectedAbility()
-                .map(ability -> ability instanceof ArcaneRailAbility)
-                .orElse(false);
+        message.getTree().getSelectedAbility().ifPresentOrElse(ability -> {
+            localArcaneSelected = ability.getClass() == ArcaneAbility.class;
+            localRailSelected = ability instanceof ArcaneRailAbility;
+        }, () -> {
+            localArcaneSelected = false;
+            localRailSelected = false;
+        });
         setLocalArcaneActive(active[0]);
+    }
+
+    public static void observeLocalAbilityKey(ServerboundAbilityKeyMessage.Opcode opcode) {
+        if (opcode != ServerboundAbilityKeyMessage.Opcode.KeyDown
+                || !localArcaneSelected
+                || !replacementEnabled(BeamKind.ARCANE)
+                || soundChoice(ArcaneBeamConfig.INSTANCE.arcane.sound) == ArcaneBeamConfig.SoundChoice.DEFAULT) {
+            return;
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level != null && minecraft.player != null) {
+            localArcaneSoundArmedUntilGameTime = minecraft.level.getGameTime() + LOCAL_ARCANE_PRE_ACTIVATE_SOUND_TICKS;
+        }
     }
 
     public static void syncLocalAbilityActivity(AbilityActivityMessage message) {
@@ -283,10 +304,13 @@ public final class ArcaneBeamManager {
 
     public static boolean handleArcaneCastSound(SoundInstance sound) {
         if (!replacementEnabled(BeamKind.ARCANE)
-                || soundChoice(ArcaneBeamConfig.INSTANCE.arcane.sound) == ArcaneBeamConfig.SoundChoice.DEFAULT) {
+                || soundChoice(ArcaneBeamConfig.INSTANCE.arcane.sound) == ArcaneBeamConfig.SoundChoice.DEFAULT
+                || !isVaultArcaneSound(sound)) {
             return false;
         }
-        return isLocalArcaneReplacementWindow();
+        Minecraft minecraft = Minecraft.getInstance();
+        return isLocalArcaneReplacementWindow()
+                || minecraft.level != null && minecraft.level.getGameTime() <= localArcaneSoundArmedUntilGameTime;
     }
 
     public static boolean handleRailCastSound(SoundInstance sound) {
@@ -352,6 +376,11 @@ public final class ArcaneBeamManager {
 
     private static boolean isVaultRailSound(SoundInstance sound) {
         return sound.getPitch() >= 1.75F && sound.getVolume() <= 0.75F;
+    }
+
+    private static boolean isVaultArcaneSound(SoundInstance sound) {
+        return Math.abs(sound.getPitch() - 2.0F) <= 0.05F
+                && Math.abs(sound.getVolume() - 0.5F) <= 0.05F;
     }
 
     private static Vec3 serverBeamStart(LivingEntity caster, float partialTick) {
@@ -483,7 +512,9 @@ public final class ArcaneBeamManager {
         smoothedStarts.clear();
         lastLookVectors.clear();
         localArcaneActive = false;
+        localArcaneSelected = false;
         localRailSelected = false;
+        localArcaneSoundArmedUntilGameTime = Long.MIN_VALUE;
         localArcaneFirstSeenGameTime = Long.MIN_VALUE;
         lastLocalArcaneDeactivateGameTime = Long.MIN_VALUE;
         localRailFirstSeenGameTime = Long.MIN_VALUE;

@@ -11,6 +11,7 @@
     "ChainLightningProjectileMixin",
     "ClientLevelMixin",
     "LightningArrowRendererMixin",
+    "ServerboundAbilityKeyMessageMixin",
     "SmiteBoltAccessor",
     "SmiteBoltRendererMixin",
     "SoundManagerMixin",
