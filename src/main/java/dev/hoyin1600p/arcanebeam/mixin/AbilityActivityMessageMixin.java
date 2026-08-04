@@ -1,7 +1,7 @@
 package dev.hoyin1600p.arcanebeam.mixin;
 
-import dev.hoyin1600p.arcanebeam.client.ArcaneBeamManager;
 import dev.hoyin1600p.arcanebeam.client.BlastWaveVisualManager;
+import dev.hoyin1600p.arcanebeam.client.ArcaneBeamManager;
 import iskallia.vault.network.message.AbilityActivityMessage;
 import net.minecraftforge.network.NetworkEvent;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,8 +16,8 @@ public abstract class AbilityActivityMessageMixin {
     @Inject(method = "handle", at = @At("HEAD"), remap = false)
     private static void arcanebeam$observeAbilityActivity(AbilityActivityMessage message, Supplier<NetworkEvent.Context> contextSupplier, CallbackInfo ci) {
         if (message != null && message.getActiveFlag() != null) {
-            ArcaneBeamManager.observeAbilityActivity(message.getAbility(), message.getActiveFlag().name());
             BlastWaveVisualManager.observeAbilityActivity(message.getAbility(), message.getActiveFlag().name());
+            contextSupplier.get().enqueueWork(() -> ArcaneBeamManager.syncLocalAbilityActivity(message));
         }
     }
 }

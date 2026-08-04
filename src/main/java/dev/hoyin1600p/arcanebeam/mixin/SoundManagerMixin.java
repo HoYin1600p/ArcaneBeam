@@ -43,11 +43,11 @@ public abstract class SoundManagerMixin {
             ci.cancel();
             return;
         }
-        if (ARCANE_CAST.equals(sound.getLocation()) && ArcaneBeamManager.shouldSuppressArcaneCastSound()) {
+        if (ARCANE_CAST.equals(sound.getLocation()) && ArcaneBeamManager.handleArcaneCastSound(sound)) {
             ci.cancel();
             return;
         }
-        if (RAIL_CAST.equals(sound.getLocation()) && ArcaneBeamManager.shouldSuppressRailCastSound()) {
+        if (RAIL_CAST.equals(sound.getLocation()) && ArcaneBeamManager.handleRailCastSound(sound)) {
             ci.cancel();
             return;
         }

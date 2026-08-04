@@ -6,11 +6,13 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.ClientRegistry;
+import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.lwjgl.glfw.GLFW;
 
 @Mod.EventBusSubscriber(modid = ArcaneBeam.MOD_ID, value = Dist.CLIENT)
@@ -27,7 +29,13 @@ public final class ArcaneBeamClient {
 
     public static void init() {
         ArcaneBeamConfig.load();
+        PlayerBeamAssignments.load();
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(ArcaneBeamClient::registerReloadListeners);
         ClientRegistry.registerKeyBinding(CONFIG_KEY);
+    }
+
+    private static void registerReloadListeners(RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener(new PlayerBeamProfileManager());
     }
 
     @SubscribeEvent

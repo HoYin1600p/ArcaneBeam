@@ -250,11 +250,12 @@ Default behavior in this mod:
 - Arcane uses sustained rendering while the ability is active.
 - Rail fades in quickly, reaches full brightness, then fades out over its short lifetime.
 - Arcane and Rail both support configurable fade/grow-in and fade/shrink-out transitions.
-- Arcane release timing is tied to local cast key/activity state so the held beam and looped custom sounds stop promptly when the cast ends.
+- Arcane starts and stops from Vault's authoritative ability synchronization; ArcaneBeam no longer polls Vault's keybindings to maintain the beam.
 - The beam endpoint follows the player's crosshair ray.
 - The visual ray does not snap to entity feet or auto-aim to entity centers.
-- The local player only claims Arcane/Rail ownership near the beam origin, which prevents nearby players from falsely triggering a local beam and local audio when their beam crosses your view.
-- Remote players can still render as beams from detected Arcane/Rail particles.
+- The local player's replacement is driven by Vault ability and successful-cast signals rather than particle presence.
+- Remote players keep Vault's default particles unless they have an explicit player beam assignment.
+- Ambiguous remote particle ownership always falls back to Vault's default particles.
 - The beam core and glow shell render as 8-sided tubes for a rounder shape.
 - The start point has a short crouch/stand smoothing pass to reduce vertical snapping when entering or leaving sneak.
 
@@ -265,6 +266,62 @@ Settings are saved to:
 `config/ArcaneBeam.json`
 
 If the config schema changes enough to make older values unsafe, Arcane Beam may regenerate this file.
+
+## Remote Player Beam Profiles
+
+Optional remote-player assignments are stored in:
+
+`config/arcanebeam/player_beams/assignments.json`
+
+ArcaneBeam creates that folder, an empty assignment file, and a local instruction file automatically. UUID matching takes priority over the optional name fallback.
+
+```json
+{
+  "players": [
+    {
+      "uuid": "00000000-0000-0000-0000-000000000000",
+      "name": "PlayerName",
+      "profile": "example_pack:blue_arcane"
+    }
+  ]
+}
+```
+
+The referenced profile must be supplied by an enabled Minecraft resource pack at:
+
+`assets/<namespace>/arcanebeam/beam_profiles/<profile>.json`
+
+Example profile:
+
+```json
+{
+  "arcane": {
+    "colors": [3516415, 7397375, 11393254, 16777215],
+    "glowColors": [3516415, 7397375, 11393254, 16777215],
+    "intensity": 0.08,
+    "opacity": 0.75,
+    "glowRadius": 0.14,
+    "glowOpacity": 0.2,
+    "colorShiftTicks": 8,
+    "lifetimeTicks": 3,
+    "maxRange": 16,
+    "shaderCompatibility": "on"
+  },
+  "rail": {
+    "colors": [65416, 8191836, 65500, 16777215],
+    "glowColors": [65416, 8191836, 65500, 16777215],
+    "intensity": 0.11,
+    "opacity": 0.95,
+    "glowRadius": 0.18,
+    "glowOpacity": 0.2,
+    "lifetimeTicks": 8,
+    "maxRange": 128,
+    "shaderCompatibility": "on"
+  }
+}
+```
+
+The resource pack is enabled globally, but ArcaneBeam selects its named profile only for assigned players. Press `F3+T` after changing assignments or profile JSON. Missing profiles, unassigned players, and uncertain ownership retain the original Vault particles.
 
 ## Audio Assets
 

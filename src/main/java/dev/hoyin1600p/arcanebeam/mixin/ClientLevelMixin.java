@@ -1,6 +1,5 @@
 package dev.hoyin1600p.arcanebeam.mixin;
 
-import dev.hoyin1600p.arcanebeam.client.ArcaneBeamManager;
 import dev.hoyin1600p.arcanebeam.client.VaultAltarBeamManager;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.particles.ParticleOptions;
@@ -17,7 +16,7 @@ public abstract class ClientLevelMixin {
             cancellable = true
     )
     private void arcanebeam$captureParticle(ParticleOptions particle, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, CallbackInfo ci) {
-        if (ArcaneBeamManager.captureParticle(particle, x, y, z) || VaultAltarBeamManager.captureParticle(particle, x, y, z)) {
+        if (VaultAltarBeamManager.captureParticle(particle, x, y, z)) {
             ci.cancel();
         }
     }
@@ -28,7 +27,7 @@ public abstract class ClientLevelMixin {
             cancellable = true
     )
     private void arcanebeam$captureForcedParticle(ParticleOptions particle, boolean force, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, CallbackInfo ci) {
-        if (ArcaneBeamManager.captureParticle(particle, x, y, z) || VaultAltarBeamManager.captureParticle(particle, x, y, z)) {
+        if (VaultAltarBeamManager.captureParticle(particle, x, y, z)) {
             ci.cancel();
         }
     }

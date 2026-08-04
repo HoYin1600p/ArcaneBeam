@@ -4,7 +4,9 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "arcanebeam.refmap.json",
   "client": [
+    "ArcaneParticleFactoryMixin",
     "AbilityActivityMessageMixin",
+    "AbilityKnownOnesMessageMixin",
     "BlastWaveParticleMessageMixin",
     "ChainLightningProjectileMixin",
     "ClientLevelMixin",
