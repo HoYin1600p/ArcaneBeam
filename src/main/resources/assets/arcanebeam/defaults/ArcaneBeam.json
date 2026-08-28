@@ -1,4 +1,7 @@
 {
+  "updates": {
+    "checkForUpdates": true
+  },
   "shaderCompatibility": "on",
   "selectedArcaneProfile": "Test",
   "selectedRailProfile": "Default",

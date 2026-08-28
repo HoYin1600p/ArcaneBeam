@@ -20,6 +20,7 @@ minecraft {
 }
 
 repositories {
+    mavenCentral()
     flatDir {
         dirs "reference"
     }
@@ -38,6 +39,7 @@ dependencies {
             ? "local.thevault:the_vault-1.18.2:${vault_hunters_local_version}"
             : "curse.maven:vault-hunters-official-mod-458203:${vault_hunters_version}")
     annotationProcessor "org.spongepowered:mixin:${mixin_version}:processor"
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
 }
 
 mixin {
@@ -73,4 +75,8 @@ jar.finalizedBy('reobfJar')
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
 }

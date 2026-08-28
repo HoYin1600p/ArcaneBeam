@@ -2,6 +2,7 @@ package dev.hoyin1600p.arcanebeam.client;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import dev.hoyin1600p.arcanebeam.client.update.UpdateNoticeService;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 import java.io.IOException;
@@ -59,6 +60,9 @@ public final class ArcaneBeamConfig {
 
     private static void validate() {
         Config defaults = defaultConfig();
+        if (INSTANCE.updates == null) {
+            INSTANCE.updates = new UpdateSettings();
+        }
         if (INSTANCE.shaderCompatibility == null) {
             INSTANCE.shaderCompatibility = defaults.shaderCompatibility == null ? ShaderCompatibility.OFF.id : defaults.shaderCompatibility;
         }
@@ -640,6 +644,19 @@ public final class ArcaneBeamConfig {
         }
     }
 
+    public static boolean updateChecksEnabled() {
+        return INSTANCE.updates == null || INSTANCE.updates.checkForUpdates;
+    }
+
+    public static void setUpdateChecksEnabled(boolean enabled) {
+        if (INSTANCE.updates == null) {
+            INSTANCE.updates = new UpdateSettings();
+        }
+        INSTANCE.updates.checkForUpdates = enabled;
+        save();
+        UpdateNoticeService.setEnabled(enabled);
+    }
+
     public static List<String> profileNames(boolean rail) {
         return new ArrayList<>(profileMap(rail).keySet());
     }
@@ -1168,6 +1185,7 @@ public final class ArcaneBeamConfig {
     }
 
     public static final class Config {
+        public UpdateSettings updates = new UpdateSettings();
         public String shaderCompatibility;
         public String selectedArcaneProfile = DEFAULT_PROFILE;
         public String selectedRailProfile = DEFAULT_PROFILE;
@@ -1193,6 +1211,10 @@ public final class ArcaneBeamConfig {
         public LinkedHashMap<String, SmiteSettings> smiteProfiles;
         public LinkedHashMap<String, ArchonSettings> archonProfiles;
         public LinkedHashMap<String, BlastWaveSettings> blastWaveProfiles;
+    }
+
+    public static final class UpdateSettings {
+        public boolean checkForUpdates = true;
     }
 
     public static final class BeamSettings {

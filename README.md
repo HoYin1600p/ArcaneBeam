@@ -356,6 +356,29 @@ Resource-pack extension sound file names:
 - `assets/arcanebeam/sounds/abilities/rail_resourcepack_1.ogg`
 - `assets/arcanebeam/sounds/abilities/rail_resourcepack_2.ogg`
 
+## Update Notifications
+
+Arcane Beam checks its [raw GitHub update manifest](https://raw.githubusercontent.com/HoYin1600p/ArcaneBeam/main/update.json) asynchronously and displays an update row on the main menu when a newer version is available. A clickable in-world reminder links only to the official [ArcaneBeam CurseForge page](https://www.curseforge.com/minecraft/mc-mods/arcanebeam).
+
+Update checks are client-only, enabled by default, and fail closed if the request times out, the server returns an error, or the manifest cannot be parsed. The notifier never downloads or installs files and does not notify a multiplayer server.
+
+The setting is saved in `config/ArcaneBeam.json`:
+
+```json
+"updates": {
+  "checkForUpdates": true
+}
+```
+
+It can be changed immediately without restarting:
+
+- `/arcanebeam updates`
+- `/arcanebeam updates status`
+- `/arcanebeam updates on`
+- `/arcanebeam updates off`
+
+Normal in-world reminders are eligible every ten qualifying client launches. A manifest entry marked `[CRITICAL]` is eligible every five qualifying launches. Each JVM can advance the counter once and display at most one reminder, so reconnects, dimensions, and later server joins do not create additional reminders.
+
 ## Building
 
 ```powershell

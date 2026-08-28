@@ -9,6 +9,7 @@ out/
 ### Gradle ###
 .gradle/
 build/
+/logs/
 
 ### Eclipse ###
 .apt_generated
@@ -37,3 +38,6 @@ bin/
 
 ### Local decompiled references ###
 /reference/
+
+### Local identity scan records ###
+/.identity-scan/

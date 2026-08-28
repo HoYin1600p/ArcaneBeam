@@ -6,10 +6,15 @@ modLoader = "javafml"
 modId = "${mod_id}"
 version = "${version}"
 displayName = "${mod_name}"
+updateJSONURL = "https://raw.githubusercontent.com/HoYin1600p/ArcaneBeam/main/update.json"
 authors = "hoyin1600p"
 description = '''
 Replaces Vault Hunters Arcane and Arcane Rail particle streams with clean rendered beams.
 '''
+
+[modproperties."${mod_id}"]
+hoyinUpdateNotifier = true
+hoyinUpdateName = "Arcane Beam"
 
 [[dependencies.${mod_id}]]
 mandatory = true
