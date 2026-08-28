@@ -47,7 +47,7 @@ When the user asks to append to this file, add a new subsection for the new vers
 
 - Artifact: `build/libs/ArcaneBeam-1.18.2-0.2.0.jar`
 - Version source: `gradle.properties -> mod_version=0.2.0`
-- SHA256: `5E1A7CA906FB6DB0F081449AE449424E32151EB004B694BE7970A8A812157D13`
+- SHA256: `38F6619B2BCF4FA481DD82CAB77655E8BE5938D96DD9502481670289C1BFC9E5`
 
 ### 0.1.17 - Direct Beam Hooks and Player Profiles (2026-08-04)
 
