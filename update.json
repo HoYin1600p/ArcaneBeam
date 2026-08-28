@@ -1,10 +1,10 @@
 {
   "homepage": "https://www.curseforge.com/minecraft/mc-mods/arcanebeam",
   "1.18.2": {
-    "0.1.17": "Update Notifications"
+    "0.2.0": "Major Visual Update"
   },
   "promos": {
-    "1.18.2-latest": "0.1.17",
-    "1.18.2-recommended": "0.1.17"
+    "1.18.2-latest": "0.2.0",
+    "1.18.2-recommended": "0.2.0"
   }
 }

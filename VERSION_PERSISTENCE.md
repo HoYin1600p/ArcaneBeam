@@ -12,11 +12,29 @@ When the user asks to append to this file, add a new subsection for the new vers
 
 ## Current Version
 
-- Current version: `0.1.17`
+- Current version: `0.2.0`
 - Repo: `https://github.com/HoYin1600p/ArcaneBeam`
 - Main technical reference: [PERSISTENCE.md](PERSISTENCE.md)
 
 ## Version History
+
+### 0.2.0 - Major Visual Update (Unreleased)
+
+#### Summary
+
+`0.2.0` is the next planned public release after CurseForge version `0.1.14`. It consolidates the substantial client-side ability-rendering, configuration, remote-player profile, and maintenance work completed since that release.
+
+#### Release Boundaries
+
+- Player-specific Arcane Hearts and Jelly Bean particle resource packs remain local testing assets and are not included in the repository or release JAR
+- Player UUID/name assignments remain in the local Prism instance config and are not shipped as defaults
+- The public update manifest must not be pushed until the matching CurseForge file and GitHub release are available
+
+#### Release Notes
+
+- Artifact: `build/libs/ArcaneBeam-1.18.2-0.2.0.jar`
+- Version source: `gradle.properties -> mod_version=0.2.0`
+- SHA256: `23D2D94DACC42CA8DF321FB6A46A8B102C59DC0FD321FBC87B34CB40F8AD0034`
 
 ### 0.1.17 - Direct Beam Hooks and Player Profiles (2026-08-04)
 
