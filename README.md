@@ -1,6 +1,6 @@
 # Arcane Beam
 
-Arcane Beam is a client-side Forge mod for Vault Hunters on Minecraft 1.18.2. It replaces the dense particle stream used by `Arcane` and `Arcane Rail` with configurable rendered beams, custom client audio, and an in-game editor.
+ArcaneBeam is a client-side visual and audio overhaul for Vault Hunters 3 on Minecraft Forge 1.18.2. It replaces selected ability and Vault Altar effects with configurable custom renders and sounds while leaving damage, targeting, cooldowns, mana costs, and server behavior unchanged.
 
 ## Requirements
 
@@ -11,17 +11,24 @@ Arcane Beam is a client-side Forge mod for Vault Hunters on Minecraft 1.18.2. It
 
 ## What It Does
 
-- Suppresses Vault Hunters `Arcane` and `Arcane Rail` particles.
-- Renders a beam from the selected hand origin toward the player's crosshair.
-- Stops the beam at block collision or configured max range.
-- Preserves Arcane's held-beam behavior.
-- Preserves Rail's short single-shot behavior.
-- Keeps local Arcane tracking tied to the local cast key/activity state so nearby players cannot easily trigger a beam or sound from your character.
-- Keeps other players' Arcane and Rail casts visible as beams through remote particle detection.
-- Supports separate beam and glow color sets for Arcane and Rail.
-- Supports custom Arcane and Rail sound selections.
-- Suppresses the stock Vault cast sounds for Arcane and Rail when custom ArcaneBeam sounds are selected.
-- Suppresses the stray `the_vault:ability_on_cooldown` sound that can occur immediately after Arcane activates.
+- Replaces selected Vault Hunters particles and projectiles with lightweight custom rendering.
+- Provides independent profiles, colors, dimensions, opacity, timing, sound, and shader-compatible settings for each supported effect.
+- Includes a translucent in-world config editor with live previews and precise mouse-wheel controls.
+- Supports bundled sounds and user-supplied resource-pack sound slots.
+- Supports optional resource-pack profiles for assigned remote players while retaining default Vault particles for everyone else.
+- Includes optional client-only update notifications that link to the official CurseForge page.
+- Requires no server installation and never changes ability gameplay.
+
+## Supported Replacements
+
+- **Arcane:** a sustained hand-origin beam that tracks the crosshair and stops at block collision or configured range.
+- **Arcane Rail:** a short, long-range beam with independent visuals, transitions, sound, and crosshair aiming.
+- **Lightning Strike:** a compact seismic-charge projectile followed by an expanding shockwave, center flash, cones, ripples, and configurable impact audio.
+- **Vault Altar:** four converging corner beams, contact sparks, a rising center beam and glow, and replacement imbuement audio.
+- **Storm Arrow:** a rolling target-designator projectile followed by orbital-style energy strikes and impact sparks.
+- **Smite:** configurable orbital-style strike beams, impact effects, targeting circle, and activation/strike audio.
+- **Archon:** short curved Whistling Bird-style missiles with configurable plume, impact, targeting, and sound settings.
+- **Smite: Blast Wave:** capped volleys of curved missiles launched from the player toward affected targets, with a smooth player-following radius indicator.
 
 ## Config Screen
 
@@ -31,7 +38,7 @@ Assign the keybind in:
 
 The keybind is unbound by default.
 
-Arcane, Rail, Lightning Strike, Vault Altar, Storm Arrow, Smite, and Archon each have their own tab in the config screen.
+Arcane, Rail, Lightning Strike, Vault Altar, Storm Arrow, Smite, Archon, and Blast Wave each have their own tab in the config screen.
 
 While the config screen is open, Arcane Beam renders a live world-space preview beam behind the translucent UI using the currently selected settings.
 The config screen suppresses vanilla, Forge, and Vault HUD overlays while it is open. Use `Collapse` to reduce the controls to a handle, or `Clean View` / `H` to hide ArcaneBeam chrome for an unobstructed preview. Clean View leaves a small `Restore Menu (H)` handle on screen so the menu can be reopened without closing the screen.

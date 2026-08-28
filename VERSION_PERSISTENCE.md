@@ -22,7 +22,20 @@ When the user asks to append to this file, add a new subsection for the new vers
 
 #### Summary
 
-`0.2.0` is the next planned public release after CurseForge version `0.1.14`. It consolidates the substantial client-side ability-rendering, configuration, remote-player profile, and maintenance work completed since that release.
+`0.2.0` is the next planned public release after CurseForge version `0.1.11`. It consolidates the substantial client-side ability-rendering, configuration, remote-player profile, and maintenance work completed since that release.
+
+#### Changes
+
+- Added the complete Smite: Blast Wave missile, targeting-circle, impact, preview, and sound replacement
+- Rebuilt the config editor around themed ability tabs, control cards, live color editing, profiles, Collapse, and Clean View
+- Added shared wheel-input protection for numeric controls
+- Added independent Arcane and Rail replacement toggles and optional Crosshair Aim
+- Reworked local Arcane/Rail activation and suppression around direct Vault synchronization and cast signals
+- Restored smooth beam color shifting and glow rotation with a monotonic client clock
+- Added optional UUID/name-based remote-player beam and particle profiles supplied by resource packs
+- Added client-only update notifications linking to the official CurseForge project
+- Smoothed player-following targeting circles used by Blast Wave, Smite, and Storm Arrow
+- Removed Sophisticated Storage compatibility from ArcaneBeam for distribution as a standalone mod
 
 #### Release Boundaries
 
@@ -34,7 +47,7 @@ When the user asks to append to this file, add a new subsection for the new vers
 
 - Artifact: `build/libs/ArcaneBeam-1.18.2-0.2.0.jar`
 - Version source: `gradle.properties -> mod_version=0.2.0`
-- SHA256: `23D2D94DACC42CA8DF321FB6A46A8B102C59DC0FD321FBC87B34CB40F8AD0034`
+- SHA256: `5E1A7CA906FB6DB0F081449AE449424E32151EB004B694BE7970A8A812157D13`
 
 ### 0.1.17 - Direct Beam Hooks and Player Profiles (2026-08-04)
 

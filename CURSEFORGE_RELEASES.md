@@ -9,6 +9,72 @@ Rules for future updates:
 - Keep the user-facing release text clean and ready to paste.
 - If Codex needs internal notes for a release, put them in a clearly separate `Internal Notes` subsection.
 
+## 0.2.0
+
+### Release Copy
+
+```markdown
+## ArcaneBeam 0.2.0 - Major Visual Update
+
+This is the largest ArcaneBeam update so far. Since the last public release, the mod has gained a new Blast Wave replacement, a redesigned config editor, more reliable Arcane and Rail handling, optional per-player particle profiles, smoother animation, and built-in update notifications.
+
+ArcaneBeam remains entirely client-side. Damage, targeting, radius, cooldowns, mana costs, and all other Vault Hunters gameplay remain unchanged.
+
+### New Blast Wave Replacement
+
+- Replaces Smite: Blast Wave damage pulses with capped volleys of small Whistling Bird-style missiles
+- Missiles launch upward from the player, follow short curved paths, and descend onto affected targets
+- Includes configurable missile count, scale, lifetime, apex height, lateral spread, origin, colors, opacity, impact effects, and sound behavior
+- Adds a smooth player-following radius indicator with a configurable pulse color when Blast Wave activates
+- Includes a live missile-origin preview in the config screen
+
+### Redesigned Config Editor
+
+- Rebuilt the config screen around organized ability tabs and horizontally scrolling control cards
+- Added Collapse and Clean View modes for unobstructed in-world previews
+- Added live color editing, profiles, themed controls, and cleaner layouts across every supported replacement
+- Prevented scroll-wheel value adjustments from accidentally moving the config screen
+- Added independent enable/disable toggles for Arcane and Rail
+
+### Arcane and Rail Improvements
+
+- Reworked local Arcane activation around Vault Hunters' synchronized ability state instead of continuous key polling
+- Improved suppression of original Arcane and Rail particles and default sounds when replacements are enabled
+- Added optional Crosshair Aim so beams line up with the block or entity under the crosshair
+- Fixed Rail Crosshair Aim and enabled it in the default Rail profile
+- Restored smooth beam color blending and glow rotation using a monotonic client clock
+
+### Optional Player Particle Profiles
+
+- Added UUID/name-based resource-pack profiles for nearby players
+- Profiles can define a custom rendered beam, one particle texture, or a randomized list of particle textures
+- Unassigned players, missing profiles, and uncertain particle ownership retain the normal Vault Hunters particles
+- No personal player assignments or player-specific texture packs are bundled with the mod
+
+Assignments are stored in:
+
+`config/arcanebeam/player_beams/assignments.json`
+
+Resource-pack profiles are loaded from:
+
+`assets/<namespace>/arcanebeam/beam_profiles/<profile>.json`
+
+### Maintenance and Scope
+
+- Added optional client-only update notifications linking to the official CurseForge page
+- Improved player-following targeting-circle movement for Blast Wave, Smite, and Storm Arrow
+- Improved config input handling and long-session custom sound cleanup
+- Moved Sophisticated Storage compatibility fixes into a separate standalone mod
+- Kept existing sound resource-pack slots and the example sound resource pack
+
+### Requirements
+
+- Minecraft 1.18.2
+- Forge 40.x
+- Vault Hunters 3
+- Client installation only; the server and other players do not need ArcaneBeam
+```
+
 ## 0.1.17
 
 ### Release Copy
