@@ -41,3 +41,6 @@ bin/
 
 ### Local identity scan records ###
 /.identity-scan/
+
+### Local agent project memory ###
+/PERSISTENCE.md
