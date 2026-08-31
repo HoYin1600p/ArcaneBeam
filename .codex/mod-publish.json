@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "workflow": {
+    "skill": "publish-mod-update",
+    "revision": 4
+  },
+  "modName": "ArcaneBeam",
+  "releaseLedger": "docs/release-ledger.json",
+  "version": {
+    "sourceFiles": [
+      "gradle.properties"
+    ],
+    "property": "mod_version",
+    "tagPrefix": "v"
+  },
+  "build": {
+    "testCommand": ".\\gradlew.bat test",
+    "buildCommand": ".\\gradlew.bat clean build",
+    "artifactGlob": "build/libs/ArcaneBeam-1.18.2-*.jar",
+    "excludeGlobs": [
+      "*-sources.jar",
+      "*-dev.jar",
+      "*-shadow.jar"
+    ]
+  },
+  "github": {
+    "repository": "HoYin1600p/ArcaneBeam",
+    "defaultBranch": "main",
+    "versionTrackingJson": "update.json",
+    "versionTrackingProductionUrl": "https://raw.githubusercontent.com/HoYin1600p/ArcaneBeam/main/update.json",
+    "versionTrackingPointers": {
+      "version": "/promos/1.18.2-latest",
+      "recommendedVersion": "/promos/1.18.2-recommended",
+      "messageTemplate": "/1.18.2/{version}",
+      "criticalEncoding": "message-prefix",
+      "criticalPrefix": "[CRITICAL] ",
+      "normalPrefix": "",
+      "removeMessageWhenNull": false
+    }
+  },
+  "curseforge": {
+    "projectId": "1550168",
+    "projectSlug": "arcanebeam",
+    "uploadCommand": ".\\scripts\\publish-curseforge.ps1 -Version <version> -ChangelogFile <path> -GitHubReleaseUrl <url>",
+    "uploadDryRunCommand": ".\\scripts\\publish-curseforge.ps1 -Version <version> -ChangelogFile <path> -GitHubReleaseUrl <url> -DryRun",
+    "uploadTokenEnvironment": "CURSEFORGE_API_TOKEN",
+    "descriptionFile": "docs/curseforge-description.md",
+    "descriptionFormat": "markdown",
+    "releaseChannel": "release",
+    "gameVersionIds": [
+      68441,
+      73250
+    ],
+    "gameVersions": [
+      "1.18.2",
+      "Forge",
+      "Client"
+    ],
+    "relations": [
+      {
+        "projectId": "458203",
+        "projectSlug": "vault-hunters-official-mod",
+        "type": "requiredDependency"
+      }
+    ],
+    "approvalPollMinutes": 15,
+    "manualRelease": false
+  },
+  "compatibility": {
+    "gameVersionSources": [
+      "gradle.properties"
+    ],
+    "loaderSources": [
+      "src/main/resources/META-INF/mods.toml"
+    ],
+    "minecraft": "1.18.2",
+    "forge": "40.x",
+    "java": 17,
+    "environment": "client"
+  },
+  "identity": {
+    "scanCommand": ".\\scripts\\verify-public-identity.ps1",
+    "ignoredScanLog": ".identity-scan/identity-scan-log.md"
+  },
+  "automation": {
+    "approvalMonitor": {
+      "enabled": true,
+      "workflowFile": ".github/workflows/curseforge-approval-monitor.yml",
+      "command": ".\\scripts\\curseforge-approval-monitor.ps1",
+      "selfTestCommand": ".\\scripts\\curseforge-approval-monitor.ps1 -SelfTest",
+      "verificationMode": "public-file-page",
+      "publicFileUrlTemplate": "https://www.curseforge.com/minecraft/mc-mods/{projectSlug}/files/{fileId}",
+      "scheduleMinutes": 15,
+      "attentionAfterHours": 72,
+      "activationMode": "direct-push"
+    }
+  }
+}
