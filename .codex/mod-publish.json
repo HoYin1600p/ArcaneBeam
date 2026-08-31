@@ -43,13 +43,15 @@
     "projectSlug": "arcanebeam",
     "uploadCommand": ".\\scripts\\publish-curseforge.ps1 -Version <version> -ChangelogFile <path> -GitHubReleaseUrl <url>",
     "uploadDryRunCommand": ".\\scripts\\publish-curseforge.ps1 -Version <version> -ChangelogFile <path> -GitHubReleaseUrl <url> -DryRun",
+    "uploadCredentialDiagnosticCommand": ".\\scripts\\publish-curseforge.ps1 -Version <version> -ChangelogFile <path> -GitHubReleaseUrl <url> -DryRun -ValidateCredential",
     "uploadTokenEnvironment": "CURSEFORGE_API_TOKEN",
     "descriptionFile": "docs/curseforge-description.md",
     "descriptionFormat": "markdown",
     "releaseChannel": "release",
     "gameVersionIds": [
-      68441,
-      73250
+      9008,
+      7498,
+      9638
     ],
     "gameVersions": [
       "1.18.2",

@@ -11,13 +11,55 @@ param(
     [string]$GitHubReleaseUrl,
 
     [string]$ArtifactPath,
-    [switch]$DryRun
+    [switch]$DryRun,
+    [switch]$ValidateCredential
 )
 
 $ErrorActionPreference = 'Stop'
 $repositoryDirectory = Split-Path -Parent $PSScriptRoot
 $manifestPath = Join-Path $repositoryDirectory '.codex/mod-publish.json'
 $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+
+function Test-CurseForgeCredentialAndMetadata {
+    $apiToken = [Environment]::GetEnvironmentVariable([string]$manifest.curseforge.uploadTokenEnvironment)
+    if ([string]::IsNullOrWhiteSpace($apiToken)) {
+        throw "Set $($manifest.curseforge.uploadTokenEnvironment) in the process environment before validating CurseForge author access."
+    }
+
+    $expectedIds = @($manifest.curseforge.gameVersionIds)
+    $expectedNames = @($manifest.curseforge.gameVersions)
+    if ($expectedIds.Count -ne $expectedNames.Count) {
+        throw 'CurseForge game-version IDs and names must have the same number of entries.'
+    }
+
+    Add-Type -AssemblyName System.Net.Http
+    $client = [Net.Http.HttpClient]::new()
+    try {
+        $client.DefaultRequestHeaders.Add('X-Api-Token', $apiToken)
+        $response = $client.GetAsync('https://minecraft.curseforge.com/api/game/versions').GetAwaiter().GetResult()
+        if (-not $response.IsSuccessStatusCode) {
+            throw "CurseForge author authentication failed with HTTP $([int]$response.StatusCode)."
+        }
+
+        $availableVersions = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult() | ConvertFrom-Json
+        for ($index = 0; $index -lt $expectedIds.Count; $index++) {
+            $expectedId = [int]$expectedIds[$index]
+            $expectedName = [string]$expectedNames[$index]
+            $match = @($availableVersions | Where-Object {
+                [int]$_.id -eq $expectedId -and [string]$_.name -eq $expectedName
+            })
+            if ($match.Count -ne 1) {
+                throw "CurseForge game-version mapping $expectedId -> $expectedName is unavailable or ambiguous."
+            }
+        }
+
+        Write-Host "CurseForge author credential and $($expectedIds.Count) upload metadata mappings verified."
+    }
+    finally {
+        $client.Dispose()
+        $apiToken = $null
+    }
+}
 
 $configuredVersionLine = Get-Content -LiteralPath (Join-Path $repositoryDirectory 'gradle.properties') |
     Where-Object { $_ -match '^mod_version=' } |
@@ -77,6 +119,10 @@ $metadata = [ordered]@{
             }
         })
     }
+}
+
+if ($ValidateCredential) {
+    Test-CurseForgeCredentialAndMetadata
 }
 
 $plan = [ordered]@{
