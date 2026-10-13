@@ -1,4 +1,20 @@
 {
   "key.categories.arcanebeam": "Arcane Beam",
-  "key.arcanebeam.config": "Open Arcane Beam Config"
+  "key.arcanebeam.config": "Open Arcane Beam Config",
+  "key.arcanebeam.labyrinth_lines": "Show labyrinth route",
+  "arcanebeam.update.available": "%s Update Available",
+  "arcanebeam.update.message": " - %s",
+  "arcanebeam.update.download": " [Download on CurseForge]",
+  "arcanebeam.update.download_tooltip": "Open the %s CurseForge page",
+  "subtitles.arcanebeam.arcane": "Arcane beam hums",
+  "subtitles.arcanebeam.rail": "Rail shot fires",
+  "subtitles.arcanebeam.lightning_cast": "Seismic charge thrown",
+  "subtitles.arcanebeam.lightning_impact": "Seismic charge strikes",
+  "subtitles.arcanebeam.altar": "Altar beams converge",
+  "subtitles.arcanebeam.storm_arrow_projectile": "Storm arrow fires",
+  "subtitles.arcanebeam.storm_arrow_strike": "Storm bolt strikes",
+  "subtitles.arcanebeam.smite_activation": "Smite activates",
+  "subtitles.arcanebeam.smite_strike": "Smite bolt strikes",
+  "subtitles.arcanebeam.archon_activation": "Archon activates",
+  "subtitles.arcanebeam.archon_strike": "Archon missile strikes"
 }

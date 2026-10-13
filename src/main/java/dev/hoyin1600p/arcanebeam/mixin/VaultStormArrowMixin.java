@@ -1,6 +1,7 @@
 package dev.hoyin1600p.arcanebeam.mixin;
 
-import dev.hoyin1600p.arcanebeam.client.StormArrowVisualManager;
+
+import dev.hoyin1600p.arcanebeam.hook.ParticleHooks;
 import iskallia.vault.entity.entity.VaultStormArrow;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleEngine;
@@ -18,9 +19,10 @@ public abstract class VaultStormArrowMixin {
                     target = "Lnet/minecraft/client/particle/ParticleEngine;createParticle(Lnet/minecraft/core/particles/ParticleOptions;DDDDDD)Lnet/minecraft/client/particle/Particle;"
             )
     )
-    private Particle arcanebeam$suppressStormArrowTrail(ParticleEngine particleEngine, ParticleOptions particle, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+    private Particle arcanebeam$suppressStormArrowTrail(ParticleEngine particleEngine, ParticleOptions particle, double x, double y, double z,
+            double xSpeed, double ySpeed, double zSpeed) {
         VaultStormArrow arrow = (VaultStormArrow) (Object) this;
-        if (StormArrowVisualManager.shouldSuppressProjectileTrail(arrow)) {
+        if (ParticleHooks.shouldSuppressStormProjectileTrail(arrow)) {
             return null;
         }
         return particleEngine.createParticle(particle, x, y, z, xSpeed, ySpeed, zSpeed);

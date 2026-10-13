@@ -1,0 +1,43 @@
+{
+  "shaderCompatibility": "iris",
+  "updates": { "checkForUpdates": false },
+  "selectedArcaneProfile": "Old Purple",
+  "selectedRailProfile": "Missing",
+  "arcane": {
+    "enabled": true,
+    "color": 16711680,
+    "radius": 0.2,
+    "alpha": 0.5,
+    "maxRange": 9999,
+    "lifetimeTicks": 0,
+    "sound": "bogus",
+    "startHand": "mainhand"
+  },
+  "rail": {
+    "color": 3528703,
+    "radius": 0.3,
+    "alpha": 0.9,
+    "colors": [1, 2]
+  },
+  "arcaneProfiles": {
+    "Old Purple": { "color": 255, "radius": 0.05, "alpha": 0.4 },
+    "Other": { "color": 65280, "intensity": 0.07, "opacity": 1.5, "fadeInStyle": "nope" }
+  },
+  "railProfiles": {
+    "Fast": { "color": 3528703, "radius": 0.1 }
+  },
+  "lightningStrike": { "alpha": 0.3, "ringColor": 255 },
+  "vaultAltar": { "cornerVerticalTicks": 10, "cornerConvergeTicks": 10, "cornerOpacity": 0.7 },
+  "vaultAltarProfiles": {
+    "Legacy": { "cornerVerticalTicks": 10, "cornerConvergeTicks": 10 }
+  },
+  "stormArrow": { "lifetimeTicks": 10, "circleAlpha": 0.4 },
+  "smite": { "lifetimeTicks": 10 },
+  "archon": { "lifetimeTicks": 10 },
+  "blastWave": { "lifetimeTicks": 10, "blasterAlpha": 2.0 },
+  "stormArrowProfiles": { "S1": { "lifetimeTicks": 10 } },
+  "smiteProfiles": { "S2": { "lifetimeTicks": 10 } },
+  "archonProfiles": { "S3": { "lifetimeTicks": 10 } },
+  "blastWaveProfiles": { "S4": { "lifetimeTicks": 10 } },
+  "dungeonGlobeMap": { "enabled": false, "opacityPercent": 500 }
+}

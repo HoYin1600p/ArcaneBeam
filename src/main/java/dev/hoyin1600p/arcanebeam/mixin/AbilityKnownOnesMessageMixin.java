@@ -1,6 +1,7 @@
 package dev.hoyin1600p.arcanebeam.mixin;
 
-import dev.hoyin1600p.arcanebeam.client.ArcaneBeamManager;
+
+import dev.hoyin1600p.arcanebeam.hook.AbilityHooks;
 import iskallia.vault.network.message.AbilityKnownOnesMessage;
 import net.minecraftforge.network.NetworkEvent;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,6 +17,6 @@ public abstract class AbilityKnownOnesMessageMixin {
     private static void arcanebeam$syncKnownAbilities(AbilityKnownOnesMessage message,
                                                        Supplier<NetworkEvent.Context> contextSupplier,
                                                        CallbackInfo ci) {
-        contextSupplier.get().enqueueWork(() -> ArcaneBeamManager.syncLocalAbilityState(message));
+        AbilityHooks.observeKnownAbilities(message, contextSupplier);
     }
 }

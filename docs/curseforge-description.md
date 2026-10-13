@@ -1,38 +1,121 @@
 # ArcaneBeam
 
-Arcane Beam is a client-side visual and audio replacement for Vault Hunters' Arcane and Arcane Rail abilities on Minecraft 1.18.2 Forge.
+Arcane Beam is a client-side visual and audio overhaul for Vault Hunters abilities, Vault Altar effects, the Mana Stealer chest trap and the Vault map on Minecraft 1.18.2 Forge.
 
-Instead of rendering long streams of particles, Arcane Beam draws clean configurable beams that follow the player's crosshair, stop on collision, and preserve the original behavior of both abilities. Arcane remains a held beam, and Rail remains a short single-shot beam.
+Arcane Beam is made by HoYin1600p.
+
+Instead of rendering long streams of particles, Arcane Beam draws clean configurable beams that follow the player's crosshair, stop on collision, and preserve the original behavior of both abilities. Arcane remains a held beam, and Rail remains a short single-shot beam. Every replacement changes presentation only: Vault Hunters damage, targeting, cooldowns, mana costs and server behavior are unchanged.
 
 ## Features
 
-- Replaces Arcane and Arcane Rail particle lines with rendered beams
-- Separate settings for Arcane and Rail
+### Ability replacements
+
+- Arcane and Arcane Rail: particle lines replaced with rendered beams, each with its own on/off switch
+- Arcane `Visuals: Resource Pack` mode: keeps Vault's own Arcane particles so a resource-pack retexture shows on your own Arcane, aimed from your configured origin to the crosshair, with particle size, face-beam and rotation options
+- Lightning Strike: a seismic-charge projectile and shockwave
+- Storm Arrow: a rolling target designator and orbital-style energy strikes
+- Smite: orbital-style strike beams with a targeting circle
+- Archon: curved Whistling Bird-style missiles
+- Smite: Blast Wave: capped volleys of small Whistling Bird-style missiles with a smooth player-following radius ring
+- Vault Altar imbuement: four converging corner beams and a rising center beam
+- Mana Stealer trap: bounded pale-blue/navy orbs across its spherical radius and a player-to-trap mana stream while an eligible player is inside the drain radius, with a separate hot-reloadable config and `/arcanebeam mana_stealer` preview/toggle commands
+
+### Other players
+
+- Other players keep Vault's normal Arcane and Rail particles by default, and Arcane Prism keeps Vault's own visuals
+- Optional resource-pack beam profiles: assign a nearby player a rendered beam, a particle texture or a random list of textures supplied by a resource pack (`config/arcanebeam/player_beams/assignments.json`, reload with `F3+T`). Nothing personal is bundled
+
+### Beam settings
+
 - Four beam colors and four glow colors per ability
 - In-game color picker with live preview
 - Intensity, opacity, glow radius, glow opacity, glow rotation, and color shift controls
-- Configurable fade/grow-in and fade/shrink-out transitions for both abilities
-- Configurable fade in / fade out timing per ability
-- Main hand or offhand origin selection
-- Fine XYZ origin offset controls
-- Mouse wheel adjustment for origin offsets, sound volume, and transition timing fields
+- Configurable fade/grow-in and fade/shrink-out transitions and timing per ability
+- Main hand or offhand origin selection with fine XYZ origin offsets
+- Crosshair Aim per beam profile
 - Shader compatibility toggle
-- Custom sound selection for both abilities
-- Per-ability custom sound volume control
+- Profiles for every ability
+
+### Sound
+
+- Custom sound selection and per-ability volume for every replacement
 - Arcane option support for startup + loop sound behavior
 - Suppresses default Vault cast sounds when custom ArcaneBeam sounds are selected
-- Live beam preview behind the translucent config screen
+- Bundled sounds have subtitles and fade with distance
+- `Resourcepack1` / `Resourcepack2` sound slots for your own `.ogg` files
+
+### Settings screen
+
+- Docked panel with a page list (Beams, Abilities, Vault), scrolling sections, a left or right dock and a minimize tab
+- Live preview behind the translucent screen, with Clean View (`H`)
+- On-screen Start Position window for the Arcane, Rail and Blast Wave origin
+- Mouse wheel adjustment on every number field
+- Opens from its keybind (unbound by default) or the Mods list Config button
 - Client-side config saved to `config/ArcaneBeam.json`
+
+### Vault helpers
+
+- Labyrinth Breadcrumbs (off by default): inside the village challenge-room labyrinths (Living, Gilded, Ornate) and the Wolds labyrinth room, a single line leads from you to the exit
+- Dungeon globe map fade: rooms revealed by globes or teammates are drawn fainter on the Vault map until you visit them
+- Optional update notices that link only to this page, limited to critical updates by default
 
 ## Requirements
 
 This mod is intended for Vault Hunters 3rd Edition and requires:
 
 - Minecraft `1.18.2`
-- Forge `40.x`
+- Forge `40.1.67` or newer
 - Java `17`
-- `The Vault`
+- `The Vault` (Vault Hunters `3.21.6` or newer; tested with Wolds `3.21.6` and Remastered `20.0.3`)
+- Client installation only; the server and other players do not need Arcane Beam
+
+Shader packs are supported: keep `Shader compatibility` on (the default) for Arcane and Rail, and the labyrinth route switches to the beacon beam program automatically when a shader pack is active.
+
+## Links
+
 - [Example Resource Pack](https://github.com/HoYin1600p/ArcaneBeam/releases/download/mod/ArcaneBeam-Example-Resourcepack-Sounds.zip)
+- [Source, full release notes and issue tracker](https://github.com/HoYin1600p/ArcaneBeam)
+
+## 0.2.0
+
+### Release Copy
+
+```markdown
+## ArcaneBeam 0.2.0
+
+A big update since 0.1.14: a new Blast Wave replacement, resource-pack beam profiles for other players, a Resource Pack visuals mode for Arcane, a rebuilt settings screen, Labyrinth Breadcrumbs, Mana Stealer trap visuals, a globe map fade, update notices and many fixes. ArcaneBeam stays client-side only and changes presentation only: Vault Hunters damage, targeting, cooldowns, mana costs and server behavior are unchanged.
+
+Full release notes: https://github.com/HoYin1600p/ArcaneBeam/releases/tag/v0.2.0
+
+### New
+
+- **Blast Wave replacement:** Smite: Blast Wave pulses become capped volleys of small Whistling Bird-style missiles, with a smooth player-following radius ring, its own sounds and profiles.
+- **Beam profiles for other players (optional):** give a nearby player their own rendered beam, particle texture or random texture list from a resource pack, set in `config/arcanebeam/player_beams/assignments.json`. Nobody is assigned by default.
+- **Arcane `Visuals: Resource Pack` mode:** keeps Vault's own Arcane particles so a resource-pack retexture shows on your own Arcane, aimed from your configured origin to the crosshair.
+- **New settings screen:** a docked panel with a page list, scrolling sections, left or right dock, a minimize tab and an on-screen Start Position window. The Mods list Config button opens it.
+- **Labyrinth Breadcrumbs** (off by default, `Vault > Labyrinth` page): inside the village challenge-room labyrinths (Living, Gilded, Ornate) and the Wolds labyrinth room, one line leads from you to the exit.
+- **Mana Stealer trap visuals:** pale-blue and navy orbs through the trap's radius and a player-to-trap stream, with their own config and `/arcanebeam mana_stealer` commands.
+- **Dungeon globe map fade:** rooms revealed by globes or teammates are drawn fainter until you visit them.
+- **Update notices:** a startup check that links only to this CurseForge page; critical updates only by default.
+- Arcane and Rail each have their own on/off switch; bundled sounds have subtitles and fade with distance.
+
+### Fixes (bugs present in 0.1.14)
+
+- A Vault update that renames something ArcaneBeam hooks no longer stops the game from starting; an error in one feature now switches off only that feature.
+- Arcane and Rail beams show exactly the configured opacity at any length, and their color blending and glow rotation are smooth again.
+- Smite, Storm Arrow, Lightning Strike and Archon replacements only touch their own bolts and effects; turning a replacement off always takes effect.
+- The beam origin no longer jumps when looking straight up or down, and rendering no longer jitters far from the world origin.
+- Config files that are locked or hand-edited are no longer reset to defaults; saves are safer.
+- The sound warnings on every resource reload are gone, and long resource-pack sounds play to the end.
+
+### Changes
+
+- Requires Forge 40.1.67 or newer and Vault Hunters 3.21.6 or newer.
+- Other players' Arcane and Rail are no longer replaced with your beam unless you assign them a profile, and Arcane Prism keeps Vault's own visuals.
+- Bundled default profiles are all named `Default`; existing configs load without losing values.
+
+0.1.14 has no update checking, so it will not tell you about this release in game; from 0.2.0 on, ArcaneBeam can tell you about the next one.
+```
 
 ## 0.1.14
 

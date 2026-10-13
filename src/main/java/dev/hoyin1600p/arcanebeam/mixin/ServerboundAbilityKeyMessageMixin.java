@@ -1,6 +1,7 @@
 package dev.hoyin1600p.arcanebeam.mixin;
 
-import dev.hoyin1600p.arcanebeam.client.ArcaneBeamManager;
+
+import dev.hoyin1600p.arcanebeam.hook.AbilityHooks;
 import iskallia.vault.network.message.ServerboundAbilityKeyMessage;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -11,6 +12,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class ServerboundAbilityKeyMessageMixin {
     @Inject(method = "send", at = @At("HEAD"), remap = false)
     private static void arcanebeam$observeLocalAbilityKey(ServerboundAbilityKeyMessage.Opcode opcode, CallbackInfo ci) {
-        ArcaneBeamManager.observeLocalAbilityKey(opcode);
+        AbilityHooks.observeLocalAbilityKey(opcode);
     }
 }

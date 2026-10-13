@@ -2,10 +2,10 @@
   "homepage": "https://www.curseforge.com/minecraft/mc-mods/arcanebeam",
   "1.18.2": {
     "0.1.11": "Audio Stability Maintenance",
-    "0.2.0": "Major Visual Update"
+    "0.2.0": "[CRITICAL] Major visual update, labyrinth route, new settings screen and startup fixes"
   },
   "promos": {
-    "1.18.2-latest": "0.1.11",
-    "1.18.2-recommended": "0.1.11"
+    "1.18.2-latest": "0.2.0",
+    "1.18.2-recommended": "0.2.0"
   }
 }

@@ -1,13 +1,13 @@
 # Arcane Beam
 
-ArcaneBeam is a client-side visual and audio overhaul for Vault Hunters 3 on Minecraft Forge 1.18.2. It replaces selected ability and Vault Altar effects with configurable custom renders and sounds while leaving damage, targeting, cooldowns, mana costs, and server behavior unchanged.
+ArcaneBeam is a client-side visual and audio overhaul for Vault Hunters 3 on Minecraft Forge 1.18.2. It replaces selected abilities, Vault Altar effects, and the Mana Stealer chest-trap presentation with configurable custom renders and sounds while leaving damage, targeting, cooldowns, mana costs, and server behavior unchanged.
 
 ## Requirements
 
 - Minecraft `1.18.2`
-- Forge `40.x`
+- Forge `40.1.67` or newer (first 1.18.2 build with `RenderLevelStageEvent`)
 - Java `17`
-- Vault Hunters / `the_vault`
+- Vault Hunters / `the_vault` `3.21.6` or newer (tested with Wolds `3.21.6` and Remastered `20.0.3`)
 
 ## What It Does
 
@@ -21,14 +21,17 @@ ArcaneBeam is a client-side visual and audio overhaul for Vault Hunters 3 on Min
 
 ## Supported Replacements
 
-- **Arcane:** a sustained hand-origin beam that tracks the crosshair and stops at block collision or configured range.
-- **Arcane Rail:** a short, long-range beam with independent visuals, transitions, sound, and crosshair aiming.
+- **Arcane:** a sustained hand-origin beam that tracks the crosshair and stops at block collision or configured range. The `Visuals: Resource Pack` mode instead keeps Vault's own Arcane particles, so a resource pack's retexture shows, and re-aims them from the configured origin to the crosshair (your own Arcane only; Arcane Prism keeps Vault's visuals).
+- **Arcane Rail:** a short, long-range beam with independent visuals, transitions, sound, and crosshair aiming. Arcane and Rail each have their own on/off switch.
 - **Lightning Strike:** a compact seismic-charge projectile followed by an expanding shockwave, center flash, cones, ripples, and configurable impact audio.
 - **Vault Altar:** four converging corner beams, contact sparks, a rising center beam and glow, and replacement imbuement audio.
 - **Storm Arrow:** a rolling target-designator projectile followed by orbital-style energy strikes and impact sparks.
 - **Smite:** configurable orbital-style strike beams, impact effects, targeting circle, and activation/strike audio.
 - **Archon:** short curved Whistling Bird-style missiles with configurable plume, impact, targeting, and sound settings.
 - **Smite: Blast Wave:** capped volleys of curved missiles launched from the player toward affected targets, with a smooth player-following radius indicator.
+- **Mana Stealer:** pale-blue and navy composite orbs move inward through the trap's full spherical radius, with a substantial player-to-trap stream while an eligible player is inside it.
+- **Dungeon globe map fade:** rooms revealed by globes, objectives or commands, and rooms a teammate visited, are drawn fainter on the Vault minimap and map screen until you visit them (Globe Map page; on by default).
+- **Labyrinth Breadcrumbs (off by default):** inside the underground labyrinth of the Living, Gilded and Ornate village challenge rooms and the Wolds labyrinth room, draws one line from you to the exit: straight across rooms and down the middle of halls and stairways, ending on the floor where the exit stair or ladder begins. It appears once you are inside the maze, not while you are in the exit passage. It scans the maze from the blocks you see, so it follows secret passages and mined or opened walls, and it needs a render distance of 4 chunks or more so the whole room is loaded. The route can be shown always or only while a key is held (`Show labyrinth route`, Tab by default).
 
 ## Config Screen
 
@@ -38,17 +41,17 @@ Assign the keybind in:
 
 The keybind is unbound by default.
 
-Arcane, Rail, Lightning Strike, Vault Altar, Storm Arrow, Smite, Archon, and Blast Wave each have their own tab in the config screen.
+The config screen is a docked panel with a page list on one side, grouped as Beams (Arcane, Rail), Abilities (Lightning Strike, Storm Arrow, Smite, Archon, Blast Wave) and Vault (Altar Beam, Globe Map, Mana Trap, Labyrinth, Update Notices). The panel can be docked on the left or the right and swapped with the arrow button, and it can be minimized to a thin `Settings` tab. Pages that have a start position (Arcane, Rail and Blast Wave) offer an `Adjust on screen` button that opens a Start Position window.
 
 While the config screen is open, Arcane Beam renders a live world-space preview beam behind the translucent UI using the currently selected settings.
-The config screen suppresses vanilla, Forge, and Vault HUD overlays while it is open. Use `Collapse` to reduce the controls to a handle, or `Clean View` / `H` to hide ArcaneBeam chrome for an unobstructed preview. Clean View leaves a small `Restore Menu (H)` handle on screen so the menu can be reopened without closing the screen.
-Click a color swatch or hex field to open the color picker popover above the drawer. The popover includes its own hex field for exact color edits.
+The config screen suppresses vanilla, Forge, and Vault HUD overlays while it is open. Use `Clean View` / `H` to hide ArcaneBeam chrome for an unobstructed preview. Clean View leaves a small `Restore Menu (H)` handle on screen so the menu can be reopened without closing the screen.
+Click a color swatch or hex field to open the color picker popover. The popover includes its own hex field for exact color edits.
 
 ### Profiles
 
 Each tab has an independent profile list.
 
-Profile controls are in the left side of the bottom drawer:
+Profile controls are in the page header:
 
 - Type a profile name and click `Add` to copy the current tab's settings into a new profile.
 - Use the profile dropdown to switch the current tab to a saved profile.
@@ -274,6 +277,30 @@ Settings are saved to:
 
 If the config schema changes enough to make older values unsafe, Arcane Beam may regenerate this file.
 
+**Edit profiles, not the top-level sections.** The top-level ability sections (`arcane`, `rail`, `lightningStrike`, `vaultAltar`, `stormArrow`, `smite`, `archon`, `blastWave`) are only a mirror of the selected profile. The real settings live in `<ability>Profiles.<profile name>` (for example `smiteProfiles.Default`); on load the mirror is replaced by the selected profile and rewritten on the next save, so a hand edit made only in a top-level section is discarded. The log names such a section when it differs from its profile.
+
+Hand edits are read leniently, one value at a time. Colours may be a number (including values above 2147483647 such as `4294967295`), `"#RRGGBB"`, `"#AARRGGBB"` or `"0xRRGGBB"`; booleans may be `true`/`false`, `"true"`/`"false"` or `1`/`0`; numbers may be written as strings. A value that still cannot be read falls back to the default of that one field (named in the log), and the rest of the profile loads. The file is copied to `ArcaneBeam.json.corrupt-<time>` only when its text is not valid JSON or a whole profile cannot be read. A file that is locked by another program at launch is not treated as damaged: the game runs on defaults for that session and does not overwrite your file.
+
+`particleScale` is limited to 0.1 to 8 and `particleRotationDegrees` is wrapped into 0 to 360 when the file is loaded. Settings are written on a background thread; if the config directory is read-only, one warning is logged and the save is retried with a growing delay.
+
+Mana Stealer has an intentionally separate hot-reloadable client config:
+
+`config/arcanebeam-mana-stealer-client.toml`
+
+Its visual replacement, legacy ground sigil, and player drain stream can be toggled immediately with:
+
+- `/arcanebeam mana_stealer on|off`
+- `/arcanebeam mana_stealer sigil on|off`
+- `/arcanebeam mana_stealer stream on|off`
+
+The complete client-only effect can be rehearsed without creating a trap or draining mana:
+
+- `/arcanebeam mana_stealer preview <ticks>` (1 to 12000 ticks, which is 10 minutes)
+- `/arcanebeam mana_stealer preview <ticks> <x> <y> <z>`
+- `/arcanebeam mana_stealer preview stop`
+
+See [Mana Stealer visuals](docs/MANA_STEALER_VISUALS.md) for behavior, tuning, ownership, and validation details.
+
 ## Remote Player Beam Profiles
 
 Optional remote-player assignments are stored in:
@@ -367,13 +394,14 @@ Resource-pack extension sound file names:
 
 Arcane Beam checks its [raw GitHub update manifest](https://raw.githubusercontent.com/HoYin1600p/ArcaneBeam/main/update.json) asynchronously and displays an update row on the main menu when a newer version is available. A clickable in-world reminder links only to the official [ArcaneBeam CurseForge page](https://www.curseforge.com/minecraft/mc-mods/arcanebeam).
 
-Update checks are client-only, enabled by default, and fail closed if the request times out, the server returns an error, or the manifest cannot be parsed. The notifier never downloads or installs files and does not notify a multiplayer server.
+Update checks are client-only, enabled by default, and show only critical updates by default. Network failures, malformed manifests, and invalid update-type settings fail closed. The notifier never downloads or installs files and does not notify a multiplayer server.
 
 The setting is saved in `config/ArcaneBeam.json`:
 
 ```json
 "updates": {
-  "checkForUpdates": true
+  "checkForUpdates": true,
+  "updateTypes": "CRITICAL"
 }
 ```
 
@@ -383,8 +411,10 @@ It can be changed immediately without restarting:
 - `/arcanebeam updates status`
 - `/arcanebeam updates on`
 - `/arcanebeam updates off`
+- `/arcanebeam updates critical`
+- `/arcanebeam updates all`
 
-Normal in-world reminders are eligible every ten qualifying client launches. A manifest entry marked `[CRITICAL]` is eligible every five qualifying launches. Each JVM can advance the counter once and display at most one reminder, so reconnects, dimensions, and later server joins do not create additional reminders.
+`CRITICAL` permits only manifest entries marked `[CRITICAL]`. `ALL` permits both normal and critical updates. Changing this setting immediately reapplies the filter to the already-fetched result without another network request. Normal in-world reminders are eligible every ten qualifying client launches. A critical reminder is eligible every five qualifying launches. Each JVM can advance the counter once and display at most one reminder, so reconnects, dimensions, and later server joins do not create additional reminders.
 
 ## Building
 
@@ -395,6 +425,14 @@ Normal in-world reminders are eligible every ten qualifying client launches. A m
 Output jar:
 
 `build/libs/ArcaneBeam-1.18.2-<version>.jar`
+
+### Vault reference jar
+
+The build compiles against a Vault Hunters jar. Put `the_vault-1.18.2-<vault_hunters_local_version>.jar` (the version in `gradle.properties`) in `reference/`, which is not tracked by git. If it is missing, Gradle falls back to the CurseForge file named by `vault_hunters_version`, which may be a different Vault build, and prints a warning that names the source it used. Add `-PrequireVaultReference` to make a missing reference jar fail the build, for example before a release.
+
+### Robustness
+
+Every event handler and mixin entry point is isolated per feature: if one throws (for example after a Vault update changes something this mod reads), the error is logged once with its stack trace and only that feature is switched off for the session. Mixins are not required, so a renamed Vault target is skipped instead of stopping the game from starting, and a startup check names the Vault members that no longer match.
 
 ## Credits
 

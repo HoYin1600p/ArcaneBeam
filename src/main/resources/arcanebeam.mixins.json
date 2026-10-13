@@ -1,28 +1,34 @@
 {
-  "required": true,
+  "required": false,
   "package": "dev.hoyin1600p.arcanebeam.mixin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "arcanebeam.refmap.json",
   "client": [
+    "AbilityQuickselectMessageMixin",
+    "accessor.AbstractSoundInstanceAccessor",
+    "accessor.ParticleAccessor",
     "ArcaneParticleFactoryMixin",
     "AbilityActivityMessageMixin",
     "AbilityKnownOnesMessageMixin",
     "BlastWaveParticleMessageMixin",
     "ChainLightningProjectileMixin",
     "ClientLevelMixin",
+    "LabyrinthBlockChangeMixin",
+    "DungeonGlobeMapOpacityMixin",
     "LightningArrowRendererMixin",
     "ServerboundAbilityKeyMessageMixin",
-    "SmiteBoltAccessor",
+    "ParticleFacingMixin",
     "SmiteBoltRendererMixin",
     "SoundManagerMixin",
     "StormArrowRendererMixin",
     "StormSmiteBoltRendererMixin",
     "VaultStormArrowMixin",
-    "VaultStormEntityAccessor",
-    "VaultStormEntityMixin"
+    "VaultStormEntityMixin",
+    "VaultMinimapMapOpacityMixin",
+    "IngameVaultMapElementOpacityMixin"
   ],
   "injectors": {
-    "defaultRequire": 1
+    "defaultRequire": 0
   },
   "minVersion": "0.8"
 }
